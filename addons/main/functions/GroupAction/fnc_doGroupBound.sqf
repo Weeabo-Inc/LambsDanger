@@ -118,11 +118,7 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
         } else {
             // open ground ~ nothing to stop at, so run further and screen the rush with smoke
             if (!_near) then {_anchor = _assaultCentre getPos [BOUND_LENGTH_OPEN min _distance, _direction];};
-            if (
-                _distance < SMOKE_RANGE
-                && {time > (_group getVariable [QGVAR(boundSmokeTime), 0])}
-                && {!(missionNamespace getVariable [QEGVAR(danger,disableAutonomousSmokeGrenades), false])}
-            ) then {
+            if (_distance < SMOKE_RANGE && {time > (_group getVariable [QGVAR(boundSmokeTime), 0])}) then {
                 _group setVariable [QGVAR(boundSmokeTime), time + SMOKE_INTERVAL];
                 [_assaultTeam, _target] call FUNC(doSmoke);
                 if (_fireTeam isNotEqualTo []) then {[_fireTeam, _target] call FUNC(doSmoke);};

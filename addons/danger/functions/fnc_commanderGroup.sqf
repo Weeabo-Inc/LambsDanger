@@ -24,6 +24,8 @@
 #define BROKEN_MORALE 0.35
 #define OVERWATCH_RANGE 150
 #define WITHDRAW_REST 300
+#define DEFEND_BUILDING_RANGE 50
+#define DEFEND_HIDE_RANGE 150
 
 params [["_group", grpNull, [grpNull]]];
 
@@ -103,11 +105,23 @@ switch (true) do {
             ["withdraw", {_this call FUNC(tacticsWithdraw)}, _threatPos, 90] call _fnc_run;
         };
 
-        // defenders stay on their ground and counterattack only inside it
+        // defenders stay on their ground and counterattack only inside it ~ and they fight from cover, not the open
         private _defending = _mode in ["hold", "defend"] && {_objective isNotEqualTo []};
         private _insideArea = _defending && {_threatPos distance2D _objective < _radius};
         if (_defending && {!_insideArea || {_mode isEqualTo "hold"}}) exitWith {
-            ["suppress", {_this call FUNC(tacticsSuppress)}, _threatPos, 45] call _fnc_run;
+            private _exposed = !(_leader call EFUNC(main,isIndoor)) && {(nearestTerrainObjects [_leader, ["BUSH", "TREE", "HOUSE", "HIDE", "WALL", "ROCK"], 4, false, true]) isEqualTo []};
+            private _buildings = if (_exposed) then {[_leader, DEFEND_BUILDING_RANGE, true, true] call EFUNC(main,findBuildings)} else {[]};
+            switch (true) do {
+                case (_buildings isNotEqualTo [] && {(_picture get "lastTactic") isNotEqualTo "garrison" || {(_picture get "lastResult") isNotEqualTo "failed"}}): {
+                    ["garrison", {_this call FUNC(tacticsGarrison)}, _threatPos, 180] call _fnc_run;
+                };
+                case (_exposed && {_distance > DEFEND_HIDE_RANGE}): {
+                    ["hide", {_this call FUNC(tacticsHide)}, _threatPos, 120] call _fnc_run;
+                };
+                default {
+                    ["suppress", {_this call FUNC(tacticsSuppress)}, _threatPos, 45] call _fnc_run;
+                };
+            };
         };
 
         // cautious posture ~ fire from where it stands, never closes

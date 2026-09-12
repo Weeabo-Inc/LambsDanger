@@ -84,12 +84,13 @@ if (formation _unit in ["FILE", "DIAMOND"]) exitWith {
     _timeout
 };
 
-// far, try to suppress
+// far, try to suppress ~ not while a Zeus marches the group somewhere, suppressing stops the unit
 if (
     _still
     && _distance > EGVAR(main,minSuppressionRange)
     && unitReady _unit
     && (_type isEqualTo DANGER_CANFIRE)
+    && {!(_unit call EFUNC(main,isDirected))}
 ) exitWith {
     private _posASL = ATLToASL (_unit getHideFrom _target);
     if (((ASLToAGL _posASL) select 2) > 6) then {

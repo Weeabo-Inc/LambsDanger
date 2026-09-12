@@ -278,6 +278,15 @@ if (GVAR(commander)) then {
     if ((_intent select 0) isEqualTo "defend" && {(_intent select 1) isNotEqualTo []} && {_pos distance2D (_intent select 1) > (_intent select 2)}) then {
         _plan = _plan apply {[_x, TACTICS_SUPPRESS] select (_x in [TACTICS_ASSAULT, TACTICS_BOUND, TACTICS_FLANK, TACTICS_ATTACK])};
     };
+    // defenders caught in the open get into the nearest buildings first
+    if (
+        (_intent select 0) in ["hold", "defend"]
+        && {!(_unit call EFUNC(main,isIndoor))}
+        && {([_unit, 50, true, true] call EFUNC(main,findBuildings)) isNotEqualTo []}
+        && {(_picture get "lastTactic") isNotEqualTo "garrison" || {(_picture get "lastResult") isNotEqualTo "failed"}}
+    ) then {
+        _plan = [TACTICS_GARRISON];
+    };
 };
 
 // broken groups do not attack ~ they break contact instead (assertive discipline)

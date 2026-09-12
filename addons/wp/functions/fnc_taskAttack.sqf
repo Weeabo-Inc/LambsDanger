@@ -78,6 +78,8 @@ private _leader = leader _group;
     _x disableAI "AUTOCOMBAT";
     _x setVariable [QGVAR(disabledAI), ["AUTOCOMBAT"]];
     _x doFollow _leader;
+    // followers travel, the leader keeps his reactions so the group still builds its picture
+    if (_x isNotEqualTo _leader) then {_x setVariable [QEGVAR(danger,forceMove), true];};
     _x setVariable [QEGVAR(main,currentTask), "Attack (approach)", EGVAR(main,debug_functions)];
 } forEach ((units _group) select {!isPlayer _x});
 
@@ -173,9 +175,17 @@ private _handle = [{
             _x forceSpeed -1;
             _x setUnitPos "AUTO";
             _x doFollow _leader;
+            if (_x isNotEqualTo _leader) then {_x setVariable [QEGVAR(danger,forceMove), true];};
             _x setVariable [QEGVAR(main,currentTask), "Attack (approach)", EGVAR(main,debug_functions)];
         } forEach _units;
     };
+    // stragglers ~ anyone who stopped to shoot or fell far behind is told to catch up
+    {
+        if (_x isNotEqualTo _leader && {(currentCommand _x) isEqualTo "Suppress" || {_x distance2D _leader > 50}}) then {
+            _x doWatch objNull;
+            _x doFollow _leader;
+        };
+    } forEach _units;
     if (unitReady _leader || {((expectedDestination _leader) select 1) isEqualTo "DoNotPlan"}) then {
         _group move _pos;
     };

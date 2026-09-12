@@ -93,6 +93,14 @@ if (_arrived) exitWith {
     };
 };
 
+// stragglers ~ a follower that stopped to shoot or fell far behind is told to catch up
+{
+    if (_x isNotEqualTo _leader && {(currentCommand _x) isEqualTo "Suppress" || {_x distance2D _leader > 50}}) then {
+        _x doWatch objNull;
+        _x doFollow _leader;
+    };
+} forEach _units;
+
 // progress
 private _progress = _group getVariable [QGVAR(directedProgress), [1e9, CBA_missionTime, 0, false]];
 _progress params ["_lastDistance", "_lastProgressTime", "_reissues", "_diagnosisSent"];
