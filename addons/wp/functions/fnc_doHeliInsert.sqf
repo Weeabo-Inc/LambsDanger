@@ -36,7 +36,7 @@
 #define LANDED_HEIGHT 1.4
 #define LANDED_SPEED 1.5
 #define UNLOAD_TIME 8
-#define TIMEOUT 45
+#define TIMEOUT 75
 #define LEAN 0.02
 
 params [["_heli", objNull, [objNull]], ["_lz", [], [[]]], ["_troops", [], [[]]], ["_exit", [], [[]]], ["_onDone", {}, [{}]]];
@@ -47,9 +47,14 @@ if (isNull _pilot || {!alive _pilot}) exitWith {false};
 
 // take the controls
 _pilot disableAI "MOVE";
+_pilot disableAI "FSM";
 _heli setVariable [QGVAR(heliInsert), true];
 _heli engineOn true;
+_heli land "NONE";
 {_x setVariable [QEGVAR(main,currentTask), "Inserting", EGVAR(main,debug_functions)];} forEach (crew _heli);
+if (EGVAR(main,debug_functions)) then {
+    ["%1 heli insert: %2 taking the controls %3m from the LZ, %4m up, %5 troops aboard", side _pilot, typeOf _heli, round (_heli distance2D _lz), round ((getPosATL _heli) select 2), count _troops] call EFUNC(main,debugLog);
+};
 
 [{
     params ["_args", "_handle"];
@@ -57,11 +62,14 @@ _heli engineOn true;
     _state params ["_phase", "_startTime", "_unloadSince"];
 
     private _fnc_release = {
-        params ["_heli", "_exit", "_aborted", "_troops", "_onDone", "_handle"];
+        params ["_heli", "_exit", "_aborted", "_troops", "_onDone", "_handle", ["_reason", ""]];
         [_handle] call CBA_fnc_removePerFrameHandler;
+        if (EGVAR(main,debug_functions)) then {
+            ["heli insert: %1 released (%2), %3 of %4 troops out", typeOf _heli, _reason, {alive _x && {isNull objectParent _x}} count _troops, count _troops] call EFUNC(main,debugLog);
+        };
         if (alive _heli) then {
             private _pilot = driver _heli;
-            if (!isNull _pilot) then {_pilot enableAI "MOVE";};
+            if (!isNull _pilot) then {_pilot enableAI "MOVE"; _pilot enableAI "FSM";};
             _heli setVariable [QGVAR(heliInsert), nil];
             private _velocity = velocity _heli;
             _heli setVelocity [_velocity select 0, _velocity select 1, MAX_UP];
@@ -73,11 +81,15 @@ _heli engineOn true;
     };
 
     // aircraft lost, crippled, or the owner gave up on it
-    if (
-        !alive _heli || {!canMove _heli} || {isNull (driver _heli)} || {!alive (driver _heli)}
-        || {isNil {_heli getVariable QGVAR(heliInsert)}}
-        || {time - _startTime > TIMEOUT}
-    ) exitWith {[_heli, _exit, true, _troops, _onDone, _handle] call _fnc_release;};
+    private _abort = switch (true) do {
+        case (!alive _heli): {"destroyed"};
+        case (!canMove _heli): {"crippled"};
+        case (isNull (driver _heli) || {!alive (driver _heli)}): {"pilot dead"};
+        case (isNil {_heli getVariable QGVAR(heliInsert)}): {"cancelled"};
+        case (time - _startTime > TIMEOUT): {"timeout"};
+        default {""};
+    };
+    if (_abort isNotEqualTo "") exitWith {[_heli, _exit, true, _troops, _onDone, _handle, _abort] call _fnc_release;};
 
     // controller ~ where we are, where we want to be
     private _pos = getPosATL _heli;
@@ -106,6 +118,7 @@ _heli engineOn true;
             if (_distance < 4 && {(_pos select 2) < LANDED_HEIGHT + 1} && {vectorMagnitude _new < LANDED_SPEED + 1}) then {
                 _state set [0, "unload"];
                 _state set [2, time];
+                if (EGVAR(main,debug_functions)) then {["heli insert: %1 down on the LZ after %2s, unloading", typeOf _heli, round (time - _startTime)] call EFUNC(main,debugLog);};
                 // out ~ instantly and safely, no jumping out of a hovering aircraft
                 {
                     if (alive _x && {(vehicle _x) isEqualTo _heli}) then {
@@ -126,7 +139,7 @@ _heli engineOn true;
             if (_allOut || {time - _unloadSince > UNLOAD_TIME}) then {
                 // troops move clear of the rotor before the aircraft lifts
                 {if (alive _x && {isNull objectParent _x}) then {_x doMove (_lz getPos [20, _lz getDir _x]); _x setUnitPos "MIDDLE";};} forEach _troops;
-                [_heli, _exit, false, _troops, _onDone, _handle] call _fnc_release;
+                [_heli, _exit, false, _troops, _onDone, _handle, "troops out"] call _fnc_release;
             };
         };
     };

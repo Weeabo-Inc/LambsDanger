@@ -31,8 +31,11 @@
 #define LZ_CLEARANCE 12
 #define LZ_GRADIENT 0.15
 #define HOT_LZ 200
-#define START_INSERT 120
+#define START_INSERT 200
+#define HOVER_ARRIVED 400
 #define APPROACH_ALTITUDE 60
+#define LIFT_DELAY 4
+#define LIFT_SPEED 5
 
 params [["_group", grpNull, [grpNull]], ["_pos", [], [[]]], ["_helis", [], [[]]]];
 
@@ -68,6 +71,8 @@ if (isNil "_air") then {
     ];
     _group setVariable [QGVAR(attackAir), _air];
     {
+        _x engineOn true;
+        _x land "NONE";
         _x flyInHeight APPROACH_ALTITUDE;
         (driver _x) doMove _lz;
         {_x setVariable [QEGVAR(main,currentTask), "Air assault (flying in)", EGVAR(main,debug_functions)];} forEach (crew _x);
@@ -106,9 +111,27 @@ switch (_phase) do {
                 if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 hot LZ, moving it out", side _group, groupId _group] call EFUNC(main,debugLog);};
             };
         };
-        if (unitReady (driver _heli)) then {(driver _heli) doMove _lz;};
-        if (_heli distance2D _lz < START_INSERT) then {
+        // sitting on the ground: an AI helicopter will not take off on a move order alone ~ start it and lift it
+        private _grounded = isTouchingGround _heli || {(getPosATL _heli) select 2 < 2 && {speed _heli < 2}};
+        if (_grounded && {_heli distance2D _lz > START_INSERT}) then {
+            _heli engineOn true;
+            _heli land "NONE";
+            if (isEngineOn _heli && {time - (_air get "time") > LIFT_DELAY}) then {
+                private _velocity = velocity _heli;
+                _heli setVelocity [_velocity select 0, _velocity select 1, LIFT_SPEED];
+                (driver _heli) doMove _lz;
+                _heli flyInHeight APPROACH_ALTITUDE;
+                if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 helicopter lifted off", side _group, groupId _group] call EFUNC(main,debugLog);};
+            };
+        } else {
+            if (unitReady (driver _heli)) then {(driver _heli) doMove _lz;};
+        };
+        if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 flying in, %3m to the LZ, %4m up, %5 km/h", side _group, groupId _group, round (_heli distance2D _lz), round ((getPosATL _heli) select 2), round (speed _heli)] call EFUNC(main,debugLog);};
+
+        // close enough, or the pilot considers himself arrived and hovers ~ take over and land
+        if (_heli distance2D _lz < START_INSERT || {unitReady (driver _heli) && {_heli distance2D _lz < HOVER_ARRIVED}}) then {
             _air set ["phase", "land"];
+            if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 starting the landing %3m from the LZ", side _group, groupId _group, round (_heli distance2D _lz)] call EFUNC(main,debugLog);};
             // everyone aboard who is not flying or manning a weapon gets off, whatever group they belong to
             private _aircrew = [driver _heli, gunner _heli, commander _heli] + (((fullCrew [_heli, "turret"]) select {!(_x select 4)}) apply {_x select 0});
             private _troops = (crew _heli) select {!(_x in _aircrew) && {!isPlayer _x} && {alive _x}};
