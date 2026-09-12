@@ -56,7 +56,7 @@ if (_group isEqualType objNull) then {_group = group _group;};
 if (isNull _group || {count _pos < 2} || {_pos isEqualTo [0, 0, 0]}) exitWith {[]};
 if (!(_source in CONTACT_SOURCES)) then {_source = "suspected";};
 _pos = +_pos;
-_pos resize 3;
+if (count _pos < 3) then {_pos pushBack 0;};
 _error = (_error max 1) min GVAR(errorCap);
 _confidence = (_confidence max 0) min 1;
 if (_type isEqualTo "") then {_type = [[_object, _ref] select (isNull _object)] call FUNC(contactType);};
