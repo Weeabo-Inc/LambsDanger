@@ -26,7 +26,7 @@ jobs:
         run: hemtt release
       - run: |
           version="${{ github.event.release.tag_name }}"
-          mv releases/lambs-latest.zip "@LambsDanger_${version//[.]/_}.zip"
+          mv releases/lambs-latest.zip "@hostis_${version//[.]/_}.zip"
       - name: Update Release with Files
         id: create_version_release
         uses: ncipollo/release-action@v1
@@ -36,6 +36,6 @@ jobs:
           draft: ${{ github.event.release.unpublished }}
           prerelease: ${{ github.event.release.prerelease }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "./@LambsDanger_*.zip"
+          artifacts: "./@hostis_*.zip"
           tag: ${{ github.event.release.tag_name }}
           body: ${{ github.event.release.body }}

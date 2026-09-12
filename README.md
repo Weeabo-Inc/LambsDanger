@@ -1,3 +1,21 @@
+# HOSTIS
+
+**HOSTIS is a modified version of [LAMBS Danger.fsm](https://github.com/nk3nny/LambsDanger)**
+by nkenny and the LAMBS contributors, distributed under the same GPLv2 with the two upstream
+amendments (see [LICENSE](LICENSE)). It is a hard fork, not a patch set: it re-architects the
+mod around one principle, *Zeus holds the reins, the AI operates*, and one constraint, *the AI
+is never friendly and never commandable by players*.
+
+What is different is listed in [docs/CHANGES-FROM-UPSTREAM.md](docs/CHANGES-FROM-UPSTREAM.md).
+The design, the research behind it, the function-by-function map of upstream and the
+architecture decision records are in [docs/](docs/README.md). The upstream waypoint, module
+and script surface (`lambs_wp_fnc_task*`, the Zeus modules, the ZEN actions, the CBA
+settings) keeps working; see [ADR-0002](docs/adr/0002-fork-identity-and-addon-naming.md).
+
+The upstream README follows.
+
+---
+
 # LAMBS Danger FSM
 <p align="center">
     <a href="https://github.com/nk3nny/LambsDanger/releases/latest">

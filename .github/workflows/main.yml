@@ -61,7 +61,7 @@ jobs:
       - name: Upload Release
         uses: actions/upload-artifact@v7
         with:
-          name: '@LambsDanger'
+          name: '@hostis'
           path: '.hemttout/release/*'
 
   stringtables:

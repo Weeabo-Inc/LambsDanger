@@ -1,6 +1,10 @@
-name = "LAMBS Danger"
+# HOSTIS is a modified version of LAMBS Danger.fsm. The PBO prefix stays "lambs" so
+# that config and stringtable paths in the compatibility addons keep resolving
+# (docs/adr/0002-fork-identity-and-addon-naming.md). New hostis_* addons set their
+# own PREFIX in script_mod.hpp.
+name = "HOSTIS"
 prefix = "lambs"
-author = "LAMBS Dev Team"
+author = "bluefield-creator (fork of LAMBS Danger.fsm by the LAMBS Dev Team)"
 mainprefix = "z"
 
 [version]
@@ -17,10 +21,10 @@ include = [
 ]
 
 [hemtt.signing]
-authority = "LambsDanger"
+authority = "hostis"
 
 [hemtt.release]
-folder = "lambs_danger"
+folder = "hostis"
 
 [hemtt.launch.default]
 workshop = [
