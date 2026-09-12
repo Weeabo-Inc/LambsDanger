@@ -33,8 +33,6 @@
 #define HOT_LZ 200
 #define START_INSERT 120
 #define APPROACH_ALTITUDE 60
-#define LOITER_RADIUS 300
-#define LOITER_ALTITUDE 120
 
 params [["_group", grpNull, [grpNull]], ["_pos", [], [[]]], ["_helis", [], [[]]]];
 
@@ -111,15 +109,17 @@ switch (_phase) do {
         if (unitReady (driver _heli)) then {(driver _heli) doMove _lz;};
         if (_heli distance2D _lz < START_INSERT) then {
             _air set ["phase", "land"];
-            // everyone aboard who is not flying or manning a weapon gets off
+            // everyone aboard who is not flying or manning a weapon gets off, whatever group they belong to
             private _aircrew = [driver _heli, gunner _heli, commander _heli] + (((fullCrew [_heli, "turret"]) select {!(_x select 4)}) apply {_x select 0});
-            private _troops = (units _group) select {(vehicle _x) isEqualTo _heli && {!(_x in _aircrew)}};
+            private _troops = (crew _heli) select {!(_x in _aircrew) && {!isPlayer _x} && {alive _x}};
+            _air set ["troops", _troops];
             private _exit = _lz getPos [400, _pos getDir _lz];
+            _heli setVariable [QGVAR(attackGroup), _group];
             [_heli, _lz, _troops, _exit, {
-                params ["_heli", "_troopsOut", "_aborted"];
+                params ["_heli"];
                 if (isNull _heli) exitWith {};
-                private _group = (_troopsOut param [0, objNull]) call {if (isNull _this) then {grpNull} else {group _this}};
-                if (isNull _group) then {_group = group (driver _heli);};
+                private _group = _heli getVariable [QGVAR(attackGroup), grpNull];
+                if (isNull _group) exitWith {};
                 private _air = _group getVariable QGVAR(attackAir);
                 if (!isNil "_air") then {_air set ["phase", "release"];};
             }] call FUNC(doHeliInsert);
@@ -131,41 +131,34 @@ switch (_phase) do {
 
     case "release": {
         _air set ["phase", "done"];
-        // the infantry leads from here
+        private _troops = _air getOrDefault ["troops", []];
         private _onFoot = (units _group) select {isNull objectParent _x && {_x call EFUNC(main,isAlive)} && {!isPlayer _x}};
-        if (_onFoot isNotEqualTo [] && {!(isNull objectParent (leader _group))}) then {_group selectLeader (_onFoot select 0);};
-        // the aircrew becomes its own element
+
+        // passengers from other groups attack on their own feet, same objective
+        private _otherGroups = [];
+        {if (alive _x && {(group _x) isNotEqualTo _group}) then {_otherGroups pushBackUnique (group _x);};} forEach _troops;
+        {
+            [QGVAR(taskAttack), [_x, _pos], leader _x] call CBA_fnc_targetEvent;
+            if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 dropped off, attacks on foot", side _x, groupId _x] call EFUNC(main,debugLog);};
+        } forEach _otherGroups;
+
         if (alive _heli) then {
             private _crew = (crew _heli) select {(group _x) isEqualTo _group};
-            if (_crew isNotEqualTo [] && {_crew isNotEqualTo (units _group)}) then {
-                private _airGroup = createGroup [side _group, true];
-                _crew joinSilent _airGroup;
-                _airGroup setBehaviour "AWARE";
-                _airGroup setCombatMode "YELLOW";
-                _airGroup setVariable [QEGVAR(danger,disableGroupAI), true, true];
-                [_airGroup] call CBA_fnc_clearWaypoints;
-                _heli flyInHeight LOITER_ALTITUDE;
-                if (someAmmo _heli && {(_crew findIf {_x isEqualTo (gunner _heli) || {(_heli unitTurret _x) isNotEqualTo []}}) isNotEqualTo -1}) then {
-                    // armed: circle the objective at a distance and shoot what shows itself
-                    private _wp = _airGroup addWaypoint [_pos, 0];
-                    _wp setWaypointType "LOITER";
-                    _wp setWaypointLoiterType "CIRCLE_L";
-                    _wp setWaypointLoiterRadius LOITER_RADIUS;
-                    _airGroup setCombatMode "RED";
-                    {_x setVariable [QEGVAR(main,currentTask), "Air support (loiter)", EGVAR(main,debug_functions)];} forEach _crew;
-                } else {
-                    // unarmed: back to where it came from, out of the fight
-                    private _wp = _airGroup addWaypoint [_air get "start", 0];
-                    _wp setWaypointType "MOVE";
-                    private _loiter = _airGroup addWaypoint [_air get "start", 0];
-                    _loiter setWaypointType "LOITER";
-                    _loiter setWaypointLoiterRadius 200;
-                    {_x setVariable [QEGVAR(main,currentTask), "Returning to base", EGVAR(main,debug_functions)];} forEach _crew;
+            if (_onFoot isNotEqualTo []) then {
+                // the infantry leads from here; this group's aircrew becomes its own element
+                if (!(isNull objectParent (leader _group))) then {_group selectLeader (_onFoot select 0);};
+                if (_crew isNotEqualTo []) then {
+                    private _airGroup = createGroup [side _group, true];
+                    _crew joinSilent _airGroup;
+                    [_airGroup, _heli, _pos, _air get "start"] call FUNC(doAirLoiter);
                 };
+            } else {
+                // nobody of ours on the ground: this is the aircrew's group, the drop was the job
+                _air set ["crewOnly", true];
             };
         };
-        [leader _group, "combat", "Advance", 125] call EFUNC(main,doCallout);
-        if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 on the ground, %3 men", side _group, groupId _group, count (units _group)] call EFUNC(main,debugLog);};
+        if (_onFoot isNotEqualTo []) then {[leader _group, "combat", "Advance", 125] call EFUNC(main,doCallout);};
+        if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 drop complete, %3 of ours on the ground, %4 other groups", side _group, groupId _group, count _onFoot, count _otherGroups] call EFUNC(main,debugLog);};
         true
     };
 

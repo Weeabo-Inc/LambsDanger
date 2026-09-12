@@ -7,6 +7,7 @@ PREP(taskBegin);
 PREP(taskCleanup);
 PREP(taskIsCancelled);
 PREP(taskAssault);
+PREP(doAirLoiter);
 PREP(doHeliInsert);
 PREP(taskAttack);
 PREP(taskAttackAir);

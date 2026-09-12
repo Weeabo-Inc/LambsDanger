@@ -101,7 +101,8 @@ if (_wpIndex < 0) then {[_group] call CBA_fnc_clearWaypoints;} else {
 private _travelPos = _pos;
 private _boarding = [];
 private _helis = ((units _group) select {(vehicle _x) isKindOf "Air"}) apply {vehicle _x};
-_helis = (_helis arrayIntersect _helis) select {alive _x && {alive (driver _x)} && {((fullCrew [_x, "cargo"]) findIf {(group (_x select 0)) isEqualTo _group}) isNotEqualTo -1}};
+// anybody at all to drop off counts: our own men, or another group riding with us
+_helis = (_helis arrayIntersect _helis) select {alive _x && {alive (driver _x)} && {((fullCrew [_x, "cargo"]) findIf {alive (_x select 0) && {!isPlayer (_x select 0)}}) isNotEqualTo -1}};
 private _airAssault = _helis isNotEqualTo [];
 _group setVariable [QGVAR(attackAir), nil];
 if (_airAssault) then {
@@ -151,10 +152,17 @@ private _handle = [{
         _group setVariable [QGVAR(attackTravelPos), nil];
         // a helicopter still under scripted control is handed back to its pilot
         private _air = _group getVariable QGVAR(attackAir);
+        private _heli = objNull;
+        private _airStart = [];
         if (!isNil "_air") then {
-            private _heli = _air get "heli";
+            _heli = _air get "heli";
+            _airStart = _air get "start";
             if (!isNull _heli) then {_heli setVariable [QGVAR(heliInsert), nil];};
             _group setVariable [QGVAR(attackAir), nil];
+        };
+        // the aircrew's own group after a drop: fire support or back to base
+        if (_reason isEqualTo "delivered" && {!isNull _heli}) then {
+            [_group, _heli, _pos, _airStart] call FUNC(doAirLoiter);
         };
         if (EGVAR(main,debug_functions)) then {
             ["%1 taskAttack: %2 %3", side _group, groupId _group, _reason] call EFUNC(main,debugLog);
@@ -204,6 +212,8 @@ private _handle = [{
     if (!isNil "_air" && {(_air get "phase") isNotEqualTo "done"}) exitWith {
         [_group, _pos, [_air get "heli"]] call FUNC(taskAttackAir);
     };
+    // this was the aircrew's group and the passengers are delivered ~ the job is done
+    if (!isNil "_air" && {_air getOrDefault ["crewOnly", false]}) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "delivered", _pos, _radius, _startTime] call _fnc_end;};
 
     private _leader = leader _group;
     if (!(_leader call EFUNC(main,isAlive))) then {
