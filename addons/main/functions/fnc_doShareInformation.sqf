@@ -17,6 +17,12 @@
  *
  * Public: No
 */
+#define SHARE_DELAY_BASE 1.5
+#define SHARE_DELAY_PER_METRE 150
+#define SHARE_SHOUT_RANGE 80
+#define SHARE_ROUGH_VALUE 1.5
+#define SHARE_RADIO_VALUE 2.5
+
 params ["_unit", ["_target", objNull], ["_range", 350], ["_override", false]];
 
 // nil or captured
@@ -59,11 +65,28 @@ private _groups = allGroups select {
     && {_x isNotEqualTo _group}
 };
 
-// share information
+// share information ~ a report takes time to pass on and loses detail with distance;
+// groups without a radio link only get a rough position beyond shouting range
 if !(isNull _target) then {
     private _knowsAbout = (_newUnit knowsAbout _target) min GVAR(maxRevealValue);
     {
-        [_x, [_target, _knowsAbout]] remoteExec ["reveal", leader _x];
+        private _receiver = leader _x;
+        private _distance = _newUnit distance2D _receiver;
+        private _delay = SHARE_DELAY_BASE + (_distance / SHARE_DELAY_PER_METRE);
+        private _value = _knowsAbout;
+        if (_distance > SHARE_SHOUT_RANGE) then {
+            _value = _value min ([SHARE_ROUGH_VALUE, SHARE_RADIO_VALUE] select _radio);
+        };
+        [
+            {
+                params ["_group", "_target", "_value"];
+                private _receiver = leader _group;
+                if (isNull _receiver || {!alive _target}) exitWith {};
+                [_receiver, [_target, _value]] remoteExec ["reveal", _receiver];
+            },
+            [_x, _target, _value],
+            _delay
+        ] call CBA_fnc_waitAndExecute;
     } forEach (_groups select {_newUnit distance2D (leader _x) < GVAR(combatShareRange)});
 };
 

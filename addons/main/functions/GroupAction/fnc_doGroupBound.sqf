@@ -16,12 +16,13 @@
  * 4: Objective position AGL <ARRAY>
  * 5: Time the current bound started <NUMBER>
  * 6: Bound destinations, one per assault unit <ARRAY>
+ * 7: Group vehicles acting as a fire base <ARRAY>
  *
  * Return Value:
  * None
  *
  * Example:
- * [group bob, [bob], [joe], [getPos angryJoe], getPos angryJoe, time, []] call lambs_main_fnc_doGroupBound;
+ * [group bob, [bob], [joe], [getPos angryJoe], getPos angryJoe, time, [], []] call lambs_main_fnc_doGroupBound;
  *
  * Public: No
 */
@@ -33,7 +34,7 @@
 #define SPREAD 3
 #define SUPPRESS_CHECKS 3
 
-params [["_group", grpNull], ["_base", []], ["_assault", []], ["_posList", []], ["_target", [0, 0, 0]], ["_boundStart", 0], ["_boundPositions", []]];
+params [["_group", grpNull], ["_base", []], ["_assault", []], ["_posList", []], ["_target", [0, 0, 0]], ["_boundStart", 0], ["_boundPositions", []], ["_vehicles", []]];
 
 // exit!
 if (isNull _group || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), false])}) exitWith {};
@@ -132,5 +133,19 @@ private _checks = SUPPRESS_CHECKS;
     };
 } forEach _base;
 
+// vehicles hold as a fire base ~ suppress what they can see, never charge the objective
+_vehicles = _vehicles select {alive _x && {canFire _x} && {(effectiveCommander _x) call FUNC(isAlive)}};
+{
+    if ((currentCommand _x) isNotEqualTo "Suppress") then {
+        private _vehicleIndex = [_x, _posList] call FUNC(checkVisibilityList);
+        if (_vehicleIndex isNotEqualTo -1) then {
+            [_x, (_posList select _vehicleIndex) vectorAdd [0, 0, random 1]] call FUNC(doVehicleSuppress);
+        } else {
+            _x doWatch _target;
+        };
+        (effectiveCommander _x) setVariable [QGVAR(currentTask), "Fire base (vehicle)", GVAR(debug_functions)];
+    };
+} forEach _vehicles;
+
 // next cycle
-[{_this call FUNC(doGroupBound)}, [_group, _base, _assault, _posList, _target, _boundStart, _boundPositions], CYCLE_TIME] call CBA_fnc_waitAndExecute;
+[{_this call FUNC(doGroupBound)}, [_group, _base, _assault, _posList, _target, _boundStart, _boundPositions, _vehicles], CYCLE_TIME] call CBA_fnc_waitAndExecute;

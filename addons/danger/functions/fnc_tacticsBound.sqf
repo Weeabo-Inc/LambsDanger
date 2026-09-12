@@ -73,11 +73,13 @@ _group setVariable [QGVAR(isExecutingTactic), true];
     [_group, time + _delay, speedMode _group, formation _group, combatMode _group, attackEnabled _group]
 ] call CBA_fnc_waitUntilAndExecute;
 
-// find units
+// find units ~ vehicles stay back as a fire base
 if (_units isEqualTo []) then {
     _units = [_unit, 250] call EFUNC(main,findReadyUnits);
 };
 if (_units isEqualTo []) exitWith {false};
+private _vehicles = ([_unit] call EFUNC(main,findReadyVehicles)) select {someAmmo _x};
+{_x doWatch _target;} forEach _vehicles;
 
 // teams ~ leader and support gunners hold the first base of fire, the rest split evenly
 private _gunners = _units select {_x call EFUNC(main,isSupportGunner)};
@@ -122,11 +124,11 @@ _group setFormDir (_unit getDir _target);
 if (!GVAR(disableAutonomousSmokeGrenades)) then {[_unit, _target] call EFUNC(main,doSmoke);};
 
 // start the cycle
-[{_this call EFUNC(main,doGroupBound)}, [_group, _base, _assault, _posList, _target, 0, []], 1] call CBA_fnc_waitAndExecute;
+[{_this call EFUNC(main,doGroupBound)}, [_group, _base, _assault, _posList, _target, 0, [], _vehicles], 1] call CBA_fnc_waitAndExecute;
 
 // debug
 if (EGVAR(main,debug_functions)) then {
-    ["%1 TACTICS BOUND (%2 with %3 base / %4 assault @ %5m, %6 positions)", side _unit, name _unit, count _base, count _assault, round (_unit distance2D _target), count _posList] call EFUNC(main,debugLog);
+    ["%1 TACTICS BOUND (%2 with %3 base / %4 assault / %5 vehicles @ %6m, %7 positions)", side _unit, name _unit, count _base, count _assault, count _vehicles, round (_unit distance2D _target), count _posList] call EFUNC(main,debugLog);
     private _m = [_unit, "tactics bound", _unit call EFUNC(main,debugMarkerColor), "hd_arrow"] call EFUNC(main,dotMarker);
     private _mt = [_target, "", _unit call EFUNC(main,debugMarkerColor), "hd_destroy"] call EFUNC(main,dotMarker);
     {_x setMarkerSizeLocal [0.6, 0.6];} forEach [_m, _mt];
