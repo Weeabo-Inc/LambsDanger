@@ -35,6 +35,13 @@ _unit setVariable ["ace_medical_ai_lastHit", CBA_missionTime];
 
 // stress ~ being shot at wears a soldier down, hits most of all
 private _stressIndex = ([DANGER_FIRE, DANGER_BULLETCLOSE, DANGER_EXPLOSION, DANGER_HIT] find _type) max 0;
+// the group remembers where shells land, so the commander can tell a barrage from a stray grenade
+if (_type isEqualTo DANGER_EXPLOSION) then {
+    private _explosions = (group _unit) getVariable [QGVAR(explosions), []];
+    _explosions pushBack [time, _pos];
+    if (count _explosions > 6) then {_explosions deleteAt 0;};
+    (group _unit) setVariable [QGVAR(explosions), _explosions];
+};
 [_unit, [0.1, 0.2, 0.3, 0.4] select _stressIndex] call EFUNC(main,addStress);
 
 // cover move when explosion ~ not while a Zeus directs the group; assertive units only sometimes duck on visible fire

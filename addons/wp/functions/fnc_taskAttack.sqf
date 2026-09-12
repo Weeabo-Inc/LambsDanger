@@ -32,6 +32,7 @@
 #define CONTACT_ENGAGE_DISTANCE 200
 #define CONTACT_AGE 30
 #define HOLD_TIME 30
+#define HOLD_TIME_FRIENDS 8
 
 if (canSuspend) exitWith { [FUNC(taskAttack), _this] call CBA_fnc_directCall; };
 
@@ -98,7 +99,7 @@ if (_wpIndex < 0) then {[_group] call CBA_fnc_clearWaypoints;} else {
 // the attack plan dismounts it there
 private _travelPos = _pos;
 private _boarding = [];
-if (([_leader, 400] call EFUNC(main,findReadyVehicles)) isNotEqualTo []) then {
+if (([_leader, 400] call EFUNC(main,findGroupVehicles)) isNotEqualTo []) then {
     _travelPos = _pos getPos [TRAVEL_STANDOFF min ((_leader distance2D _pos) * 0.8), _pos getDir _leader];
     private _empty = _travelPos findEmptyPosition [0, 30, typeOf (vehicle _leader)];
     if (_empty isNotEqualTo []) then {_travelPos = _empty;};
@@ -202,10 +203,13 @@ private _handle = [{
         };
     } forEach _contacts;
 
-    // objective held ~ on it, and nothing known around it for a while
+    // objective held ~ on it, and nothing known around it for a while (quickly, if friends already hold it)
     private _held = false;
     if (_distance < _radius && {_nearestContact isEqualTo []}) then {
-        if (_heldSince < 0) then {_state set [1, time];} else {_held = time - _heldSince > HOLD_TIME;};
+        private _friendsThere = (allGroups findIf {
+            _x isNotEqualTo _group && {(side _x) isEqualTo (side _group)} && {(leader _x) call EFUNC(main,isAlive)} && {(leader _x) distance2D _pos < _radius}
+        }) isNotEqualTo -1;
+        if (_heldSince < 0) then {_state set [1, time];} else {_held = time - _heldSince > ([HOLD_TIME, HOLD_TIME_FRIENDS] select _friendsThere);};
     } else {
         _state set [1, -1];
     };
@@ -242,7 +246,7 @@ private _handle = [{
             _x setVariable [QEGVAR(danger,forceMove), nil];
             _x setVariable [QEGVAR(main,currentTask), "Attack (engage)", EGVAR(main,debug_functions)];
         } forEach _units;
-        private _mounted = ([_leader, 400] call EFUNC(main,findReadyVehicles)) isNotEqualTo [];
+        private _mounted = ([_leader, 400] call EFUNC(main,findGroupVehicles)) isNotEqualTo [];
         if (_mounted || {count _units >= 4 && {_distance > 120}}) then {
             [_group, _objective, 420] call EFUNC(danger,tacticsManeuver);
         } else {

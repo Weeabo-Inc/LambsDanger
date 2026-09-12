@@ -46,6 +46,17 @@ _unit setVariable [QEGVAR(main,FSMDangerCauseData), _causeArray, EGVAR(main,debu
 // is it an attack?
 private _attack = _cause in [DANGER_ENEMYDETECTED, DANGER_ENEMYNEAR, DANGER_HIT, DANGER_CANFIRE, DANGER_BULLETCLOSE] && {(side _dangerCausedBy) isNotEqualTo (side _unit)} && {!isNull _dangerCausedBy} && {(behaviour _unit) isEqualTo "COMBAT"};
 
+// carrying troops under orders and taking fire ~ smoke, and keep driving
+if (
+    _cause in [DANGER_HIT, DANGER_EXPLOSION, DANGER_BULLETCLOSE]
+    && {_vehicle getVariable [QEGVAR(main,keepMounted), false]}
+    && {"SmokeLauncher" in (weapons _vehicle)}
+    && {time > (_vehicle getVariable [QEGVAR(main,smokescreenTime), 0])}
+) then {
+    (effectiveCommander _vehicle) forceWeaponFire ["SmokeLauncher", "SmokeLauncher"];
+    _vehicle setVariable [QEGVAR(main,smokescreenTime), time + 30 + random 20];
+};
+
 // update dangerPos if attacking. Check that the position is not too far above, or below ground.
 if (_attack) then {
     _dangerPos = _unit getHideFrom _dangerCausedBy;

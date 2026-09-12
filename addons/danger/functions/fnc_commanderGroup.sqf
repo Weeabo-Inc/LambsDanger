@@ -46,6 +46,14 @@ private _picture = [_group] call FUNC(pictureGet);
 private _intent = [_group] call FUNC(intentGet);
 _intent params ["_mode", "_objective", "_radius", "_posture", "", "_home"];
 private _level = [_group, _picture] call FUNC(commanderEscalation);
+
+// the small things first ~ a new leader, a driver, shells, strays, ammunition
+private _contingency = [_group, _level] call FUNC(commanderContingency);
+if (_contingency in ["displace", "joined", "bail out"]) exitWith {
+    if (EGVAR(main,debug_functions)) then {["%1 COMMANDER %2: %3", side _group, groupId _group, _contingency] call EFUNC(main,debugLog);};
+    _contingency
+};
+_leader = leader _group;
 private _role = _group getVariable [QGVAR(role), ""];
 private _threatPos = _picture get "threatPos";
 private _decision = "";

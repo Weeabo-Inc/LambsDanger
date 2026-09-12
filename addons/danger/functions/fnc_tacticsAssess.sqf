@@ -22,6 +22,7 @@
 #define TACTICS_ATTACK 5
 #define TACTICS_BOUND 6
 #define TACTICS_WITHDRAW 7
+#define RANGE_AMBUSH 50
 #define RANGE_NEAR 120
 #define RANGE_MID 220
 #define RANGE_LONG 300
@@ -138,6 +139,14 @@ if !(_enemies isEqualTo [] || {GVAR(aggression) isEqualTo 0 && {_unitCount < ran
     if (_nearIndoorTarget != -1) exitWith {
         _plan append [TACTICS_ASSAULT, TACTICS_ASSAULT];
         _pos = _unit getHideFrom (_enemies select _nearIndoorTarget);
+    };
+
+    // near ambush ~ fire from inside grenade range: the only answer is to assault through it, now
+    private _nearAmbush = _enemies findIf {_unit distance2D _x < RANGE_AMBUSH};
+    if (_nearAmbush != -1 && {getSuppression _unit > 0.2 || {(_unit call EFUNC(main,getStress)) > 0.4}}) exitWith {
+        _plan = [TACTICS_ASSAULT];
+        _pos = _unit getHideFrom (_enemies select _nearAmbush);
+        [_unit, "combat", "flank", 100] call EFUNC(main,doCallout);
     };
 
     // unit has HOLD waypoint

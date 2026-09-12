@@ -368,6 +368,12 @@
         <Key ID="STR_Lambs_Danger_Settings_CommanderMaxAssault_ToolTip">
             <English>When several groups fight the same enemy, at most this many close with it. The rest hold as support by fire, so players are manoeuvred against instead of swarmed.</English>
         </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderMergeStrays">
+            <English>Strays join the nearest squad</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderMergeStrays_ToolTip">
+            <English>A group reduced to two men or fewer, with no orders of its own and no fight going on, joins the nearest AI squad of its side within 300 m. Off keeps every group as the Zeus placed it.</English>
+        </Key>
         <Key ID="STR_Lambs_Danger_Settings_CommanderPosture">
             <English>Default posture</English>
         </Key>

@@ -80,7 +80,7 @@ private _units = [_unit, 300] call EFUNC(main,findReadyUnits);
 
 // mechanized ~ troops still aboard, or on foot next to their carrier: the vehicles carry them to a dismount
 // point short of the objective, then hold there as the fire base while the infantry fans out and assaults
-private _vehicles = ([_unit, 400] call EFUNC(main,findReadyVehicles)) select {alive _x && {(effectiveCommander _x) call EFUNC(main,isAlive)} && {alive (driver _x)}};
+private _vehicles = ([_unit, 400] call EFUNC(main,findGroupVehicles)) select {(effectiveCommander _x) call EFUNC(main,isAlive) && {alive (driver _x)}};
 private _mounted = [];
 {
     private _vehicle = _x;
@@ -364,6 +364,12 @@ private _handle = [{
         private _lifted = _state get "lifted";
         {
             private _vehicle = _x;
+            // an unarmed carrier is a taxi ~ it waits at the support position, out of the fight
+            if (!(canFire _vehicle && {someAmmo _vehicle})) then {
+                if (unitReady (driver _vehicle) && {_vehicle distance2D (_state get "supportPos") > 20}) then {(driver _vehicle) doMove (_state get "supportPos");};
+                (effectiveCommander _vehicle) setVariable [QEGVAR(main,currentTask), "Waiting (transport)", EGVAR(main,debug_functions)];
+                continue;
+            };
             if ((currentCommand _vehicle) isNotEqualTo "Suppress") then {
                 private _index = if (_lifted) then {-1} else {[_vehicle, _posList] call EFUNC(main,checkVisibilityList)};
                 if (_index isEqualTo -1 || {!([_vehicle, (_posList select _index) vectorAdd [0, 0, random 1]] call EFUNC(main,doVehicleSuppress))}) then {
@@ -378,6 +384,8 @@ private _handle = [{
 
         // mechanized: ride to the dismount point
         case "mounted": {
+            // a dead driver or gunner is replaced from the passengers on the way (or everyone bails if the enemy is close)
+            [_group, 3] call FUNC(commanderContingency);
             private _lead = _vehicles param [0, objNull];
 
             // contact on the way ~ actions on contact while mounted: smoke, get off the road away from the

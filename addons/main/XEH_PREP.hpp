@@ -23,6 +23,7 @@ PREP(findOverwatch);
 PREP(findReadyUnits);
 PREP(findReadyVehicles);
 PREP(findClosestTarget);
+PREP(findGroupVehicles);
 
 PREP(initModules);
 

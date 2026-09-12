@@ -196,6 +196,16 @@ _curCat = LSTRING(Settings_CommanderCat);
     1
 ] call CBA_fnc_addSetting;
 
+// Two men or fewer left on their own join the nearest squad
+[
+    QGVAR(commanderMergeStrays),
+    "CHECKBOX",
+    [LSTRING(Settings_CommanderMergeStrays), LSTRING(Settings_CommanderMergeStrays_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    true,
+    1
+] call CBA_fnc_addSetting;
+
 /*
 TEMPORARILY DISABLED FOR VERSION 2.5 RELEASE
 WAITING BETTER OR OTHER SOLUTION
