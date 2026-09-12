@@ -88,8 +88,7 @@ private _dummy = "CBA_buildingPos" createVehicle _flarePos;
 _dummy setPos _flarePos;
 _unit reveal _dummy;
 
-// store - remove
-_unit addMagazine (currentMagazine _unit);
+// load the flare from his own inventory; nothing is added (FAIRNESS.md R5)
 _unit removeMagazine _flare;
 _unit addWeaponItem [currentWeapon _unit, _flare];
 

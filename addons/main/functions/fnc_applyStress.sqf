@@ -1,42 +1,30 @@
 #include "script_component.hpp"
 /*
  * Author: bluefield-creator
- * Applies the effect of combat stress to a unit's aiming: a stressed soldier shoots
- * more and aims less. The original skill is remembered and restored once the unit
- * has calmed down. Meant to be called from the danger cycle (every 1-2 s), not per frame.
+ * Returns a unit's current stress. It used to lower aimingAccuracy in proportion; that
+ * skill write is gone (docs/FAIRNESS.md R3, RESEARCH.md C-35): stress now changes what a
+ * man does through his morale state (hostis_agent_fnc_moraleState), never how well he
+ * shoots. Kept as the call site every brain already uses.
  *
  * Arguments:
  * 0: Unit <OBJECT>
  *
  * Return Value:
- * current stress <NUMBER>
+ * stress 0..1 <NUMBER>
  *
  * Example:
- * bob call lambs_main_fnc_applyStress;
+ * [bob] call lambs_main_fnc_applyStress;
  *
  * Public: No
 */
-#define STRESS_THRESHOLD 0.3
-#define ACCURACY_LOSS 0.6
-
 params [["_unit", objNull, [objNull]]];
 
-if ((missionNamespace getVariable [QEGVAR(danger,aggression), 0]) isEqualTo 0 || {isPlayer _unit}) exitWith {0};
+if (isNull _unit || {isPlayer _unit}) exitWith {0};
 
-private _stress = _unit call FUNC(getStress);
+// a base accuracy stored by an earlier version is handed back once
 private _baseAccuracy = _unit getVariable [QGVAR(baseAccuracy), -1];
-
-if (_stress > STRESS_THRESHOLD) then {
-    if (_baseAccuracy < 0) then {
-        _baseAccuracy = _unit skill "aimingAccuracy";
-        _unit setVariable [QGVAR(baseAccuracy), _baseAccuracy];
-    };
-    _unit setSkill ["aimingAccuracy", _baseAccuracy * (1 - (ACCURACY_LOSS * _stress))];
-} else {
-    if (_baseAccuracy >= 0) then {
-        _unit setSkill ["aimingAccuracy", _baseAccuracy];
-        _unit setVariable [QGVAR(baseAccuracy), nil];
-    };
+if (_baseAccuracy >= 0) then {
+    _unit setVariable [QGVAR(baseAccuracy), nil];
 };
 
-_stress
+_unit call FUNC(getStress)

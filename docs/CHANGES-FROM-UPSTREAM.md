@@ -82,6 +82,32 @@ migrated into the layer addons per ADR-0008.
 `commanderReinforceRange`, `commanderMergeStrays`, `zeusWaypointDiscipline`,
 `zeusWaypointTimeout`, `aggression`, `dodgeCooldown`.
 
+## Milestone 3: layer 1, the Agent (`hostis_agent`)
+
+- **Morale states per man** ([docs/systems/morale.md](systems/morale.md)): steady, suppressed,
+  pinned, shaken, broken, rallying, from engine suppression, stress, hits, isolation and the
+  leader. Consequences are behavioural: a pinned man refuses to move sideways without
+  covering fire, a shaken man refuses to assault and only rallies with a living leader
+  within 25 m, a broken man breaks away from the fire. **Group cohesion** (steady, strained,
+  broken, rallying) in the picture; a broken group breaks contact.
+- **Volume of fire is measured, not guessed**: every Fire, BulletClose and Hit cause logs an
+  incoming event with a bearing; a FiredMan handler stamps every shooter. The bound in
+  `doGroupBound` only goes while the stationary team is actually firing when fire is coming
+  in; otherwise the runners wait and call for covering fire.
+- **Barks** ([docs/systems/legibility.md](systems/legibility.md)): a vocabulary with priorities
+  and per-man and per-group cooldowns over the engine's radio protocol.
+- **Evidence from the danger causes**: a known shooter files as `shotAt`, an unknown one as
+  `heard` at the fire position, a scream as `heard` infantry.
+- **Position selection** ([docs/systems/positions.md](systems/positions.md)): `findPositions`
+  gained a `directness` condition and weight, a 25 m cell cache for the world queries (20 s),
+  and `hostis_agent_fnc_positionValid` for the cheap "still good enough" check.
+- **Fairness**: `applyStress` no longer writes `aimingAccuracy` (stress acts through morale);
+  the danger FSM re-queues `getHideFrom` instead of the target's true position;
+  `brainEngage`, `brainVehicle` and `doFleeing` decide from the believed position; `doUGL`
+  no longer adds a magazine; `doFleeing` runs the infantry through the soldier machine's
+  `survive` order.
+- Settings under HOSTIS Agent. Test: `tests/morale.Stratis`.
+
 ## Milestone 2: layer 0, the knowledge model (`hostis_core`)
 
 - The group combat picture is now a contact store owned by `hostis_core`

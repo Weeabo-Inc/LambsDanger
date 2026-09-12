@@ -57,8 +57,7 @@ addons/wp/functions/fnc_taskAttackAir.sqf|doWatch|pilot watches the landing zone
 addons/wp/functions/fnc_taskRush.sqf|commandSuppressiveFire|suppresses an aircraft contact the group has seen itself (contactNearest returns the object only for seen contacts)
 addons/wp/functions/fnc_taskRush.sqf|doSuppressiveFire|suppresses a tank contact the group has seen itself
 #
-# R3: skill is never raised.
-addons/main/functions/fnc_applyStress.sqf|setSkill|only lowers aimingAccuracy below the recorded base; TODO milestone 3: replaced by behavioural consequences
+# R3: skill is never raised. (No entries: nothing in the tree writes skill.)
 #
 # R4: nothing below the Director reads the player list.
 addons/danger/functions/fnc_tacticsReinforce.sqf|allDeadMen|TODO milestone 5: body search moves to the death events of the contact store
@@ -66,7 +65,6 @@ addons/main/functions/UnitAction/fnc_doCheckBody.sqf|allDeadMen|scan for a body 
 #
 # R5: no teleport, no free ammunition, no spawning next to players.
 addons/main/functions/GroupAction/fnc_doGroupCommandoDeploy.sqf|createVehicle|creates the weapon holder for a mortar the team carried in its bags
-addons/main/functions/UnitAction/fnc_doUGL.sqf|addMagazine|TODO milestone 3: free magazine, load the flare directly
 addons/main/functions/UnitAction/fnc_doUGL.sqf|createVehicle|scripted flare aim dummy 200 m up, not a unit
 addons/main/functions/UnitAction/fnc_doUGL.sqf|setPos|positions the scripted flare aim dummy
 addons/wp/functions/fnc_taskCQB.sqf|setVehiclePosition|TODO milestone 4: the unstick teleport goes with the rewrite on unitOrder

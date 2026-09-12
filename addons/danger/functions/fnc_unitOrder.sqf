@@ -60,6 +60,16 @@ if (_type in ["follow", "release"]) exitWith {
 };
 
 if (!(_unit call EFUNC(main,isAlive)) || {!isNull objectParent _unit} || {!(_unit checkAIFeature "PATH")} || {!(_unit checkAIFeature "MOVE")}) exitWith {false};
+
+// a pinned man does not move sideways without covering fire; a shaken man does not assault (docs/systems/morale.md)
+private _morale = (_unit getVariable [QHGVAR(agent,morale), ["steady"]]) select 0;
+if (_type in ["move", "rush", "assault"] && {!(_options getOrDefault ["covered", false])}) then {
+    if (_morale isEqualTo "pinned" || {_morale in ["shaken", "broken"] && {_type isEqualTo "assault"}}) exitWith {
+        if (EGVAR(main,debug_functions)) then {["%1 UNIT %2 refuses %3: %4", side _unit, name _unit, _type, _morale] call EFUNC(main,debugLog);};
+        [_unit, "coverMe"] call HFUNC(agent,bark);
+        false
+    };
+};
 private _record = [_unit] call FUNC(unitRegister);
 if (isNil "_record") exitWith {false};
 

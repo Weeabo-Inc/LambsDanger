@@ -73,7 +73,7 @@ if (_artillery) exitWith {
     // enemies within 12-30m may cause crew to disembark!
     if (
         _attack
-        && {_dangerCausedBy distance _vehicle < (12 + random 18)}
+        && {_vehicle distance2D (_unit getHideFrom _dangerCausedBy) < (12 + random 18)}
         && {currentCommand _unit isEqualTo ""}
         && {!(_vehicle isKindOf "Tank" && {count (allTurrets [_vehicle, false]) > 1})}
     ) then {
@@ -205,7 +205,8 @@ if (_armored && {!isNull _dangerCausedBy}) exitWith {
     // delay + info
     private _delay = 2 + random 3;
     private _validTarget = (side _unit) isNotEqualTo (side _dangerCausedBy);
-    private _distance = _vehicle distance _dangerCausedBy;
+    // the crew's belief, not the target's true position (FAIRNESS.md R1)
+    private _distance = _vehicle distance2D (_unit getHideFrom _dangerCausedBy);
 
     // keep cargo aboard!
     _vehicle setUnloadInCombat [false, false];

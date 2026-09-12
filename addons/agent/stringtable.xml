@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="hostis">
+    <Package name="Agent">
+        <Key ID="STR_hostis_Agent_Settings_BarkGroupCooldown">
+            <English>Bark cooldown multiplier</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_BarkGroupCooldown_ToolTip">
+            <English>Scales every bark's cooldown. 0 lets the men talk over each other, 2 halves the chatter.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_Barks">
+            <English>Barks</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_Barks_ToolTip">
+            <English>Voice lines tied to what the men are actually doing: taking fire, pinned, moving, covering, rallying.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_BrokenStress">
+            <English>Broken: stress</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_BrokenStress_ToolTip">
+            <English>A man this stressed, under fire and cut off from his group or leader, breaks.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_DebugCat">
+            <English>Debug</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_DebugMorale">
+            <English>Log morale changes</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_DebugMorale_ToolTip">
+            <English>Every morale and cohesion change goes to the RPT. For testing only.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_IsolationRange">
+            <English>Isolation range (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_IsolationRange_ToolTip">
+            <English>A man this far from his leader with nobody within 15 m counts as cut off.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_LegibilityCat">
+            <English>Legibility</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_Morale">
+            <English>Morale states</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_MoraleCat">
+            <English>Morale</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_Morale_ToolTip">
+            <English>Steady, suppressed, pinned, shaken, broken and rallying per man, with what each state lets him do. Off leaves only the engine's suppression.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_PinnedSuppression">
+            <English>Pinned: suppression</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_PinnedSuppression_ToolTip">
+            <English>Engine suppression above this pins a man: he does not move sideways without covering fire.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_RallyRange">
+            <English>Rally range (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_RallyRange_ToolTip">
+            <English>A shaken or broken man recovers only with a living leader this close.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_RallyTime">
+            <English>Rally time (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_RallyTime_ToolTip">
+            <English>How long a man is rallying before he counts as steady again.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_ShakenStress">
+            <English>Shaken: stress</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_ShakenStress_ToolTip">
+            <English>Stress above this, or a hit while suppressed, shakes a man: he will not assault.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_StateMinTime">
+            <English>State minimum time (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_StateMinTime_ToolTip">
+            <English>A worse state holds at least this long before it can ease, so the read-out does not flicker.</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_SuppressedLevel">
+            <English>Suppressed: suppression</English>
+        </Key>
+        <Key ID="STR_hostis_Agent_Settings_SuppressedLevel_ToolTip">
+            <English>Engine suppression above this, or a hit in the last 5 s, counts a man as suppressed: head down, blind fire.</English>
+        </Key>
+    </Package>
+</Project>

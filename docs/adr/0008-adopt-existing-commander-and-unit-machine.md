@@ -37,6 +37,15 @@ Migration is one function group per PR, each a move plus the minimum change to f
 layer's interface, each with before and after profiler numbers, so that history stays
 readable.
 
+**Amendment, milestone 3.** The owner asked for milestones 3 and 4 to be completed without
+an in-game run between them. Physically moving the soldier machine, the position system
+and the tactics into the layer addons is a mechanical change with no behavioural gain and a
+wide blast radius (thirty files read the machine's variables), so those moves are deferred
+until the test loop has validated milestones 2 to 4. Until then: the layer addons
+(`hostis_agent`, `hostis_squad`) hold the *new* code and the layer's interface, and the
+upstream functions that seed a layer stay where they are and are called through `HFUNC` and
+`LFUNC`. The mapping table above still says where each function ends up.
+
 ## Consequences
 
 - Milestone 1 stays behaviour-free: this ADR and the map are the deliverable; moves start

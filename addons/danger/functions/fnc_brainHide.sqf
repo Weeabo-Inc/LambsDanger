@@ -33,6 +33,9 @@ private _timeout = time + 2;
 // check screams
 if (_type isEqualTo DANGER_SCREAM) exitWith {
 
+    // a scream is evidence of a man over there, rough and unconfirmed (C-62)
+    [group _unit, objNull, _pos, "heard", 30 + 0.2 * (_unit distance2D _pos), 0.5, 1, "infantry"] call HFUNC(core,contactReport);
+
     // check danger
     _unit doWatch _pos;
     _unit setVariable [QEGVAR(main,currentTarget), _pos, EGVAR(main,debug_functions)];

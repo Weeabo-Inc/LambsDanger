@@ -100,16 +100,17 @@ if (!_onFoot) exitWith {
 };
 
 
-// enemy
+// enemy ~ where this man believes him to be (FAIRNESS.md R1)
 private _enemy = _unit findNearestEnemy _unit;
-private _distance2D = _unit distance2D _enemy;
+private _believed = if (isNull _enemy) then {[0, 0, 0]} else {_unit getHideFrom _enemy};
+private _distance2D = if (_believed isEqualTo [0, 0, 0]) then {1e9} else {_unit distance2D _believed};
 
 // get destination
 private _eyePos = eyePos _unit;
 private _suppression = getSuppression _unit;
 
 // on foot and seen by enemy
-private _onFootAndSeen = _distance2D < 75 || {_suppression > 0.9} || {([objNull, "VIEW", objNull] checkVisibility [_eyePos, eyePos _enemy]) > 0.01};
+private _onFootAndSeen = _distance2D < 75 || {_suppression > 0.9} || {_distance2D < 1e8 && {([objNull, "VIEW", objNull] checkVisibility [_eyePos, (AGLToASL _believed) vectorAdd [0, 0, 1.5]]) > 0.01}};
 if (_onFootAndSeen) then {
 
     // variable
@@ -130,25 +131,10 @@ if (_onFootAndSeen) then {
         doStop _unit;
     };
 
-    // find nearby cover
-    private _cover = nearestTerrainObjects [_unit, ["BUSH", "TREE", "HIDE", "ROCK", "WALL", "FENCE"], SEARCH_FOR_HIDE, false, true];
-
-    // speed and stance (based on cover)
-    _unit forceSpeed -1;
-    _unit setUnitPos (["MIDDLE", "DOWN"] select (_suppression > 0 || {_cover isNotEqualTo []})); // test nkenny
-
-    // update cover
-    _cover = _cover apply {_x getPos [1.5, _enemy getDir _x]};
-
-    // find buildings to hide
-    if (_distance2D > 30) then {
-        private _buildings = [_unit, SEARCH_FOR_BUILDING, true, true] call FUNC(findBuildings);
-        _cover append _buildings;
-    };
-
-    // execute move
-    if (_cover isNotEqualTo [] && {_distance2D > 5}) then {
-        _unit doMove selectRandom _cover;
+    // the machine takes him away from the fire, cover to cover, unless it already has him
+    if (_distance2D > 5 && {!([_unit, "isBusy"] call EFUNC(danger,unitState))}) then {
+        private _threats = [[], [_believed]] select (_distance2D < 1e8);
+        [_unit, "survive", getPosATL _unit, _threats, createHashMapFromArray [["task", "Fleeing"], ["indoorBias", _distance2D > 30]]] call EFUNC(danger,unitOrder);
     };
 
 } else {
@@ -169,7 +155,7 @@ if (GVAR(debug_functions)) then {
         [format ["Enemy @ %1", round _distance2D], format ["Destination @ %1", round (_unit distance2D ((expectedDestination _unit) select 0))]] select (isNull _enemy),
         ["", "- suppressed "] select (_suppression > 0),
         ["", "- inside "] select (lineIntersects [_eyePos, _eyePos vectorAdd [0, 0, 10], _unit]),
-        ["", "- spotted "] select (([objNull, "VIEW", objNull] checkVisibility [_eyePos, eyePos _enemy]) > 0.01)
+        ["", "- spotted "] select _onFootAndSeen
     ] call FUNC(debugLog);
 };
 

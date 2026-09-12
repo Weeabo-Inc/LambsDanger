@@ -122,7 +122,28 @@ if (!_arrived && {_boundPositions isNotEqualTo []}) then {
     } forEach _boundPositions;
 };
 
-if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
+// the bound only goes while the men staying put are achieving volume onto the enemy (C-42): a stationary
+// team that is not firing gets the order to suppress and the runners wait one cycle
+private _covered = true;
+if ((_arrived || {_moving isEqualTo TEAM_NONE}) && {_fireTeam isNotEqualTo []} && {_assaultTeam isNotEqualTo []}) then {
+    private _nextMovers = _assaultTeam;
+    private _nextStatic = _fireTeam;
+    if (_moving isEqualTo TEAM_ASSAULT) then {
+        private _behindAssault = _assaultCentre getPos [FIRE_TEAM_BEHIND, _target getDir _assaultCentre];
+        if (_fireCentre distance2D _behindAssault > FIRE_TEAM_CLOSE_ENOUGH) then {_nextMovers = _fireTeam; _nextStatic = _assaultTeam;};
+    };
+    private _volume = [_nextStatic, 4] call HFUNC(agent,fireVolume);
+    private _underFire = ([_group, 6] call HFUNC(core,fireIncoming)) > 0.3;
+    // no fire coming in means nobody needs covering; fire coming in and nobody covering means wait
+    _covered = !_underFire || {(_volume select 0) >= ((count _nextStatic) min 2)};
+    if (!_covered && {time - (_group getVariable [QGVAR(boundWaitLogged), -1e9]) > 6}) then {
+        _group setVariable [QGVAR(boundWaitLogged), time];
+        [_nextMovers select 0, "coverMe"] call HFUNC(agent,bark);
+        if (GVAR(debug_functions)) then {["%1 BOUND %2 waits: %3 of %4 covering men firing", side _group, groupId _group, _volume select 0, count _nextStatic] call FUNC(debugLog);};
+    };
+};
+
+if ((_arrived || {_moving isEqualTo TEAM_NONE}) && _covered) then {
 
     // whose turn ~ the fire team moves up after the assault, unless it is close enough already
     private _next = TEAM_ASSAULT;
@@ -231,6 +252,7 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
             ["onArrive", "hold"],
             ["suppressList", _posList],
             ["delay", (_forEachIndex * RUSH_STAGGER) + random RUSH_STAGGER],
+            ["covered", true],
             ["task", ["Assault team bounding", "Fire team moving up"] select (_moving isEqualTo TEAM_FIRE)]
         ];
         [_unit, "rush", _pos, [_target], _options] call EFUNC(danger,unitOrder);

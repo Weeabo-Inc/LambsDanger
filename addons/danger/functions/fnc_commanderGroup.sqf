@@ -131,7 +131,8 @@ switch (true) do {
         private _fear = 0;
         {_fear = _fear + (([_x, true] call EFUNC(main,getThreat)) select 1);} forEach (units _group);
         _fear = _fear / ((count units _group) max 1);
-        if ((_morale < BROKEN_MORALE || {_fear > GROUP_FEAR && {(_picture get "losses") > 0}}) && {_restedFromWithdraw} && {_posture < 2 || {_level isEqualTo 3}}) exitWith {
+        private _cohesionBroken = (_picture getOrDefault ["cohesion", "steady"]) isEqualTo "broken";
+        if ((_morale < BROKEN_MORALE || _cohesionBroken || {_fear > GROUP_FEAR && {(_picture get "losses") > 0}}) && {_restedFromWithdraw} && {_posture < 2 || {_level isEqualTo 3}}) exitWith {
             _group setVariable [QGVAR(reinforceRequest), [time, _threatPos]];
             ["withdraw", {_this call FUNC(tacticsWithdraw)}, _threatPos, 90] call _fnc_run;
         };

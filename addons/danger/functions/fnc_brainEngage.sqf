@@ -52,14 +52,19 @@ if (
     || _stealth
     || _holdFire
     || {(_unit getVariable [QEGVAR(main,survival), 0]) > time}
-    || {(speed _target) > 20 || (_unit knowsAbout _target) isEqualTo 0}
+    || {(_unit knowsAbout _target) isEqualTo 0}
     || {(getUnitState _unit) isEqualTo "PLANNING"}
 ) exitWith {
     _timeout
 };
 
-// distance + group memory
-private _distance = _unit distance2D _target;
+// what this man believes about the target, not the target's true state (FAIRNESS.md R1)
+private _believed = _unit getHideFrom _target;
+private _knows = _unit knowsAbout _target;
+private _distance = _unit distance2D _believed;
+// a man he can identify (knowledge 1.5 and up) he can also see is in a vehicle or in a doorway; otherwise he assumes neither
+private _identified = _knows >= 1.5;
+if (_identified && {(vehicle _target) isNotEqualTo _target} && {speed (vehicle _target) > 20}) exitWith {_timeout};
 
 // feed the group picture, apply stress to aiming
 [group _unit, [_target]] call FUNC(pictureUpdate);
@@ -76,13 +81,13 @@ if (
     _distance < GVAR(cqbRange)
     && _unit checkAIFeature "PATH"
     && {!(_unit call EFUNC(main,isDirected))}
-    && (vehicle _target) isKindOf "CAManBase"
+    && {!_identified || {(vehicle _target) isKindOf "CAManBase"}}
     && {_target call EFUNC(main,isAlive)}
 ) exitWith {
     _unit setVariable ["ace_medical_ai_lastFired", CBA_missionTime]; // ACE3
     // grenade first, then the corner: an enemy holed up inside gets one through the door before anyone goes in
     private _fragged = _distance < GRENADE_RANGE
-        && {_target call EFUNC(main,isIndoor)}
+        && {_identified && {_target call EFUNC(main,isIndoor)}}
         && {!(_unit call EFUNC(main,isIndoor)) || {_unit distance2D _target > 8}}
         && {[_unit, _unit getHideFrom _target] call EFUNC(main,doGrenade)};
     if (_fragged) then {

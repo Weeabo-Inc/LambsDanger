@@ -25,13 +25,26 @@
     9 BulletClose
 */
 
-params ["_unit", ["_type", -1], ["_pos", [0, 0, 0]]];
+params ["_unit", ["_type", -1], ["_pos", [0, 0, 0]], ["_causedBy", objNull]];
 
 // timeout
 private _timeout = time + 1.4;
 
 // ACE3
 _unit setVariable ["ace_medical_ai_lastHit", CBA_missionTime];
+
+// evidence into the picture: a shooter this man knows is a sighting, otherwise the fire came from a direction (C-58, C-62)
+private _group = group _unit;
+if (_type in [DANGER_FIRE, DANGER_BULLETCLOSE, DANGER_HIT]) then {
+    [_group, _pos] call HFUNC(core,fireLog);
+    if (!isNull _causedBy && {(side _causedBy) isNotEqualTo (side _group)} && {_unit knowsAbout _causedBy > 0}) then {
+        [_group, [_causedBy], "shotAt", _unit] call HFUNC(core,contactSweep);
+    } else {
+        if (_type isEqualTo DANGER_FIRE && {_pos isNotEqualTo [0, 0, 0]}) then {
+            [_group, objNull, _pos, "heard", 25 + 0.2 * (_unit distance2D _pos), 0.6, 1, "unknown", -1, "firing"] call HFUNC(core,contactReport);
+        };
+    };
+};
 
 // stress ~ being shot at wears a soldier down, hits most of all
 private _stressIndex = ([DANGER_FIRE, DANGER_BULLETCLOSE, DANGER_EXPLOSION, DANGER_HIT] find _type) max 0;

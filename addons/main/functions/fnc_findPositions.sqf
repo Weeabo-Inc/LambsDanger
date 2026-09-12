@@ -62,6 +62,9 @@
 #define DEBUG_MS 2
 #define HARD_TYPES ["WALL", "ROCK", "FENCE", "HIDE"]
 #define SOFT_TYPES ["BUSH", "TREE", "SMALL TREE"]
+#define CACHE_CELL 25
+#define CACHE_TIME 20
+#define CACHE_MAX 300
 
 params [["_centre", [], [[]]], ["_radius", 25, [0]], ["_threats", [], [[]]], ["_options", createHashMap, [createHashMap]]];
 
@@ -76,6 +79,10 @@ private _indoorBias = _options getOrDefault ["indoorBias", false];
 private _buildingsOnly = _options getOrDefault ["buildingsOnly", false];
 private _minDistance = _options getOrDefault ["minDistance", 0];
 private _count = _options getOrDefault ["count", 6];
+// directness (docs/RESEARCH.md C-25): how much closer to the objective a point gets the man per metre walked;
+// a [min, max] condition, and a weight. A band around zero is a flank, a negative weight a zigzag.
+private _directness = _options getOrDefault ["directness", []];
+private _directnessWeight = _options getOrDefault ["directnessWeight", 0];
 private _threat = _threats param [0, []];
 private _hasThreat = _threat isNotEqualTo [];
 private _threatASL = if (_hasThreat) then {(AGLToASL _threat) vectorAdd [0, 0, THREAT_EYE]} else {[]};
@@ -102,13 +109,46 @@ if (!isNull _unit) then {
     };
 };
 
+// the world around a cell is asked once per CACHE_TIME, not once per man (ADR-0010)
+private _fnc_cached = {
+    params ["_queryCentre", "_queryRadius"];
+    if (isNil QGVAR(tpsCache)) then {GVAR(tpsCache) = createHashMap;};
+    private _key = format ["%1_%2_%3", floor ((_queryCentre select 0) / CACHE_CELL), floor ((_queryCentre select 1) / CACHE_CELL), ceil (_queryRadius / 10)];
+    private _entry = GVAR(tpsCache) get _key;
+    if (isNil "_entry" || {time - (_entry select 0) > CACHE_TIME}) then {
+        if (count GVAR(tpsCache) > CACHE_MAX) then {GVAR(tpsCache) = createHashMap;};
+        private _cellCentre = [(floor ((_queryCentre select 0) / CACHE_CELL) + 0.5) * CACHE_CELL, (floor ((_queryCentre select 1) / CACHE_CELL) + 0.5) * CACHE_CELL, 0];
+        private _reach = _queryRadius + CACHE_CELL * 0.71;
+        _entry = [
+            time,
+            nearestTerrainObjects [_cellCentre, HARD_TYPES, _reach, false, true],
+            nearestTerrainObjects [_cellCentre, SOFT_TYPES, _reach, false, true],
+            nearestObjects [_cellCentre, ["House"], _reach]
+        ];
+        GVAR(tpsCache) set [_key, _entry];
+    };
+    _entry
+};
+([_centre, _objectRadius] call _fnc_cached) params ["", "_hardObjects", "_softObjects", "_houses"];
+
 // candidates ~ [posAGL, coverGuess, source, soft, indoor, floor]
 private _candidates = [];
+private _fromObjective = if (_objective isNotEqualTo []) then {_from distance2D _objective} else {0};
+private _fnc_directness = {
+    params ["_pos"];
+    if (_objective isEqualTo []) exitWith {0};
+    (_fromObjective - (_pos distance2D _objective)) / ((_from distance2D _pos) max 1)
+};
 private _fnc_add = {
     params ["_pos", "_cover", "_source", ["_soft", false], ["_indoor", false], ["_floor", 0]];
     private _distance = _pos distance2D _centre;
     if (_distance > _radius || {_distance < _minDistance}) exitWith {};
+    if (_distance > _objectRadius + 2 && {_source in ["terrain", "building", "vehicle"]}) exitWith {};
     if (surfaceIsWater _pos) exitWith {};
+    if (_directness isNotEqualTo [] && {_objective isNotEqualTo []}) then {
+        private _d = [_pos] call _fnc_directness;
+        if (_d < (_directness select 0) || {_d > (_directness select 1)}) exitWith {};
+    };
     if ((_threats findIf {_x distance2D _pos < THREAT_CLEARANCE}) isNotEqualTo -1) exitWith {};
     if ((_reserved findIf {_x distance2D _pos < RESERVED_BLOCK}) isNotEqualTo -1) exitWith {};
     if ((_blacklist findIf {_x distance2D _pos < RESERVED_BLOCK}) isNotEqualTo -1) exitWith {};
@@ -125,10 +165,10 @@ if (!_buildingsOnly) then {
     // walls, rocks and fences stop bullets; bushes and trees mostly hide the man
     {
         [[_x, STANDOFF] call _fnc_behind, 1.2, "terrain", false] call _fnc_add;
-    } forEach (nearestTerrainObjects [_centre, HARD_TYPES, _objectRadius, false, true]);
+    } forEach _hardObjects;
     {
         [[_x, STANDOFF] call _fnc_behind, 0.6, "terrain", true] call _fnc_add;
-    } forEach (nearestTerrainObjects [_centre, SOFT_TYPES, _objectRadius, false, true]);
+    } forEach _softObjects;
 
     // dips in the ground ~ lower than the centre, or out of the threat's sight behind a crest
     private _baseHeight = getTerrainHeightASL _centre;
@@ -149,7 +189,6 @@ if (!_buildingsOnly) then {
 };
 
 // buildings ~ only where there are any, from the per-house cache
-private _houses = nearestObjects [_centre, ["House"], _objectRadius];
 {
     private _house = _x;
     {
@@ -168,13 +207,16 @@ if (_candidates isEqualTo []) then {
 };
 
 // cheap score
-private _fromObjective = if (_objective isNotEqualTo []) then {_centre distance2D _objective} else {0};
+private _centreObjective = if (_objective isNotEqualTo []) then {_centre distance2D _objective} else {0};
 private _unitIndoor = !isNull _unit && {_unit call FUNC(isIndoor)};
 _candidates = _candidates apply {
     _x params ["_pos", "_cover", "_source", "_soft", "_indoor", "_floor"];
     private _score = _cover * WEIGHT_COVER;
     if (_objective isNotEqualTo [] && {_purpose isEqualTo "move"}) then {
-        _score = _score + ((_fromObjective - (_pos distance2D _objective)) / (_radius max 1)) * WEIGHT_PROGRESS;
+        _score = _score + ((_centreObjective - (_pos distance2D _objective)) / (_radius max 1)) * WEIGHT_PROGRESS;
+    };
+    if (_directnessWeight isNotEqualTo 0) then {
+        _score = _score + ([_pos] call _fnc_directness) * _directnessWeight;
     };
     _score = _score - ((_from distance2D _pos) / (_radius max 1)) * WEIGHT_PATH;
     if (isOnRoad _pos) then {_score = _score - WEIGHT_ROAD;};
