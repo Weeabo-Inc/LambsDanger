@@ -23,7 +23,7 @@
 params [["_unit", objNull, [objNull]], ["_key", "", [""]], ["_force", false, [false]]];
 
 if (!GVAR(barks) || {isNull _unit} || {isPlayer _unit} || {!(_unit call LFUNC(main,isAlive))}) exitWith {false};
-private _entry = GVAR(barks) get _key;
+private _entry = GVAR(barkVocabulary) get _key;
 if (isNil "_entry") exitWith {false};
 _entry params ["_sentence", "_behaviour", "_priority", "_unitCooldown", "_groupCooldown", "_range"];
 

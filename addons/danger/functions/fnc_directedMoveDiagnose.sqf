@@ -124,12 +124,16 @@ _lines pushBack "<t color='#FFAA00'>Units</t>";
     private _machine = if (isNil "_record") then {"-"} else {
         private _final = _record get "final";
         private _position = _record get "position";
+        private _finalText = if (_final isEqualTo []) then {"-"} else {round (_x distance2D _final)};
+        private _positionText = if (_position isNotEqualTo [] && {count _position > 5}) then {
+            format [" (%1, cover %2)", _position select 5, _position select 1]
+        } else {""};
         format ["%1 %2 | final %3m | %4%5",
             _record get "state",
             [_record get "phase", ""] select ((_record get "state") isNotEqualTo "InCover"),
-            [round (_x distance2D _final), "-"] select (_final isEqualTo []),
-            [(_record get "order") param [0, "-"], "-"] select ((_record get "order") isEqualTo []),
-            ["", format [" (%1, cover %2)", _position select 5, _position select 1]] select (_position isNotEqualTo [])
+            _finalText,
+            (_record get "order") param [0, "-"],
+            _positionText
         ]
     };
     _lines pushBack format [

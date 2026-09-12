@@ -5,7 +5,7 @@ ADDON = false;
 
 // the bark vocabulary: key -> [radio protocol sentence, behaviour, priority, unit cooldown, group cooldown, range]
 // sentences are the ones the engine's radio protocol ships (docs/systems/legibility.md)
-GVAR(barks) = createHashMapFromArray [
+GVAR(barkVocabulary) = createHashMapFromArray [
     ["contact",     ["contact",        "combat",  3, 6,  4,  125]],
     ["underFire",   ["UnderFireE",     "combat",  2, 8,  6,  125]],
     ["takeCover",   ["TakeCover",      "combat",  2, 8,  6,  125]],
