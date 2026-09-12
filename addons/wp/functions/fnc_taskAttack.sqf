@@ -86,8 +86,14 @@ private _leader = leader _group;
     _x setVariable [QEGVAR(main,currentTask), "Attack (approach)", EGVAR(main,debug_functions)];
 } forEach ((units _group) select {!isPlayer _x});
 
-// go ~ a Zeus route is kept, the attack waypoint on it points at the same spot
-if (_wpIndex < 0) then {[_group] call CBA_fnc_clearWaypoints;};
+// go ~ a Zeus route is kept, but the Seek & Destroy waypoint itself is parked as HOLD while the task runs:
+// otherwise the engine keeps driving the group into the objective in competition with the plan
+if (_wpIndex < 0) then {[_group] call CBA_fnc_clearWaypoints;} else {
+    if (_wpIndex < count (waypoints _group)) then {
+        [_group, _wpIndex] setWaypointType "HOLD";
+        _group setCurrentWaypoint [_group, _wpIndex];
+    };
+};
 // a group with vehicles mounts up and is driven to the engagement distance, never into the objective;
 // the attack plan dismounts it there
 private _travelPos = _pos;
@@ -136,7 +142,12 @@ private _handle = [{
         if (EGVAR(main,debug_functions)) then {
             ["%1 taskAttack: %2 %3", side _group, groupId _group, _reason] call EFUNC(main,debugLog);
         };
-        if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {};
+        if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {
+            // somebody else took the group ~ give the Zeus back the waypoint as placed
+            if (_wpIndex >= 0 && {_wpIndex < count (waypoints _group)} && {(waypointType [_group, _wpIndex]) isEqualTo "HOLD"}) then {
+                [_group, _wpIndex] setWaypointType "SAD";
+            };
+        };
         [_group] call FUNC(taskCleanup);
         [_group] call EFUNC(main,doMountRelease);
 

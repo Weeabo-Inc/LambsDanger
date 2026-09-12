@@ -37,6 +37,13 @@ if (_vehicles isEqualTo []) then {
 _vehicles = _vehicles select {alive _x && {_x distance2D _leader < MOUNT_RANGE}};
 if (_vehicles isEqualTo []) exitWith {[]};
 
+// whoever is aboard stays aboard, even when nobody needs a seat
+{
+    _x setUnloadInCombat [false, false];
+    _x setVariable [QGVAR(groupVehicle), _group];
+    _x setVariable [QGVAR(keepMounted), true];
+} forEach _vehicles;
+
 // who needs a seat
 private _onFoot = (units _group) select {isNull objectParent _x && {_x call FUNC(isAlive)} && {!isPlayer _x}};
 if (_onFoot isEqualTo []) exitWith {[]};
@@ -45,9 +52,6 @@ if (_onFoot isEqualTo []) exitWith {[]};
 private _boarding = [];
 {
     private _vehicle = _x;
-    _vehicle setUnloadInCombat [false, false];
-    _vehicle setVariable [QGVAR(groupVehicle), _group];
-    _vehicle setVariable [QGVAR(keepMounted), true];
     if (isNull (driver _vehicle) && {_onFoot isNotEqualTo []}) then {
         private _unit = _onFoot deleteAt 0;
         _unit assignAsDriver _vehicle;

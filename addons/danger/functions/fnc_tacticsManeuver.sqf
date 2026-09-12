@@ -52,7 +52,7 @@
 #define FAN_WIDTH 12
 #define FAN_AHEAD 4
 #define FAN_TIMEOUT 20
-#define MOUNTED_TIMEOUT 120
+#define MOUNTED_TIMEOUT 75
 #define SUPPRESS_POSITIONS 10
 
 params ["_group", "_objective", ["_maxDuration", 420]];
@@ -81,7 +81,10 @@ private _mounted = [];
 _mounted = _mounted select {_x call EFUNC(main,isAlive) && {!isPlayer _x} && {(group _x) isEqualTo _group}};
 private _mechanized = _vehicles isNotEqualTo [] && {_mounted isNotEqualTo [] || {(_units findIf {private _foot = _x; (_vehicles findIf {_x distance2D _foot < 40}) isNotEqualTo -1}) isNotEqualTo -1}};
 if (_mechanized) then {_units = _units + _mounted;};
-if (_units isEqualTo []) exitWith {false};
+if (_units isEqualTo []) exitWith {
+    if (EGVAR(main,debug_functions)) then {["%1 MANEUVER %2: nobody available (%3 vehicles, %4 mounted)", side _unit, groupId _group, count _vehicles, count _mounted] call EFUNC(main,debugLog);};
+    false
+};
 
 // stop whatever else was running
 private _oldPFH = _group getVariable [QGVAR(maneuverPFH), -1];
@@ -184,9 +187,10 @@ _group setFormDir (_unit getDir _objective);
 if (_mechanized) then {
     {
         _x setUnloadInCombat [false, false];
+        _x setVariable [QEGVAR(main,keepMounted), true];
         (effectiveCommander _x) setVariable [QGVAR(forceMove), true];
         _x doWatch _objective;
-        _x doMove _dismountPos;
+        (driver _x) doMove _dismountPos;
         (effectiveCommander _x) setVariable [QEGVAR(main,currentTask), "Carrying troops forward", EGVAR(main,debug_functions)];
     } forEach _vehicles;
     {_x setVariable [QEGVAR(main,currentTask), "Mounted", EGVAR(main,debug_functions)];} forEach _mounted;
@@ -372,13 +376,19 @@ private _handle = [{
                 || {_lead distance2D _dismountPos < DISMOUNT_STOPPED && {speed _lead < 2}}
                 || {time - (_state get "phaseTime") > MOUNTED_TIMEOUT};
             if (!_there) then {
-                {if (unitReady _x) then {_x doMove _dismountPos;};} forEach _vehicles;
+                {
+                    private _driver = driver _x;
+                    if (alive _driver && {unitReady _driver || {_x distance2D _dismountPos > DISMOUNT_STOPPED}}) then {_driver doMove _dismountPos;};
+                } forEach _vehicles;
+                {_x setVariable [QEGVAR(main,currentTask), "Mounted", EGVAR(main,debug_functions)];} forEach _assault;
             } else {
                 "dismount" call _fnc_setPhase;
                 {
                     private _vehicle = _x;
                     doStop (driver _vehicle);
                     _vehicle doWatch _objective;
+                    _vehicle setVariable [QEGVAR(main,keepMounted), nil];
+                    _vehicle setUnloadInCombat [true, true];
                 } forEach _vehicles;
                 private _troops = _assault + _support;
                 _troops orderGetIn false;
