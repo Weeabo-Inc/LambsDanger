@@ -44,6 +44,8 @@ private _fnc_score = {
     private _score = 0;
     if (_places isNotEqualTo []) then {
         (_places select 0) params ["_bestPos", "_value"];
+        // selectBestPlaces returns [x, y]
+        _bestPos = [_bestPos select 0, _bestPos select 1, 0];
         if (!surfaceIsWater _bestPos) then {_best = _bestPos;};
         _score = _value;
     };

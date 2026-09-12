@@ -81,7 +81,7 @@ if (_units isEqualTo []) exitWith {false};
 private _awayDir = _target getDir _unit;
 private _searchCentre = _unit getPos [WITHDRAW_DISTANCE, _awayDir];
 private _places = selectBestPlaces [_searchCentre, SEARCH_RADIUS, "(2 * forest) + (2 * trees) + houses + hills - (3 * meadow) - (5 * sea)", 20, 3];
-_places = (_places apply {_x select 0}) select {!(surfaceIsWater _x)};
+_places = (_places apply {[(_x select 0) select 0, (_x select 0) select 1, 0]}) select {!(surfaceIsWater _x)};
 private _destination = if (_places isEqualTo []) then {_searchCentre} else {_places select 0};
 
 // covering pair ~ support gunners first
