@@ -37,6 +37,8 @@
 #define LIFT_DELAY 4
 #define LIFT_SPEED 5
 #define ENGINE_LAND_TIMEOUT 60
+#define SECURITY_TIME 15
+#define SECURITY_CLEAR_DISTANCE 100
 
 params [["_group", grpNull, [grpNull]], ["_pos", [], [[]]], ["_helis", [], [[]]], ["_curatorOwner", -1, [0]]];
 
@@ -180,6 +182,18 @@ switch (_phase) do {
     case "release": {
         private _troops = _air getOrDefault ["troops", []];
         private _aboard = _troops select {alive _x && {(vehicle _x) isEqualTo _heli}};
+
+        // 360 security on the ring until the aircraft is clear, then the attack begins
+        private _holdSecurity = false;
+        if (_aboard isEqualTo [] && {_troops isNotEqualTo []}) then {
+            if (isNil {_air get "securitySince"}) then {
+                _air set ["securitySince", time];
+                if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 on the ring, security while the aircraft clears", side _group, groupId _group] call EFUNC(main,debugLog);};
+            };
+            private _heliClear = !alive _heli || {_heli distance2D _lz > SECURITY_CLEAR_DISTANCE};
+            _holdSecurity = !_heliClear && {time - (_air get "securitySince") < SECURITY_TIME};
+        };
+        if (_holdSecurity) exitWith {false};
 
         // the drop did not happen ~ try the scripted landing once more, then let the engine land it
         if (_aboard isNotEqualTo [] && {alive _heli} && {canMove _heli}) then {

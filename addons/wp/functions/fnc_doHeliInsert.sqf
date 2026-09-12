@@ -37,8 +37,12 @@
 #define HOLD_HEIGHT 0.3
 #define LANDED_HEIGHT 1.2
 #define LANDED_SPEED 1.5
-#define UNLOAD_TIME 8
-#define TIMEOUT 75
+#define UNLOAD_TIME 6
+#define EGRESS_INTERVAL 0.7
+#define EGRESS_ANIMATION_TIME 3
+#define SECURITY_RING 20
+#define SECURITY_RUN_TIMEOUT 12
+#define TIMEOUT 90
 #define LEAN 0.02
 
 params [["_heli", objNull, [objNull]], ["_lz", [], [[]]], ["_troops", [], [[]]], ["_exit", [], [[]]], ["_onDone", {}, [{}]]];
@@ -145,26 +149,61 @@ if (EGVAR(main,debug_functions)) then {
                 _state set [0, "unload"];
                 _state set [2, time];
                 if (EGVAR(main,debug_functions)) then {["heli insert: %1 down on the LZ after %2s, unloading", typeOf _heli, round (time - _startTime)] call EFUNC(main,debugLog);};
-                // out ~ instantly and safely, no jumping out of a hovering aircraft
-                {
-                    if (alive _x && {(vehicle _x) isEqualTo _heli}) then {
-                        unassignVehicle _x;
-                        moveOut _x;
-                        [_x] allowGetIn false;
-                        _x setVariable [QEGVAR(main,currentTask), "Unloading", EGVAR(main,debug_functions)];
-                    };
-                } forEach _troops;
                 [selectRandom _troops, "combat", "Dismount"] call EFUNC(main,doCallout);
+                // out one after another through the doors, each man runs 20 m to his slot on the ring around the
+                // aircraft, drops prone and watches outward ~ 360 security while the rest get off
+                private _count = count _troops;
+                private _heading = getDir _heli;
+                {
+                    private _unit = _x;
+                    private _bearing = _heading + 90 + (_forEachIndex * (360 / (_count max 1)));
+                    private _slot = _lz getPos [SECURITY_RING, _bearing];
+                    [
+                        {
+                            params ["_unit", "_heli", "_slot", "_bearing"];
+                            if (!alive _unit) exitWith {};
+                            if ((vehicle _unit) isEqualTo _heli) then {_unit action ["GetOut", _heli];};
+                            _unit setVariable [QEGVAR(main,currentTask), "Getting off", EGVAR(main,debug_functions)];
+                            // if the animation did not get him out, he is put out
+                            [
+                                {
+                                    params ["_unit", "_heli", "_slot", "_bearing"];
+                                    if (!alive _unit) exitWith {};
+                                    if ((vehicle _unit) isEqualTo _heli) then {unassignVehicle _unit; moveOut _unit;};
+                                    [_unit] allowGetIn false;
+                                    _unit setVariable [QEGVAR(danger,forceMove), true];
+                                    _unit setUnitPos "UP";
+                                    _unit forceSpeed -1;
+                                    _unit doMove _slot;
+                                    _unit setVariable [QEGVAR(main,currentTask), "Running to the ring", EGVAR(main,debug_functions)];
+                                    [
+                                        {params ["_unit", "_slot"]; !alive _unit || {_unit distance2D _slot < 3} || {unitReady _unit}},
+                                        {
+                                            params ["_unit", "_slot", "_bearing"];
+                                            if (!alive _unit) exitWith {};
+                                            _unit setUnitPos "DOWN";
+                                            _unit doWatch (_slot getPos [60, _bearing]);
+                                            _unit setVariable [QEGVAR(main,currentTask), "Security", EGVAR(main,debug_functions)];
+                                        },
+                                        [_unit, _slot, _bearing],
+                                        SECURITY_RUN_TIMEOUT
+                                    ] call CBA_fnc_waitUntilAndExecute;
+                                },
+                                [_unit, _heli, _slot, _bearing],
+                                EGRESS_ANIMATION_TIME
+                            ] call CBA_fnc_waitAndExecute;
+                        },
+                        [_unit, _heli, _slot, _bearing],
+                        _forEachIndex * EGRESS_INTERVAL
+                    ] call CBA_fnc_waitAndExecute;
+                } forEach _troops;
             };
         };
         case "unload": {
-            {
-                if (alive _x && {(vehicle _x) isEqualTo _heli}) then {unassignVehicle _x; moveOut _x; [_x] allowGetIn false;};
-            } forEach _troops;
             private _allOut = (_troops findIf {alive _x && {(vehicle _x) isEqualTo _heli}}) isEqualTo -1;
-            if (_allOut || {time - _unloadSince > UNLOAD_TIME}) then {
-                // troops move clear of the rotor before the aircraft lifts
-                {if (alive _x && {isNull objectParent _x}) then {_x doMove (_lz getPos [20, _lz getDir _x]); _x setUnitPos "MIDDLE";};} forEach _troops;
+            private _unloadTime = UNLOAD_TIME + ((count _troops) * EGRESS_INTERVAL);
+            if ((_allOut && {time - _unloadSince > EGRESS_ANIMATION_TIME}) || {time - _unloadSince > _unloadTime}) then {
+                {if (alive _x && {(vehicle _x) isEqualTo _heli}) then {unassignVehicle _x; moveOut _x; [_x] allowGetIn false;};} forEach _troops;
                 [_heli, _exit, false, _troops, _onDone, _handle, "troops out"] call _fnc_release;
             };
         };
