@@ -43,6 +43,8 @@
 #define REACT_RANGE 150
 #define FAIL_MORALE 0.35
 #define FAIL_LOSSES 3
+#define STALL_STEP 8
+#define STALL_TIME 60
 #define SUPPRESS_POSITIONS 10
 
 params ["_group", "_objective", ["_maxDuration", 420]];
@@ -146,6 +148,7 @@ private _handle = [{
         _picture set ["lastTacticTime", time];
         _group setVariable [QGVAR(maneuverPFH), nil];
         _group setVariable [QGVAR(maneuver), nil];
+        _group setVariable [QGVAR(boundToken), nil];
         _group setVariable [QGVAR(isExecutingTactic), nil];
         _group setVariable [QEGVAR(main,currentTactic), nil, EGVAR(main,debug_functions)];
         _group enableAttack (GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))});
@@ -182,7 +185,24 @@ private _handle = [{
     private _alive = {_x call EFUNC(main,isAlive) && {isNull objectParent _x}};
     private _support = (_state get "support") select _alive;
     private _assault = (_state get "assault") select _alive;
-    if (_assault isEqualTo []) then {_assault = _support; _support = [];};
+    [_group, []] call FUNC(pictureUpdate);
+
+    // assault element wiped out ~ the support element either carries the attack on or the attack has failed
+    if (_assault isEqualTo []) then {
+        if (count _support >= 2 && {_phase in ["assault", "clear"]} && {([_group] call FUNC(getMorale)) >= FAIL_MORALE}) then {
+            _assault = _support;
+            _support = [];
+            _state set ["lifted", true];
+            _phase = "assault";
+            _state set ["phase", "assault"];
+            _state set ["phaseTime", time];
+            _state set ["relaunch", true];
+            if (EGVAR(main,debug_functions)) then {["%1 MANEUVER %2: assault element lost, support carries on", side _group, groupId _group] call EFUNC(main,debugLog);};
+        } else {
+            _assault = _support;
+            _support = [];
+        };
+    };
     _state set ["support", _support];
     _state set ["assault", _assault];
     if (_assault isEqualTo []) exitWith {[_group, _handle, _units, "failed"] call _fnc_end;};
@@ -197,6 +217,34 @@ private _handle = [{
     _assaultCentre = _assaultCentre vectorMultiply (1 / count _assault);
     private _assaultDistance = _assaultCentre distance2D _objective;
     private _posList = _state get "posList";
+
+    // stalled ~ nobody has gained ground for a while during a phase that is meant to move
+    private _stalled = false;
+    if (_phase in ["approach", "assault"]) then {
+        private _bestDistance = _state getOrDefault ["bestDistance", 1e9];
+        if (_assaultDistance < _bestDistance - STALL_STEP) then {
+            _state set ["bestDistance", _assaultDistance];
+            _state set ["progressTime", time];
+        };
+        _stalled = time - (_state getOrDefault ["progressTime", time]) > STALL_TIME;
+    };
+    if (_stalled) exitWith {[_group, _handle, _units, "failed"] call _fnc_end;};
+
+    // a fresh fire and movement with whoever is left
+    private _fnc_launchBound = {
+        private _fireHalf = [];
+        private _runHalf = [];
+        {[_runHalf, _fireHalf] select ((_forEachIndex % 2) isEqualTo 1) pushBack _x;} forEach _assault;
+        if (_runHalf isEqualTo []) then {_runHalf = _fireHalf; _fireHalf = [];};
+        private _token = time + random 1;
+        _group setVariable [QGVAR(boundToken), _token];
+        [{_this call EFUNC(main,doGroupBound)}, [_group, _fireHalf, _runHalf, _posList, _objective, 0, 0, [], [_leader] call EFUNC(main,findReadyVehicles), _token], 0.5] call CBA_fnc_waitAndExecute;
+        [_leader, "combat", "Advance", 125] call EFUNC(main,doCallout);
+    };
+    if (_state getOrDefault ["relaunch", false]) then {
+        _state set ["relaunch", false];
+        call _fnc_launchBound;
+    };
     private _fnc_setPhase = {
         _state set ["phase", _this];
         _state set ["phaseTime", time];
@@ -257,12 +305,7 @@ private _handle = [{
             if (_arrived || {_stress > REACT_STRESS && _closeContact} || {_assaultDistance < REACT_RANGE * 0.8}) then {
                 "assault" call _fnc_setPhase;
                 // pairs: half covers, half runs, alternating, straight out of the bound code
-                private _fireHalf = [];
-                private _runHalf = [];
-                {[_runHalf, _fireHalf] select ((_forEachIndex % 2) isEqualTo 1) pushBack _x;} forEach _assault;
-                if (_runHalf isEqualTo []) then {_runHalf = _fireHalf; _fireHalf = [];};
-                [{_this call EFUNC(main,doGroupBound)}, [_group, _fireHalf, _runHalf, _posList, _objective, 0, 0, [], [_leader] call EFUNC(main,findReadyVehicles)], 0.5] call CBA_fnc_waitAndExecute;
-                [_leader, "combat", "Advance", 125] call EFUNC(main,doCallout);
+                call _fnc_launchBound;
             };
         };
 

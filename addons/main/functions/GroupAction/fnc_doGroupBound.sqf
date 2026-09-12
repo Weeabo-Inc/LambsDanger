@@ -55,10 +55,11 @@
 #define TEAM_ASSAULT 1
 #define TEAM_FIRE 2
 
-params [["_group", grpNull], ["_fireTeam", []], ["_assaultTeam", []], ["_posList", []], ["_target", [0, 0, 0]], ["_moving", TEAM_NONE], ["_boundStart", 0], ["_boundPositions", []], ["_vehicles", []]];
+params [["_group", grpNull], ["_fireTeam", []], ["_assaultTeam", []], ["_posList", []], ["_target", [0, 0, 0]], ["_moving", TEAM_NONE], ["_boundStart", 0], ["_boundPositions", []], ["_vehicles", []], ["_token", -1]];
 
-// exit!
+// exit! ~ also when a newer bound or tactic has taken the group over
 if (isNull _group || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), false])}) exitWith {};
+if (_token isNotEqualTo (_group getVariable [QEGVAR(danger,boundToken), -1])) exitWith {};
 
 // update teams
 private _fnc_ready = {_x call FUNC(isAlive) && {!isPlayer _x} && {isNull objectParent _x} && {!(_x getVariable [QEGVAR(danger,disableAI), false])}};
@@ -277,4 +278,4 @@ _vehicles = _vehicles select {alive _x && {canFire _x} && {(effectiveCommander _
 } forEach _vehicles;
 
 // next cycle
-[{_this call FUNC(doGroupBound)}, [_group, _fireTeam, _assaultTeam, _posList, _target, _moving, _boundStart, _boundPositions, _vehicles], CYCLE_TIME] call CBA_fnc_waitAndExecute;
+[{_this call FUNC(doGroupBound)}, [_group, _fireTeam, _assaultTeam, _posList, _target, _moving, _boundStart, _boundPositions, _vehicles, _token], CYCLE_TIME] call CBA_fnc_waitAndExecute;

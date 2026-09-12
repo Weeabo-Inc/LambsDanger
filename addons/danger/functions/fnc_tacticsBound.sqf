@@ -56,6 +56,7 @@ _group setVariable [QGVAR(isExecutingTactic), true];
         params [["_group", grpNull], "", ["_speedMode", "NORMAL"], ["_formation", "WEDGE"], ["_combatMode", "YELLOW"], ["_enableAttack", true], ["_behaviour", "AWARE"], ["_boundUnits", []]];
         if (!isNull _group) then {
             _group setVariable [QGVAR(isExecutingTactic), nil];
+            _group setVariable [QGVAR(boundToken), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
             _group setSpeedMode _speedMode;
             _group setFormation _formation;
@@ -142,7 +143,9 @@ _group setBehaviourStrong "AWARE";
 if (!GVAR(disableAutonomousSmokeGrenades)) then {[_unit, _target] call EFUNC(main,doSmoke);};
 
 // start the cycle
-[{_this call EFUNC(main,doGroupBound)}, [_group, _base, _assault, _posList, _target, 0, 0, [], _vehicles], 1] call CBA_fnc_waitAndExecute;
+private _token = time + random 1;
+_group setVariable [QGVAR(boundToken), _token];
+[{_this call EFUNC(main,doGroupBound)}, [_group, _base, _assault, _posList, _target, 0, 0, [], _vehicles, _token], 1] call CBA_fnc_waitAndExecute;
 
 // debug
 if (EGVAR(main,debug_functions)) then {
