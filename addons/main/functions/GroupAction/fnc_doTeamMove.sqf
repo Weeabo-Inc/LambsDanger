@@ -27,7 +27,7 @@
 
 params [["_units", [], [[]]], ["_route", [], [[]]], ["_index", 0, [0]], ["_shape", "wedge", [""]], ["_spacing", 4, [0]], ["_facing", [], [[]]]];
 
-_units = _units select {_x call FUNC(isAlive) && {isNull objectParent _x}};
+_units = _units select {_x call FUNC(isAlive) && {isNull objectParent _x} && {(_x getVariable [QGVAR(survival), 0]) < time}};
 if (_units isEqualTo [] || {_route isEqualTo []}) exitWith {[true, _index]};
 _index = _index min ((count _route) - 1);
 

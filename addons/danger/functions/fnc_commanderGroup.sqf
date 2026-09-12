@@ -22,6 +22,7 @@
 #define FLANK_STRESS 0.55
 #define CAUTIOUS_MORALE 0.5
 #define BROKEN_MORALE 0.35
+#define GROUP_FEAR 0.7
 #define OVERWATCH_RANGE 150
 #define WITHDRAW_REST 300
 #define DEFEND_BUILDING_RANGE 50
@@ -109,8 +110,11 @@ switch (true) do {
         private _morale = [_group] call FUNC(getMorale);
         private _restedFromWithdraw = time - (_picture get "withdrawTime") > WITHDRAW_REST;
 
-        // broken ~ break contact and ask for help
-        if (_morale < BROKEN_MORALE && {_restedFromWithdraw} && {_posture < 2 || {_level isEqualTo 3}}) exitWith {
+        // broken ~ break contact and ask for help; a squad where most men feel they are about to die is broken too
+        private _fear = 0;
+        {_fear = _fear + (([_x, true] call EFUNC(main,getThreat)) select 1);} forEach (units _group);
+        _fear = _fear / ((count units _group) max 1);
+        if ((_morale < BROKEN_MORALE || {_fear > GROUP_FEAR && {(_picture get "losses") > 0}}) && {_restedFromWithdraw} && {_posture < 2 || {_level isEqualTo 3}}) exitWith {
             _group setVariable [QGVAR(reinforceRequest), [time, _threatPos]];
             ["withdraw", {_this call FUNC(tacticsWithdraw)}, _threatPos, 90] call _fnc_run;
         };

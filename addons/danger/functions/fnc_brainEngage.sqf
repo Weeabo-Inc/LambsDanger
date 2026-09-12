@@ -43,11 +43,12 @@ if (
     _timeout + 2
 };
 
-// check
+// check ~ a man looking after himself is not sent anywhere
 if (
     isNull _target
     || _stealth
     || _holdFire
+    || {(_unit getVariable [QEGVAR(main,survival), 0]) > time}
     || {(speed _target) > 20 || (_unit knowsAbout _target) isEqualTo 0}
     || {(getUnitState _unit) isEqualTo "PLANNING"}
 ) exitWith {

@@ -3,6 +3,7 @@ PREP(addShareInformationHandler);
 PREP(addStress);
 PREP(applyStress);
 PREP(getStress);
+PREP(getThreat);
 PREP(isSupportGunner);
 PREP(checkMagazineAiUsageFlags);
 PREP(doAnimation);
@@ -68,6 +69,7 @@ SUBPREP(UnitAction,doPanic);
 SUBPREP(UnitAction,doReposition);
 SUBPREP(UnitAction,doSmoke);
 SUBPREP(UnitAction,doSuppress);
+SUBPREP(UnitAction,doSurvive);
 SUBPREP(UnitAction,doUGL);
 
 SUBPREP(VehicleAction,doVehicleAssault);

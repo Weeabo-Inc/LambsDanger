@@ -62,7 +62,7 @@ if (isNull _group || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), fa
 if (_token isNotEqualTo (_group getVariable [QEGVAR(danger,boundToken), -1])) exitWith {};
 
 // update teams
-private _fnc_ready = {_x call FUNC(isAlive) && {!isPlayer _x} && {isNull objectParent _x} && {!(_x getVariable [QEGVAR(danger,disableAI), false])}};
+private _fnc_ready = {_x call FUNC(isAlive) && {!isPlayer _x} && {isNull objectParent _x} && {!(_x getVariable [QEGVAR(danger,disableAI), false])} && {(_x getVariable [QGVAR(survival), 0]) < time}};
 _fireTeam = _fireTeam select _fnc_ready;
 _assaultTeam = _assaultTeam select _fnc_ready;
 if (_fireTeam isEqualTo [] && {_assaultTeam isEqualTo []}) exitWith {};

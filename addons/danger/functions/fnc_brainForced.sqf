@@ -28,8 +28,18 @@ if !(_unit call EFUNC(main,isAlive)) exitWith {
     _timeout
 };
 
-// forced AI
+// forced AI ~ orders or not, a man who just got hit while running looks after himself first
 if (_unit getVariable [QGVAR(forceMove), false]) exitWith {
+    private _lastDamage = _unit getVariable [QEGVAR(main,lastDamage), 0];
+    private _damage = damage _unit;
+    if (_damage > _lastDamage + 0.15) then {
+        _unit setVariable [QEGVAR(main,lastHit), time];
+        [_unit, 0.4] call EFUNC(main,addStress);
+        if (isNull objectParent _unit && {(_unit getVariable [QEGVAR(main,survival), 0]) < time} && {!(_unit call EFUNC(main,isDirected))}) then {
+            [_unit, 3, []] call EFUNC(main,doSurvive);
+        };
+    };
+    _unit setVariable [QEGVAR(main,lastDamage), _damage];
     _timeout + 1
 };
 

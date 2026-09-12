@@ -43,6 +43,14 @@ if (_type isEqualTo DANGER_EXPLOSION) then {
     (group _unit) setVariable [QGVAR(explosions), _explosions];
 };
 [_unit, [0.1, 0.2, 0.3, 0.4] select _stressIndex] call EFUNC(main,addStress);
+if (_type isEqualTo DANGER_HIT) then {_unit setVariable [QEGVAR(main,lastHit), time];};
+
+// self preservation comes before any drill ~ a man who feels he is about to die gets himself out of it
+if (!(_unit call EFUNC(main,isDirected))) then {
+    ([_unit] call EFUNC(main,getThreat)) params ["_threatLevel"];
+    if (_threatLevel >= 2 && {[_unit, _threatLevel, [_pos, []] select (_type isEqualTo DANGER_EXPLOSION)] call EFUNC(main,doSurvive)}) exitWith {};
+};
+if ((_unit getVariable [QEGVAR(main,survival), 0]) > time) exitWith {_timeout + 1};
 
 // cover move when explosion ~ not while a Zeus directs the group; assertive units only sometimes duck on visible fire
 private _assertive = GVAR(aggression) > 0;
