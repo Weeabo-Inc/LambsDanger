@@ -140,6 +140,15 @@
         <Key ID="STR_Lambs_Danger_Escalation_Routine">
             <English>Routine</English>
         </Key>
+        <Key ID="STR_Lambs_Danger_Feedback_AirAssault">
+            <English>%1: air assault, landing zone %2 m short of the objective</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Feedback_AirDropped">
+            <English>%1 on the ground, attacking the objective %2 m away</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Feedback_AirGoAround">
+            <English>%1: landing failed, going around</English>
+        </Key>
         <Key ID="STR_Lambs_Danger_Feedback_Attack">
             <English>%1 attacking waypoint %2 (%3 m)</English>
         </Key>

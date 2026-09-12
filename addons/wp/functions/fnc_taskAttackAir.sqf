@@ -38,7 +38,11 @@
 #define LIFT_SPEED 5
 #define ENGINE_LAND_TIMEOUT 60
 
-params [["_group", grpNull, [grpNull]], ["_pos", [], [[]]], ["_helis", [], [[]]]];
+params [["_group", grpNull, [grpNull]], ["_pos", [], [[]]], ["_helis", [], [[]]], ["_curatorOwner", -1, [0]]];
+
+private _fnc_feedback = {
+    if (_curatorOwner >= 0) then {[_curatorOwner, _this] call EFUNC(danger,directedMoveFeedback);};
+};
 
 private _air = _group getVariable QGVAR(attackAir);
 _helis = _helis select {alive _x && {canMove _x} && {alive (driver _x)}};
@@ -78,6 +82,7 @@ if (isNil "_air") then {
         (driver _x) doMove _lz;
         {_x setVariable [QEGVAR(main,currentTask), "Air assault (flying in)", EGVAR(main,debug_functions)];} forEach (crew _x);
     } forEach _helis;
+    format [localize ELSTRING(danger,Feedback_AirAssault), groupId _group, round (_lz distance2D _pos)] call _fnc_feedback;
     if (EGVAR(main,debug_functions)) then {
         ["%1 taskAttack: %2 air assault, LZ %3m from the objective", side _group, groupId _group, round (_lz distance2D _pos)] call EFUNC(main,debugLog);
         private _marker = [_lz, "LZ", (leader _group) call EFUNC(main,debugMarkerColor), "hd_pickup"] call EFUNC(main,dotMarker);
@@ -185,6 +190,7 @@ switch (_phase) do {
                 _air set ["phase", "fly"];
                 (driver _heli) doMove _lz;
                 _heli flyInHeight APPROACH_ALTITUDE;
+                format [localize ELSTRING(danger,Feedback_AirGoAround), groupId _group] call _fnc_feedback;
                 if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 drop failed with %3 still aboard, going around", side _group, groupId _group, count _aboard] call EFUNC(main,debugLog);};
             } else {
                 _air set ["phase", "engineLand"];
@@ -202,9 +208,11 @@ switch (_phase) do {
         private _otherGroups = [];
         {if (alive _x && {isNull objectParent _x} && {(group _x) isNotEqualTo _group}) then {_otherGroups pushBackUnique (group _x);};} forEach _troops;
         {
-            [QGVAR(taskAttack), [_x, _pos], leader _x] call CBA_fnc_targetEvent;
+            [QGVAR(taskAttack), [_x, _pos, 0, -1, _curatorOwner], leader _x] call CBA_fnc_targetEvent;
+            format [localize ELSTRING(danger,Feedback_AirDropped), groupId _x, round ((leader _x) distance2D _pos)] call _fnc_feedback;
             if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 dropped off, attacks on foot", side _x, groupId _x] call EFUNC(main,debugLog);};
         } forEach _otherGroups;
+        if (_onFoot isNotEqualTo []) then {format [localize ELSTRING(danger,Feedback_AirDropped), groupId _group, round ((_onFoot select 0) distance2D _pos)] call _fnc_feedback;};
 
         if (alive _heli) then {
             private _crew = (crew _heli) select {(group _x) isEqualTo _group};

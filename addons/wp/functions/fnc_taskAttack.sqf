@@ -106,7 +106,7 @@ _helis = (_helis arrayIntersect _helis) select {alive _x && {alive (driver _x)} 
 private _airAssault = _helis isNotEqualTo [];
 _group setVariable [QGVAR(attackAir), nil];
 if (_airAssault) then {
-    [_group, _pos, _helis] call FUNC(taskAttackAir);
+    [_group, _pos, _helis, _curatorOwner] call FUNC(taskAttackAir);
 } else {
 if (([_leader, 400] call EFUNC(main,findGroupVehicles)) isNotEqualTo []) then {
     _travelPos = _pos getPos [TRAVEL_STANDOFF min ((_leader distance2D _pos) * 0.8), _pos getDir _leader];
@@ -214,7 +214,7 @@ private _handle = [{
     // air assault in progress ~ nothing else until the infantry is on the ground
     private _air = _group getVariable QGVAR(attackAir);
     if (!isNil "_air" && {(_air get "phase") isNotEqualTo "done"}) exitWith {
-        [_group, _pos, [_air get "heli"]] call FUNC(taskAttackAir);
+        [_group, _pos, [_air get "heli"], _curatorOwner] call FUNC(taskAttackAir);
     };
     // this was the aircrew's group and the passengers are delivered ~ the job is done
     if (!isNil "_air" && {_air getOrDefault ["crewOnly", false]}) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "delivered", _pos, _radius, _startTime] call _fnc_end;};
