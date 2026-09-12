@@ -120,7 +120,7 @@ if (_distance < _lastDistance - PROGRESS_STEP) then {
             _progress set [3, true];
             [_curatorOwner, format [localize LSTRING(Feedback_NoProgress), groupId _group, round _distance]] call FUNC(directedMoveFeedback);
             if (_curatorOwner >= 0) then {
-                [QGVAR(diagnoseResult), [groupId _group, _group call FUNC(directedMoveDiagnose)], _curatorOwner] call CBA_fnc_targetEvent;
+                [QGVAR(diagnoseResult), [groupId _group, _group call FUNC(directedMoveDiagnose)], _curatorOwner] call CBA_fnc_ownerEvent;
             };
         };
     };

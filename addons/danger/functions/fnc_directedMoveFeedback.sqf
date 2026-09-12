@@ -19,6 +19,6 @@ params [["_curatorOwner", -1, [0]], ["_text", "", [""]]];
 
 if (_curatorOwner < 0 || {_text isEqualTo ""}) exitWith {false};
 
-[QGVAR(curatorFeedback), [_text], _curatorOwner] call CBA_fnc_targetEvent;
+[QGVAR(curatorFeedback), [_text], _curatorOwner] call CBA_fnc_ownerEvent;
 
 true

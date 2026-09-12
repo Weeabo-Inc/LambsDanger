@@ -83,7 +83,7 @@ if (isNil QGVAR(dangerUntil)) then {
 [QGVAR(diagnose), {
     params [["_group", grpNull, [grpNull]], ["_curatorOwner", -1, [0]]];
     if (isNull _group || {!local _group} || {_curatorOwner < 0}) exitWith {};
-    [QGVAR(diagnoseResult), [groupId _group, _group call FUNC(directedMoveDiagnose)], _curatorOwner] call CBA_fnc_targetEvent;
+    [QGVAR(diagnoseResult), [groupId _group, _group call FUNC(directedMoveDiagnose)], _curatorOwner] call CBA_fnc_ownerEvent;
 }] call CBA_fnc_addEventHandler;
 
 // feedback for curators ~ handled on the curator client
