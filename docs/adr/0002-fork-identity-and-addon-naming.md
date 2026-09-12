@@ -37,9 +37,19 @@ surface for no behavioural gain. It also produces a single unreviewable mechanic
    the `lambs_*` addons. As behaviour migrates out of `lambs_danger` into a layer addon, the
    old function is kept as a thin forwarder for one release, then deleted, and the deletion
    is listed in `docs/CHANGES-FROM-UPSTREAM.md`.
-4. HEMTT's `prefix` stays `lambs` because it is the PBO prefix used by `\z\lambs\addons\...`
-   paths in configs and stringtables; new addons use `MAINPREFIX z`, `PREFIX hostis` in
-   their own `script_mod.hpp`. Two prefixes in one project is supported by HEMTT and by CBA.
+4. HEMTT's project `prefix` is `hostis`, so every PBO, the bikey and the release zip are
+   named `hostis_*`. The six compatibility addons keep their upstream `$PBOPREFIX$`
+   (`z\lambs\addons\main` and so on) so that `\z\lambs\addons\...` paths in configs,
+   stringtables and the danger FSM keep resolving. HEMTT warns `INVALID-PBOPREFIX` for
+   each of them on every build; the warning is expected and documented in
+   `.hemtt/project.toml`. (HEMTT's documented `ignore_pboprefix` addon option is rejected
+   by 1.20.1, the version installed here, so it is not used.) New addons use
+   `MAINPREFIX z`, `PREFIX hostis` from `addons/core/script_mod.hpp` and a matching
+   `$PBOPREFIX$`. A `hostis_*` addon calls into the compatibility addons with the
+   `LFUNC`, `LGVAR` and `LAMBS_STRING` macros from `addons/core/script_macros.hpp`,
+   because `EFUNC` and `EGVAR` expand with the `hostis` prefix. Two script prefixes in
+   one project is supported by HEMTT and by CBA; verified with `hemtt build` in
+   milestone 1.
 5. CBA setting names of new settings use `hostis_`. Existing `lambs_` settings are not
    renamed.
 
@@ -51,8 +61,8 @@ surface for no behavioural gain. It also produces a single unreviewable mechanic
   the compatibility surface, `hostis_` is the architecture.
 - If the owner picks a different name, only the `hostis` token in new addons and in the mod
   identity changes; nothing in the compatibility surface does.
-- `tools/nodejs_tools/prepchecker.js` and the SQF validator must accept both prefixes; this
-  is checked in milestone 1 when the first `hostis_` addon is scaffolded.
+- `tools/nodejs_tools/prepchecker.js` and the SQF validator accept both prefixes; checked in
+  milestone 1 with the empty `hostis_core` scaffold (`addons/core`).
 
 ## What this overrides in upstream, and why
 

@@ -1,9 +1,10 @@
-# HOSTIS is a modified version of LAMBS Danger.fsm. The PBO prefix stays "lambs" so
-# that config and stringtable paths in the compatibility addons keep resolving
-# (docs/adr/0002-fork-identity-and-addon-naming.md). New hostis_* addons set their
-# own PREFIX in script_mod.hpp.
+# HOSTIS is a modified version of LAMBS Danger.fsm. PBOs, keys and the release zip are
+# named hostis_*. The compatibility addons (main, danger, wp, eventhandlers, formations,
+# range) keep their z\lambs\addons\* $PBOPREFIX$ and lambs_* script prefix so existing
+# missions keep working. HEMTT therefore prints six INVALID-PBOPREFIX warnings on every
+# build; they are expected (docs/adr/0002-fork-identity-and-addon-naming.md).
 name = "HOSTIS"
-prefix = "lambs"
+prefix = "hostis"
 author = "bluefield-creator (fork of LAMBS Danger.fsm by the LAMBS Dev Team)"
 mainprefix = "z"
 

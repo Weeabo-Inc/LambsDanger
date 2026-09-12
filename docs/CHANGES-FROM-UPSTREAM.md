@@ -8,11 +8,16 @@ with each milestone.
 
 ## Identity
 
-- Mod name, folder and signing authority are `HOSTIS` / `@hostis` / `hostis`, so the fork's
-  PBOs and keys never collide with upstream's (ADR-0002).
-- The `lambs_main`, `lambs_danger` and `lambs_wp` addons keep their names, function prefixes,
-  module classnames, waypoint classnames, setting names and group and unit variables. Existing
-  missions and `cba_settings.sqf` files keep working.
+- Mod name, folder, PBO names, signing authority and release zip are `HOSTIS` / `@hostis` /
+  `hostis_*.pbo` / `hostis` / `hostis-latest.zip`, so the fork never collides with upstream
+  on a server (ADR-0002).
+- The `lambs_main`, `lambs_danger` and `lambs_wp` addons (and `eventhandlers`, `formations`,
+  `range`) keep their CfgPatches names, `\z\lambs\addons\` paths, function prefixes, module
+  classnames, waypoint classnames, setting names and group and unit variables. Existing
+  missions and `cba_settings.sqf` files keep working. Do not load HOSTIS together with
+  upstream LAMBS: both define the same CfgPatches classes.
+- New layer addons use the `hostis` prefix; `addons/core` (`hostis_core`) is scaffolded empty
+  in milestone 1 to prove the two-prefix build.
 
 ## Behaviour (fork work before the HOSTIS brief, commits `241b603` to `b1885db`)
 
