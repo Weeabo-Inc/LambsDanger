@@ -25,7 +25,7 @@
  * Public: Yes
 */
 #define CYCLE_TIME 6
-#define ENGAGE_DISTANCE 250
+#define ENGAGE_DISTANCE 350
 #define CONTACT_ENGAGE_DISTANCE 200
 #define CONTACT_AGE 30
 #define HOLD_TIME 30
@@ -159,13 +159,21 @@ private _handle = [{
         _group setVariable [QEGVAR(danger,isExecutingTactic), nil];
     };
 
-    // fight forward when close to the objective, or when the enemy is close to us
+    // fight forward when close to the objective, or when the enemy is close to us ~ a deliberate attack
+    // (support by fire, flank approach, assault, clear, consolidate); a fire team bounds instead
     if (_distance < ENGAGE_DISTANCE || {_nearestContactDistance < CONTACT_ENGAGE_DISTANCE}) exitWith {
         private _objective = [_pos, _nearestContact] select (_nearestContact isNotEqualTo [] && {_distance > _radius});
         _state set [0, "engage"];
-        {_x setVariable [QEGVAR(main,currentTask), "Attack (engage)", EGVAR(main,debug_functions)];} forEach _units;
-        [_group, _objective] call EFUNC(danger,tacticsBound);
-        [_group, "bound", _objective, 150] call EFUNC(danger,tacticsMonitor);
+        {
+            _x setVariable [QEGVAR(danger,forceMove), nil];
+            _x setVariable [QEGVAR(main,currentTask), "Attack (engage)", EGVAR(main,debug_functions)];
+        } forEach _units;
+        if (count _units >= 4 && {_distance > 120}) then {
+            [_group, _objective, 420] call EFUNC(danger,tacticsManeuver);
+        } else {
+            [_group, _objective] call EFUNC(danger,tacticsBound);
+            [_group, "bound", _objective, 150] call EFUNC(danger,tacticsMonitor);
+        };
     };
 
     // travel ~ keep the leader moving, everyone else follows

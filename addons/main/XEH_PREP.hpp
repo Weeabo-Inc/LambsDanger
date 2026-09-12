@@ -15,6 +15,7 @@ PREP(shouldSuppressPosition);
 PREP(checkVisibilityList);
 
 PREP(eventCallback);
+PREP(findApproach);
 PREP(findBuildings);
 PREP(findCover);
 PREP(findNearbyFriendlies);
@@ -42,6 +43,7 @@ SUBPREP(GroupAction,doGroupBound);
 SUBPREP(GroupAction,doGroupFlank);
 SUBPREP(GroupAction,doGroupHide);
 SUBPREP(GroupAction,doGroupSuppress);
+SUBPREP(GroupAction,doTeamMove);
 SUBPREP(GroupAction,doGroupStaticDeploy);
 SUBPREP(GroupAction,doGroupStaticFind);
 SUBPREP(GroupAction,doGroupStaticPack);

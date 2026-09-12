@@ -78,7 +78,7 @@ if (_assaultTeam isEqualTo []) then {
 private _closest = 1e9;
 {_closest = _closest min (_x distance2D _target);} forEach _assaultTeam;
 if (_closest < (missionNamespace getVariable [QEGVAR(danger,cqbRange), 60])) exitWith {
-    [_group, _target] call (missionNamespace getVariable [QEFUNC(danger,tacticsAssault), {}]);
+    [_group, _target, _fireTeam + _assaultTeam] call (missionNamespace getVariable [QEFUNC(danger,tacticsAssault), {}]);
 };
 
 // team centres

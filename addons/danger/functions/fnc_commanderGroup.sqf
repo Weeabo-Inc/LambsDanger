@@ -26,6 +26,8 @@
 #define WITHDRAW_REST 300
 #define DEFEND_BUILDING_RANGE 50
 #define DEFEND_HIDE_RANGE 150
+#define MANEUVER_DISTANCE 150
+#define MANEUVER_SIZE 5
 
 params [["_group", grpNull, [grpNull]]];
 
@@ -57,12 +59,12 @@ private _fnc_run = {
 
 switch (true) do {
 
-    // routine ~ toy soldiers: drift back to where they belong
+    // routine ~ groups with ground to hold go back to it; everyone else stays where the fight left them
     case (_level < 1): {
-        private _anchor = [_home, _objective] select (_mode in ["hold", "defend"] && {_objective isNotEqualTo []});
+        private _anchor = [[], _objective] select (_mode in ["hold", "defend"] && {_objective isNotEqualTo []});
         if (
             _anchor isNotEqualTo []
-            && {_leader distance2D _anchor > ([HOME_SLACK, _radius] select (_mode in ["hold", "defend"]))}
+            && {_leader distance2D _anchor > _radius}
             && {count waypoints _group <= 1}
             && {unitReady _leader || {((expectedDestination _leader) select 1) isEqualTo "DoNotPlan"}}
         ) then {
@@ -161,11 +163,18 @@ switch (true) do {
             _decision = "pursue";
         };
 
-        // close with the enemy
-        if (_distance > GVAR(cqbRange)) then {
-            ["bound", {_this call FUNC(tacticsBound)}, _threatPos, 150] call _fnc_run;
-        } else {
-            ["assault", {_this call FUNC(tacticsAssault)}, _threatPos, 85] call _fnc_run;
+        // close with the enemy ~ a squad plans a deliberate attack, a fire team bounds, everyone rushes inside CQB range
+        switch (true) do {
+            case (_distance > MANEUVER_DISTANCE && {count (units _group) >= MANEUVER_SIZE}): {
+                [_group, _threatPos] call FUNC(tacticsManeuver);
+                _decision = "maneuver";
+            };
+            case (_distance > GVAR(cqbRange)): {
+                ["bound", {_this call FUNC(tacticsBound)}, _threatPos, 150] call _fnc_run;
+            };
+            default {
+                ["assault", {_this call FUNC(tacticsAssault)}, _threatPos, 85] call _fnc_run;
+            };
         };
     };
 };
