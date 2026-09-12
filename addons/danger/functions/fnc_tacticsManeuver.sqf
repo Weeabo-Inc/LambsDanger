@@ -60,6 +60,8 @@
 #define EMERGENCY_TIMEOUT 15
 #define EMERGENCY_FAN_BACK 10
 #define EMERGENCY_FAN_WIDTH 20
+#define CRIPPLED_DAMAGE 0.7
+#define WRECK_CLEARANCE 25
 #define SUPPRESS_POSITIONS 10
 
 params ["_group", "_objective", ["_maxDuration", 420]];
@@ -426,9 +428,19 @@ private _handle = [{
                 };
             };
 
+            // carrier knocked out or crippled ~ everyone out at once, and away from it
+            private _crippled = isNull _lead || {!canMove _lead} || {!alive (driver _lead)} || {damage _lead > CRIPPLED_DAMAGE};
+            if (_crippled && {!(_state getOrDefault ["crippled", false])}) then {
+                _state set ["crippled", true];
+                _state set ["emergency", true];
+                private _wreck = if (isNull _lead) then {_state get "dismountPos"} else {getPosATL _lead};
+                _state set ["wreckPos", _wreck];
+                if (EGVAR(main,debug_functions)) then {["%1 MANEUVER %2: carrier knocked out, bailing out", side _group, groupId _group] call EFUNC(main,debugLog);};
+            };
+
             private _dismountPos = _state get "dismountPos";
             private _emergency = _state getOrDefault ["emergency", false];
-            private _there = isNull _lead
+            private _there = _crippled
                 || {_lead distance2D _dismountPos < DISMOUNT_REACHED}
                 || {_lead distance2D _dismountPos < DISMOUNT_STOPPED && {speed _lead < 2}}
                 || {time - (_state get "phaseTime") > ([MOUNTED_TIMEOUT, EMERGENCY_TIMEOUT] select _emergency)};
@@ -465,6 +477,12 @@ private _handle = [{
             private _lead = _vehicles param [0, objNull];
             private _emergency = _state getOrDefault ["emergency", false];
             private _anchor = if (isNull _lead) then {_state get "dismountPos"} else {getPosATL _lead};
+            // a wreck is left behind: the fan forms 25 m from it on the side away from the enemy
+            if (_state getOrDefault ["crippled", false]) then {
+                private _wreck = _state getOrDefault ["wreckPos", _anchor];
+                private _threat = _state getOrDefault ["threatPos", _objective];
+                _anchor = _wreck getPos [WRECK_CLEARANCE, _threat getDir _wreck];
+            };
             private _axis = _anchor getDir _objective;
             private _all = _assault + _support;
             private _onFoot = _all select {isNull objectParent _x};

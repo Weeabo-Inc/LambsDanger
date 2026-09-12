@@ -98,6 +98,19 @@ if (_arrived) exitWith {
     };
 };
 
+// a carrier that cannot move any more is a death trap ~ everybody out, the move goes on on foot
+{
+    private _vehicle = vehicle _x;
+    if (_vehicle isNotEqualTo _x && {_vehicle isKindOf "LandVehicle"} && {!canMove _vehicle || {damage _vehicle > 0.7}}) then {
+        _vehicle setVariable [QEGVAR(main,keepMounted), nil];
+        _vehicle setUnloadInCombat [true, true];
+        [_x] orderGetIn false;
+        _x action ["Eject", _vehicle];
+        [_x] allowGetIn false;
+        _x setVariable [QEGVAR(main,currentTask), "Bailing out", EGVAR(main,debug_functions)];
+    };
+} forEach _units;
+
 // still mounting up ~ nothing to chase yet
 if (!isNil {_group getVariable QGVAR(directedMounting)}) exitWith {};
 
