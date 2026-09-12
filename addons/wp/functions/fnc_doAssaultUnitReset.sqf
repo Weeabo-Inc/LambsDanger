@@ -26,7 +26,7 @@ _unit setVariable [QGVAR(taskAssault), nil];
 // stance
 _unit forceSpeed -1;
 _unit setUnitPos "AUTO";
-_unit allowGetIn true;
+[_unit] allowGetIn true;
 _unit doMove (getPosASL _unit);
 _unit doFollow (leader _unit);
 

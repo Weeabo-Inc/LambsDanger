@@ -101,7 +101,7 @@ private _units = (units _group) select {!isPlayer _x};
     _x setVariable [QGVAR(forceMove), nil];
     _x forceSpeed -1;
     _x setUnitPos "AUTO";
-    _x allowGetIn true;
+    [_x] allowGetIn true;
     if (!(_x checkAIFeature "PATH")) then {_x enableAI "PATH";};
     if (!(_x checkAIFeature "MOVE")) then {_x enableAI "MOVE";};
     if (_strict && {!(_x getVariable [QGVAR(disableAI), false])}) then {

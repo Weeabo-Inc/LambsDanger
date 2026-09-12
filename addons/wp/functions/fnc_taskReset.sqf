@@ -78,7 +78,7 @@ private _leader = leader _group;
     _x forceSpeed -1;
     _x setUnitPos "AUTO";
     _x setUnitPosWeak "AUTO";
-    _x allowGetIn true;
+    [_x] allowGetIn true;
 
     // reset animations
     _x enableAI "ANIM";

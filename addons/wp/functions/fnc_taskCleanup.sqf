@@ -54,7 +54,7 @@ private _leader = leader _group;
     // movement
     _unit forceSpeed -1;
     _unit setUnitPos "AUTO";
-    _unit allowGetIn true;
+    [_unit] allowGetIn true;
     _unit setVariable [QEGVAR(danger,forceMove), nil];
     _unit setVariable [QGVAR(taskAssault), nil];
 
