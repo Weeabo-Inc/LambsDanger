@@ -63,6 +63,11 @@ if (_wpIndex isEqualTo -1) exitWith {[_group, "waypoint removed"] call FUNC(dire
 private _leader = leader _group;
 private _waypoint = _waypoints select _wpIndex;
 private _wpType = waypointType _waypoint;
+
+// the Zeus turned the waypoint into an attack after placing it ~ hand the group to the attack task
+if (_wpType in ["SAD", "DESTROY"] && {EGVAR(main,Loaded_WP)}) exitWith {
+    [_group, _wpIndex, _curatorOwner] call FUNC(directedMoveSet);
+};
 private _radius = (waypointCompletionRadius _waypoint) max MIN_COMPLETION_RADIUS;
 private _arrived = (currentWaypoint _group) > _wpIndex
     || {_wpType in HOLDING_WAYPOINTS && {_leader distance2D _wpPos < _radius}};

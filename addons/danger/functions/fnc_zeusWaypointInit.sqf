@@ -34,6 +34,7 @@ if (!hasInterface) exitWith {};
     _logic addEventHandler ["CuratorWaypointEdited", {
         params ["", "_waypoint"];
         _waypoint params ["_group", "_wpIndex"];
+        if (EGVAR(main,debug_functions)) then {["ZEUS waypoint edited: %1", _this] call EFUNC(main,debugLog);};
         if (GVAR(zeusWaypointDiscipline) isEqualTo 0 || {isNull _group} || {isNull (leader _group)}) exitWith {};
         [QGVAR(directedMove), [_group, _wpIndex, clientOwner], leader _group] call CBA_fnc_targetEvent;
     }];

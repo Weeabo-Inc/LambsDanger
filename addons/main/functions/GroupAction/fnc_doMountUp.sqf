@@ -89,7 +89,7 @@ private _boarding = [];
     _x setVariable [QGVAR(currentTask), "Mounting up", GVAR(debug_functions)];
 } forEach _boarding;
 _boarding orderGetIn true;
-if (_boarding isNotEqualTo []) then {[_leader, "combat", "GetIn", 100] call FUNC(doCallout);};
+if (_boarding isNotEqualTo []) then {[_leader, "gestureFollow"] call FUNC(doGesture);};
 
 // debug
 if (GVAR(debug_functions)) then {
