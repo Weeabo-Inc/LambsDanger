@@ -44,6 +44,10 @@ if (_wasActive && {local _group}) then {
             _x setVariable [QGVAR(disableAI), nil, true];
             _x setVariable [QGVAR(directedStrict), nil];
         };
+        if (_x getVariable [QGVAR(directedAutoCombat), false]) then {
+            _x enableAI "AUTOCOMBAT";
+            _x setVariable [QGVAR(directedAutoCombat), nil];
+        };
         _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
     } forEach (units _group);
 

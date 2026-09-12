@@ -116,6 +116,11 @@ private _units = (units _group) select {!isPlayer _x};
         _x setVariable [QGVAR(disableAI), true, true];
         _x setVariable [QGVAR(directedStrict), true];
     };
+    // no automatic COMBAT ~ in COMBAT the engine strings the formation out and bounds at a crawl
+    if (_x checkAIFeature "AUTOCOMBAT") then {
+        _x disableAI "AUTOCOMBAT";
+        _x setVariable [QGVAR(directedAutoCombat), true];
+    };
     _x setVariable [QEGVAR(main,currentTask), "Directed move", EGVAR(main,debug_functions)];
 } forEach _units;
 
@@ -130,8 +135,9 @@ if (!(_leader call EFUNC(main,isAlive))) then {
 };
 {_x doFollow _leader;} forEach _units;
 
-// group orders ~ attack stays off so nobody breaks formation to chase targets
+// group orders ~ attack stays off so nobody breaks formation to chase targets, AWARE so they actually travel
 _group enableAttack false;
+if ((behaviour _leader) isEqualTo "COMBAT") then {_group setBehaviourStrong "AWARE";};
 _group setCurrentWaypoint _waypoint;
 
 // state
