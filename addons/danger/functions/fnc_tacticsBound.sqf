@@ -72,8 +72,11 @@ _group setVariable [QGVAR(isExecutingTactic), true];
             // give the engine its combat reflexes back ~ only where this tactic took them
             {
                 if (!isNull _x) then {
-                    _x enableAI "SUPPRESSION";
-                    if (!("AUTOCOMBAT" in (_x getVariable [QEGVAR(wp,disabledAI), []]))) then {_x enableAI "AUTOCOMBAT";};
+                    private _boundUnit = _x;
+                    private _taskDisabled = _boundUnit getVariable [QEGVAR(wp,disabledAI), []];
+                    {
+                        if (!(_x in _taskDisabled)) then {_boundUnit enableAI _x;};
+                    } forEach ["SUPPRESSION", "TARGET", "AUTOTARGET", "AUTOCOMBAT"];
                 };
             } forEach _boundUnits;
         };

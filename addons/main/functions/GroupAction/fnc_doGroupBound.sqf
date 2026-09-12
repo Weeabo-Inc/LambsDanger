@@ -109,6 +109,15 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
     private _near = _distance < NEAR_DISTANCE;
     private _anchor = [0, 0, 0];
 
+    // the team that stays behind screens the runners with smoke when there is nothing else to hide them
+    private _fnc_smoke = {
+        params ["_throwers"];
+        if (_distance < SMOKE_RANGE && {time > (_group getVariable [QGVAR(boundSmokeTime), 0])}) then {
+            _group setVariable [QGVAR(boundSmokeTime), time + SMOKE_INTERVAL];
+            {[_x, _target] call FUNC(doSmoke);} forEach (_throwers select {(throwables _x) isNotEqualTo []} select [0, 2]);
+        };
+    };
+
     if (_moving isEqualTo TEAM_ASSAULT) then {
         // next bound from the assault team's centre towards the objective, on cover if there is any nearby
         _anchor = _assaultCentre getPos [([BOUND_LENGTH_FAR, BOUND_LENGTH_NEAR] select _near) min _distance, _direction];
@@ -116,17 +125,16 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
         if (_cover isNotEqualTo []) then {
             _anchor = (_cover select 0) getPos [1.5, _target getDir (_cover select 0)];
         } else {
-            // open ground ~ nothing to stop at, so run further and screen the rush with smoke
+            // open ground ~ nothing to stop at, so run further under smoke
             if (!_near) then {_anchor = _assaultCentre getPos [BOUND_LENGTH_OPEN min _distance, _direction];};
-            if (_distance < SMOKE_RANGE && {time > (_group getVariable [QGVAR(boundSmokeTime), 0])}) then {
-                _group setVariable [QGVAR(boundSmokeTime), time + SMOKE_INTERVAL];
-                [_assaultTeam, _target] call FUNC(doSmoke);
-                if (_fireTeam isNotEqualTo []) then {[_fireTeam, _target] call FUNC(doSmoke);};
-            };
+            [[_fireTeam, _assaultTeam] select (_fireTeam isEqualTo [])] call _fnc_smoke;
         };
     } else {
         // fire team moves up to a spot behind the assault team, still facing the objective
         _anchor = _assaultCentre getPos [FIRE_TEAM_BEHIND, _direction + 180];
+        if ((nearestTerrainObjects [_anchor, ["BUSH", "TREE", "SMALL TREE", "HIDE", "WALL", "ROCK", "FENCE"], COVER_SEARCH, false, true]) isEqualTo []) then {
+            [_assaultTeam] call _fnc_smoke;
+        };
     };
 
     // formation slots
@@ -156,12 +164,37 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
         _boundPositions pushBack _pos;
 
         _x setVariable [QEGVAR(danger,forceMove), true];
-        // the moving team ignores incoming fire until it is on its slot
+        // the moving team sprints: no shooting, no aiming, no stopping for incoming fire until it is on its slot
         _x disableAI "SUPPRESSION";
-        _x setUnitPos (["UP", "MIDDLE"] select (_near && {_moving isEqualTo TEAM_FIRE}));
+        _x disableAI "TARGET";
+        _x disableAI "AUTOTARGET";
+        _x doWatch objNull;
+        _x setUnitPos "UP";
         _x forceSpeed -1;
         _x doMove _pos;
         _x setVariable [QGVAR(currentTask), ["Assault team bounding", "Fire team moving up"] select (_moving isEqualTo TEAM_FIRE), GVAR(debug_functions)];
+
+        // the moment it arrives it drops prone and starts shooting again
+        [
+            {
+                params ["_unit", "_pos"];
+                !(_unit call FUNC(isAlive)) || {_unit distance2D _pos < ARRIVED_DISTANCE} || {unitReady _unit}
+            },
+            {
+                params ["_unit", "", "_target", "_group", "_posList"];
+                if (!(_unit call FUNC(isAlive)) || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), false])}) exitWith {};
+                _unit enableAI "TARGET";
+                _unit enableAI "AUTOTARGET";
+                _unit enableAI "SUPPRESSION";
+                _unit setUnitPos "DOWN";
+                private _index = [_unit, _posList] call FUNC(checkVisibilityList);
+                if (_index isEqualTo -1 || {!([_unit, AGLToASL ((_posList select _index) vectorAdd [0, 0, random 1])] call FUNC(doSuppress))}) then {
+                    _unit doWatch _target;
+                };
+            },
+            [_x, _pos, _target, _group, _posList],
+            BOUND_TIMEOUT
+        ] call CBA_fnc_waitUntilAndExecute;
     } forEach _movingUnits;
     _boundStart = time;
 
@@ -180,7 +213,9 @@ private _checks = SUPPRESS_CHECKS;
 {
     _x setVariable [QEGVAR(danger,forceMove), true];
     _x enableAI "SUPPRESSION";
-    _x setUnitPos (_x call FUNC(getLowStance));
+    _x enableAI "TARGET";
+    _x enableAI "AUTOTARGET";
+    _x setUnitPos "DOWN";
     _x setVariable [QGVAR(currentTask), ["Fire team covering", "Assault team covering"] select (_moving isEqualTo TEAM_FIRE), GVAR(debug_functions)];
     if (_index isEqualTo -1 && {_checks > 0} && {_posList isNotEqualTo []}) then {
         _index = [_x, _posList] call FUNC(checkVisibilityList);
