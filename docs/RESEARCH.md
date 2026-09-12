@@ -72,14 +72,52 @@ Consequences:
   values in use are read from upstream's own FSM and `lambs_main_fnc_debugDangerType`:
   DCEnemyDetected 0, DCFire 1, DCHit 2, DCEnemyNear 3, DCExplosion 4, DCDeadBodyGroup 5,
   DCDeadBody 6, DCScream 7, DCCanFire 8, DCBulletClose 9, plus LAMBS' own pseudo-cause 10
-  "Assessing". **[P]** (the wiki page *FSM Danger Causes* is empty in the harvest, so the
-  engine's list is verified only through upstream's usage.) LAMBS replaces this FSM with its own
+  "Assessing". **[P]**
+- The wiki page *Arma 2: FSM Danger Causes* (empty in the harvest, supplied by the owner
+  from the live page; the answers are Suma's, Bohemia's AI programmer) defines each cause
+  and its scope. **[P]**
+  - **DCEnemyDetected**: the first enemy detected; sent to every unit of a group that was
+    not aware of any enemy.
+  - **DCFire**: a unit was *seen* firing at another unit; one event per bullet, and one
+    firing can be seen by many units. It is the highest-rate event in combat.
+  - **DCHit**: sent only to the vehicle (or man) that was hit.
+  - **DCEnemyNear**: the unit knows it has been *disclosed*: the enemy knows about it.
+  - **DCExplosion**: an impact or explosion seen or heard; the range comes from impact
+    strength, there is no fixed maximum distance.
+  - **DCDeadBodyGroup**: a dead soldier of my own group found (first unit to see the body)
+    or a kill of a group member seen (every unit seeing it).
+  - **DCDeadBody**: a dead soldier of another group; once per group per body when found,
+    per witnessing unit when the kill is seen.
+  - **DCScream**: a scream heard; any non-head hit produces one, "useful to detect a
+    silenced weapon attacks".
+  - **DCCanFire**: a new firing opportunity: an enemy the unit can fire on for the first
+    time, or one that reappears from cover. Meant for the "surprise" situation. Suma: giving
+    it low priority "was a mistake and it should rather have a highest priority".
+  - Engine default handling for any cause is to switch the *whole group* into combat
+    behaviour unless careless, with a radio message ("Under fire" for Fire, Hit and
+    Explosion; "Contact" for a detection), and to dismount if `unloadInCombat` says so.
+    Combat behaviour cannot be disabled per unit, only by CARELESS. LAMBS replaces this FSM with its own
   (`addons/danger/scripts/lambs_danger.fsm`) and dispatches to script from it.
 
 Consequences:
 
 - **C-04** The danger FSM is our layer-1 *event source*, not our layer-1 brain. Events go into
   the per-soldier machine; the machine decides. Nothing else in the mod may poll for danger.
+- **C-58** DCFire arrives once per bullet seen, so it is a free, honest counter of incoming
+  and outgoing *volume*: the suppression model (C-22, C-37) counts DCFire and DCBulletClose
+  per sector per second instead of estimating rounds, and the base of fire's "volume
+  achieved" signal (C-42) is read from the same counter on the enemy's side of the picture.
+- **C-59** DCEnemyNear is the engine telling a unit "you have been seen"; it is the honest
+  trigger for the compromised state (reposition, smoke, bark "he's got eyes on me"), and
+  nothing else may infer "spotted" from player state.
+- **C-60** DCCanFire keeps the second-highest priority upstream gave it and becomes the
+  "surprise" path in the soldier machine: a new target in the open gets fire before any
+  other decision, as Suma intended.
+- **C-61** DCDeadBody and DCDeadBodyGroup are the only ways a group learns of a death it did
+  not see; the contact store records deaths from these events, not from `alive`.
+- **C-62** DCScream is how a silenced attack is noticed; a group taking suppressed fire is
+  alerted by screams, not by omniscience, so a suppressed player can still be hunted after
+  a wounding shot.
 
 ### A.3 The scheduler and CBA per-frame handlers
 
@@ -572,11 +610,11 @@ Consequences:
 
 | System (brief §) | Consequences |
 |---|---|
-| 3.1 Knowledge model | C-01, C-02, C-03, C-28, C-34, C-56, C-57 |
-| 3.2 Fairness contract | C-01, C-12, C-17, C-22 |
-| 3.3 Morale, suppression, cohesion | C-35, C-37 |
+| 3.1 Knowledge model | C-01, C-02, C-03, C-28, C-34, C-56, C-57, C-61 |
+| 3.2 Fairness contract | C-01, C-12, C-17, C-22, C-59, C-61 |
+| 3.3 Morale, suppression, cohesion | C-35, C-37, C-58, C-62 |
 | 3.4 Position selection | C-09, C-20, C-21, C-23, C-24, C-25, C-26, C-27 |
-| 3.5 Squad tactics | C-08, C-10, C-30, C-41 to C-51 |
+| 3.5 Squad tactics | C-08, C-10, C-30, C-41 to C-51, C-58, C-60 |
 | 3.6 Combined arms | C-46, C-55 |
 | 3.7 Indirect fire and Director tools | C-13, C-16, C-18, C-22, C-31, C-36, C-52 to C-55 |
 | 3.8 Adaptation and memory | C-14, C-31, C-54 |
