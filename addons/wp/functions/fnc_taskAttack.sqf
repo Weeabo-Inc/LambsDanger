@@ -27,6 +27,8 @@
 #define CYCLE_TIME 6
 #define ENGAGE_DISTANCE 350
 #define TRAVEL_STANDOFF 300
+#define MOUNT_TIMEOUT 45
+#define MAX_ATTEMPTS 2
 #define CONTACT_ENGAGE_DISTANCE 200
 #define CONTACT_AGE 30
 #define HOLD_TIME 30
@@ -86,14 +88,37 @@ private _leader = leader _group;
 
 // go ~ a Zeus route is kept, the attack waypoint on it points at the same spot
 if (_wpIndex < 0) then {[_group] call CBA_fnc_clearWaypoints;};
-// a mounted group is driven to the engagement distance, never into the objective; the attack plan dismounts it
+// a group with vehicles mounts up and is driven to the engagement distance, never into the objective;
+// the attack plan dismounts it there
 private _travelPos = _pos;
+private _boarding = [];
 if (([_leader, 400] call EFUNC(main,findReadyVehicles)) isNotEqualTo []) then {
     _travelPos = _pos getPos [TRAVEL_STANDOFF min ((_leader distance2D _pos) * 0.8), _pos getDir _leader];
-    _travelPos = [_travelPos, _travelPos findEmptyPosition [0, 30, typeOf (vehicle _leader)]] select ((_travelPos findEmptyPosition [0, 30, typeOf (vehicle _leader)]) isNotEqualTo []);
+    private _empty = _travelPos findEmptyPosition [0, 30, typeOf (vehicle _leader)];
+    if (_empty isNotEqualTo []) then {_travelPos = _empty;};
     _group setVariable [QGVAR(attackTravelPos), _travelPos];
+    _boarding = [_group] call EFUNC(main,doMountUp);
 };
-_group move _travelPos;
+if (_boarding isEqualTo []) then {
+    _group move _travelPos;
+} else {
+    // vehicles wait for everyone, then roll
+    {if (!isNull objectParent _x) then {doStop (driver (vehicle _x));};} forEach (units _group);
+    [
+        {
+            params ["_group", "_boarding"];
+            isNull _group || {(_boarding findIf {alive _x && {isNull objectParent _x}}) isEqualTo -1}
+        },
+        {
+            params ["_group", "", "_travelPos"];
+            if (isNull _group) exitWith {};
+            {if (!isNull objectParent _x) then {(driver (vehicle _x)) doFollow (leader _group);};} forEach (units _group);
+            _group move _travelPos;
+        },
+        [_group, _boarding, _travelPos],
+        MOUNT_TIMEOUT
+    ] call CBA_fnc_waitUntilAndExecute;
+};
 [_leader, "combat", "Advance", 125] call EFUNC(main,doCallout);
 
 private _handle = [{
@@ -113,22 +138,31 @@ private _handle = [{
         };
         if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {};
         [_group] call FUNC(taskCleanup);
+        [_group] call EFUNC(main,doMountRelease);
 
         // the objective is now the group's ground
-        [_group, ["free", "defend"] select (_reason isEqualTo "objective held"), _pos, _radius] call EFUNC(danger,intentSet);
+        private _held = _reason isEqualTo "objective held";
+        [_group, ["free", "defend"] select _held, _pos, _radius] call EFUNC(danger,intentSet);
 
-        // carry on with the route the Zeus laid out ~ as a directed move, so a mounted group mounts up first
-        if (_wpIndex >= 0 && {_wpIndex + 1 < count (waypoints _group)}) then {
-            [_group, _wpIndex + 1, _curatorOwner] call EFUNC(danger,directedMoveSet);
+        // the Seek & Destroy waypoint is done ~ take it off the route so the engine does not drive them into it
+        private _nextIndex = -1;
+        if (_wpIndex >= 0 && {_wpIndex < count (waypoints _group)}) then {
+            deleteWaypoint [_group, _wpIndex];
+            if (_wpIndex < count (waypoints _group)) then {_nextIndex = _wpIndex;};
+        };
+
+        // carry on with the route as a directed move (mounts up first), or remount when nothing was found
+        if (_nextIndex >= 0) then {
+            [_group, _nextIndex, _curatorOwner] call EFUNC(danger,directedMoveSet);
         } else {
-            // nothing found and nowhere else to go ~ a mounted group gets back in its vehicles
-            if (_reason isEqualTo "objective held" && {(([_group] call EFUNC(danger,pictureGet)) get "lastContact") < _startTime}) then {
+            if (_held && {(([_group] call EFUNC(danger,pictureGet)) get "lastContact") < _startTime}) then {
                 [_group] call EFUNC(main,doMountUp);
                 [_group, "free"] call EFUNC(danger,intentSet);
             };
         };
         if (_curatorOwner >= 0) then {
-            [_curatorOwner, format [localize ELSTRING(danger,Feedback_AttackDone), groupId _group]] call EFUNC(danger,directedMoveFeedback);
+            private _feedback = [ELSTRING(danger,Feedback_AttackDone), ELSTRING(danger,Feedback_AttackFailed)] select (_reason isEqualTo "attack failed");
+            [_curatorOwner, format [localize _feedback, groupId _group]] call EFUNC(danger,directedMoveFeedback);
         };
     };
 
@@ -166,13 +200,26 @@ private _handle = [{
     };
     if (_held) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "objective held", _pos, _radius, _startTime] call _fnc_end;};
 
-    // a tactic this task started (fire and movement or the building sweep) ~ let it work
+    // a tactic this task started (the attack plan, fire and movement or the building sweep) ~ let it work
     private _executing = _group getVariable [QEGVAR(danger,isExecutingTactic), false];
     if (_executing && {_phase isEqualTo "engage"}) exitWith {};
     if (_executing) then {
         // something else grabbed the group ~ take it back
         _group setVariable [QEGVAR(danger,isExecutingTactic), nil];
     };
+
+    // the attack ran its course ~ completed means hold here and only go again on a new contact; failed twice means give up
+    if (_phase isEqualTo "engage") then {
+        private _picture = [_group] call EFUNC(danger,pictureGet);
+        if ((_picture get "lastResult") isEqualTo "completed") then {
+            _state set [0, "hold"];
+        } else {
+            _state set [0, "approach"];
+            _state set [2, (_state param [2, 0]) + 1];
+        };
+    };
+    if ((_state param [2, 0]) >= MAX_ATTEMPTS) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "attack failed", _pos, _radius, _startTime] call _fnc_end;};
+    if (_phase isEqualTo "hold" && {_nearestContact isEqualTo []}) exitWith {};
 
     // fight forward when close to the objective, or when the enemy is close to us ~ a deliberate attack
     // (support by fire, flank approach, assault, clear, consolidate); a fire team bounds instead
@@ -213,7 +260,7 @@ private _handle = [{
     if (unitReady _leader || {((expectedDestination _leader) select 1) isEqualTo "DoNotPlan"}) then {
         _group move (_group getVariable [QGVAR(attackTravelPos), _pos]);
     };
-}, CYCLE_TIME, [_group, _pos, _radius, _token, _wpIndex, _curatorOwner, ["approach", -1], time]] call CBA_fnc_addPerFrameHandler;
+}, CYCLE_TIME, [_group, _pos, _radius, _token, _wpIndex, _curatorOwner, ["approach", -1, 0], time]] call CBA_fnc_addPerFrameHandler;
 
 _group setVariable [QGVAR(attackPFH), _handle];
 
