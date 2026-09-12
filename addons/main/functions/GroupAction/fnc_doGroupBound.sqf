@@ -33,12 +33,15 @@
 #define CYCLE_TIME 3
 #define BOUND_LENGTH_NEAR 30
 #define BOUND_LENGTH_FAR 50
+#define BOUND_LENGTH_OPEN 70
 #define NEAR_DISTANCE 150
 #define BOUND_TIMEOUT 15
 #define ARRIVED_DISTANCE 4
 #define COVER_SEARCH 8
 #define FIRE_TEAM_BEHIND 12
-#define FIRE_TEAM_CLOSE_ENOUGH 20
+#define FIRE_TEAM_CLOSE_ENOUGH 30
+#define SMOKE_RANGE 250
+#define SMOKE_INTERVAL 20
 #define SUPPRESS_CHECKS 3
 #define TEAM_NONE 0
 #define TEAM_ASSAULT 1
@@ -112,6 +115,18 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
         private _cover = nearestTerrainObjects [_anchor, ["BUSH", "TREE", "SMALL TREE", "HIDE", "WALL", "ROCK", "FENCE"], COVER_SEARCH, false, true];
         if (_cover isNotEqualTo []) then {
             _anchor = (_cover select 0) getPos [1.5, _target getDir (_cover select 0)];
+        } else {
+            // open ground ~ nothing to stop at, so run further and screen the rush with smoke
+            if (!_near) then {_anchor = _assaultCentre getPos [BOUND_LENGTH_OPEN min _distance, _direction];};
+            if (
+                _distance < SMOKE_RANGE
+                && {time > (_group getVariable [QGVAR(boundSmokeTime), 0])}
+                && {!(missionNamespace getVariable [QEGVAR(danger,disableAutonomousSmokeGrenades), false])}
+            ) then {
+                _group setVariable [QGVAR(boundSmokeTime), time + SMOKE_INTERVAL];
+                [_assaultTeam, _target] call FUNC(doSmoke);
+                if (_fireTeam isNotEqualTo []) then {[_fireTeam, _target] call FUNC(doSmoke);};
+            };
         };
     } else {
         // fire team moves up to a spot behind the assault team, still facing the objective
