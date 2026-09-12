@@ -523,6 +523,7 @@ private _handle = [{
                         _x doMove _spot;
                         _x doWatch _objective;
                     } forEach _vehicles;
+                };
             } else {
                 _state set ["quietSince", -1];
             };
