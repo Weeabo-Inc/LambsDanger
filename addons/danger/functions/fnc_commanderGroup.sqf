@@ -28,6 +28,7 @@
 #define DEFEND_BUILDING_RANGE 50
 #define DEFEND_HIDE_RANGE 150
 #define AMBUSH_RANGE 150
+#define FALLBACK_LOSSES 0.34
 #define MANEUVER_DISTANCE 150
 #define MANEUVER_SIZE 5
 
@@ -125,6 +126,14 @@ switch (true) do {
         private _defending = _mode in ["hold", "defend"] && {_objective isNotEqualTo []};
         private _insideArea = _defending && {_threatPos distance2D _objective < _radius};
         if (_defending && {!_insideArea || {_mode isEqualTo "hold"}}) exitWith {
+            // a position that has cost a third of the squad is given up for the next line back, by bounds under
+            // smoke, and that line becomes the ground to hold ~ trading ground beats dying on it
+            private _lossRatio = (_picture get "losses") / ((_picture get "maxCount") max 1);
+            if (_mode isEqualTo "defend" && {_lossRatio >= FALLBACK_LOSSES} && {_restedFromWithdraw} && {_posture < 2}) exitWith {
+                _picture set ["fallingBack", true];
+                ["withdraw", {_this call FUNC(tacticsWithdraw)}, _threatPos, 90] call _fnc_run;
+                _decision = "fall back to the next line";
+            };
             private _exposed = !(_leader call EFUNC(main,isIndoor)) && {(nearestTerrainObjects [_leader, ["BUSH", "TREE", "HOUSE", "HIDE", "WALL", "ROCK"], 4, false, true]) isEqualTo []};
             private _buildings = if (_exposed) then {[_leader, DEFEND_BUILDING_RANGE, true, true] call EFUNC(main,findBuildings)} else {[]};
 
@@ -217,6 +226,15 @@ switch (true) do {
                 ["assault", {_this call FUNC(tacticsAssault)}, _threatPos, 85] call _fnc_run;
             };
         };
+    };
+};
+
+// a defence that fell back holds the new line, it does not walk back into the old position
+if (_picture getOrDefault ["fallingBack", false] && {!(_group getVariable [QGVAR(isExecutingTactic), false])}) then {
+    _picture set ["fallingBack", false];
+    if (_mode isEqualTo "defend") then {
+        [_group, "defend", getPosATL _leader, _radius] call FUNC(intentSet);
+        if (EGVAR(main,debug_functions)) then {["%1 COMMANDER %2: new line %3m from the old position", side _group, groupId _group, round (_leader distance2D _objective)] call EFUNC(main,debugLog);};
     };
 };
 

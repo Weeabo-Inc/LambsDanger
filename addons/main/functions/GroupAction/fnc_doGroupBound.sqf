@@ -301,6 +301,12 @@ private _checks = SUPPRESS_CHECKS;
         _index = [_x, _suppressList] call FUNC(checkVisibilityList);
         _checks = _checks - 1;
     };
+    // the last man of a team of three or more watches the rear, not the objective
+    if (_forEachIndex isEqualTo ((count _stationary) - 1) && {count _stationary >= 3}) then {
+        _x doWatch ((getPosATL _x) getPos [60, _target getDir _x]);
+        _x setVariable [QGVAR(currentTask), "Rear security", GVAR(debug_functions)];
+        continue;
+    };
     // rockets and grenade launchers go into the enemy position from here
     private _launched = _x distance2D _target < LAUNCHER_RANGE && {[_x, [_target, _posList select 0] select (_posList isNotEqualTo [])] call FUNC(doLauncherFire)};
     if (!_launched) then {
