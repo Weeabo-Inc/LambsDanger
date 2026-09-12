@@ -24,6 +24,9 @@
     8 CanFire
 */
 
+#define GRENADE_RANGE 30
+#define GRENADE_DELAY 3
+
 params ["_unit", ["_type", -1], ["_target", objNull]];
 
 // timeout
@@ -71,8 +74,17 @@ if (
     && {_target call EFUNC(main,isAlive)}
 ) exitWith {
     _unit setVariable ["ace_medical_ai_lastFired", CBA_missionTime]; // ACE3
-    [_unit, _target] call EFUNC(main,doAssault);
-    _timeout
+    // grenade first, then the corner: an enemy holed up inside gets one through the door before anyone goes in
+    private _fragged = _distance < GRENADE_RANGE
+        && {_target call EFUNC(main,isIndoor)}
+        && {!(_unit call EFUNC(main,isIndoor)) || {_unit distance2D _target > 8}}
+        && {[_unit, _unit getHideFrom _target] call EFUNC(main,doGrenade)};
+    if (_fragged) then {
+        [{if ((_this select 0) call EFUNC(main,isAlive)) then {_this call EFUNC(main,doAssault);};}, [_unit, _target], GRENADE_DELAY] call CBA_fnc_waitAndExecute;
+    } else {
+        [_unit, _target] call EFUNC(main,doAssault);
+    };
+    _timeout + ([0, GRENADE_DELAY] select _fragged)
 };
 
 // set low stance

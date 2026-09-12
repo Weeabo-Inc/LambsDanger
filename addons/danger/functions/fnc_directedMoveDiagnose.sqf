@@ -76,6 +76,28 @@ private _lines = [
     "<t color='#FFAA00'>Likely causes</t>"
 ];
 _lines append (_causes apply {"- " + _x});
+
+// what the commander thinks
+private _picture = [_group] call FUNC(pictureGet);
+private _intent = [_group] call FUNC(intentGet);
+private _maneuver = _group getVariable QGVAR(maneuver);
+private _airTask = _group getVariable QEGVAR(wp,attackAir);
+_lines pushBack "<t color='#FFAA00'>Commander</t>";
+_lines pushBack format ["Intent %1 | posture %2 | cap %3 | objective %4m", _intent select 0, ["cautious", "balanced", "aggressive"] select (_intent select 3), _intent select 4, [round (_leader distance2D (_intent select 1)), "-"] select ((_intent select 1) isEqualTo [])];
+_lines pushBack format ["Escalation %1 | morale %2 | losses %3 | contacts %4 (last %5s ago) | role %6",
+    ["routine", "alert", "engaged", "decisive"] select (_picture getOrDefault ["escalation", 0]),
+    ([_group] call FUNC(getMorale)) toFixed 2,
+    _picture get "losses",
+    count ([_group, 60] call FUNC(pictureContacts)),
+    round (time - (_picture get "lastContact")) min 9999,
+    _group getVariable [QGVAR(role), "-"]
+];
+_lines pushBack format ["Last tactic %1 %2 | executing %3 | plan %4 | air %5",
+    _picture get "lastTactic", _picture get "lastResult",
+    _group getVariable [QGVAR(isExecutingTactic), false],
+    ["-", _maneuver getOrDefault ["phase", "?"]] select (!isNil "_maneuver"),
+    ["-", _airTask getOrDefault ["phase", "?"]] select (!isNil "_airTask")
+];
 _lines pushBack "<t color='#FFAA00'>Units</t>";
 
 // unit lines

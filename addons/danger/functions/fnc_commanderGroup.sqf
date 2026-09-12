@@ -27,6 +27,7 @@
 #define WITHDRAW_REST 300
 #define DEFEND_BUILDING_RANGE 50
 #define DEFEND_HIDE_RANGE 150
+#define AMBUSH_RANGE 150
 #define MANEUVER_DISTANCE 150
 #define MANEUVER_SIZE 5
 
@@ -126,6 +127,32 @@ switch (true) do {
         if (_defending && {!_insideArea || {_mode isEqualTo "hold"}}) exitWith {
             private _exposed = !(_leader call EFUNC(main,isIndoor)) && {(nearestTerrainObjects [_leader, ["BUSH", "TREE", "HOUSE", "HIDE", "WALL", "ROCK"], 4, false, true]) isEqualTo []};
             private _buildings = if (_exposed) then {[_leader, DEFEND_BUILDING_RANGE, true, true] call EFUNC(main,findBuildings)} else {[]};
+
+            // fire discipline ~ a defence that opens up at 400 m gives itself away for nothing. Weapons stay quiet
+            // until the enemy is inside the kill range or has started shooting at us, then everyone opens at once.
+            private _sprung = _picture getOrDefault ["ambushSprung", false];
+            private _underFire = (_leader call EFUNC(main,getStress)) > 0.25 || {(units _group) findIf {time - (_x getVariable [QEGVAR(main,lastHit), -1e9]) < 10} != -1};
+            if (!_sprung && {_posture < 2} && {_distance > AMBUSH_RANGE} && {!_underFire}) then {
+                if ((combatMode _group) isNotEqualTo "GREEN") then {
+                    _group setCombatMode "GREEN";
+                    {_x setUnitPos (_x call EFUNC(main,getLowStance)); _x doWatch _threatPos;} forEach (units _group);
+                    [_leader, "combat", "StayAlert", 60] call EFUNC(main,doCallout);
+                    if (EGVAR(main,debug_functions)) then {["%1 COMMANDER %2: holding fire, enemy at %3m", side _group, groupId _group, round _distance] call EFUNC(main,debugLog);};
+                };
+                // in cover while waiting
+                if (_buildings isNotEqualTo [] && {(_picture get "lastTactic") isNotEqualTo "garrison"}) then {
+                    ["garrison", {_this call FUNC(tacticsGarrison)}, _threatPos, 180] call _fnc_run;
+                };
+                _decision = "holding fire";
+            } else {
+                if (!_sprung) then {
+                    _picture set ["ambushSprung", true];
+                    _group setCombatMode "RED";
+                    _group enableAttack false;
+                    {_x doTarget objNull; _x doWatch _threatPos;} forEach (units _group);
+                    [_leader, "combat", "suppress", 125] call EFUNC(main,doCallout);
+                    if (EGVAR(main,debug_functions)) then {["%1 COMMANDER %2: open fire, enemy at %3m", side _group, groupId _group, round _distance] call EFUNC(main,debugLog);};
+                };
             switch (true) do {
                 case (_buildings isNotEqualTo [] && {(_picture get "lastTactic") isNotEqualTo "garrison" || {(_picture get "lastResult") isNotEqualTo "failed"}}): {
                     ["garrison", {_this call FUNC(tacticsGarrison)}, _threatPos, 180] call _fnc_run;
@@ -136,6 +163,7 @@ switch (true) do {
                 default {
                     ["suppress", {_this call FUNC(tacticsSuppress)}, _threatPos, 45] call _fnc_run;
                 };
+            };
             };
         };
 
@@ -195,6 +223,9 @@ switch (true) do {
 // contact just ended ~ consolidate: face the last threat, stand down, count heads
 if ((_picture getOrDefault ["escalationPrev", 0]) >= 2 && {_level < 2} && {time - (_picture getOrDefault ["escalationTime", 0]) < 8}) then {
     _picture set ["escalationPrev", 0];
+    // the next ambush is held again
+    _picture set ["ambushSprung", false];
+    if ((combatMode _group) isEqualTo "GREEN") then {_group setCombatMode "RED";};
     if (_threatPos isNotEqualTo []) then {_group setFormDir (_leader getDir _threatPos);};
     _group setFormation "WEDGE";
     _group setSpeedMode "NORMAL";

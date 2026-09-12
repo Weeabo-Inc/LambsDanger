@@ -64,6 +64,7 @@ SUBPREP(UnitAction,doCheckBody);
 SUBPREP(UnitAction,doCover);
 SUBPREP(UnitAction,doDodge);
 SUBPREP(UnitAction,doFleeing);
+SUBPREP(UnitAction,doGrenade);
 SUBPREP(UnitAction,doHide);
 SUBPREP(UnitAction,doLauncherFire);
 SUBPREP(UnitAction,doPanic);
