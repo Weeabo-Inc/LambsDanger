@@ -41,6 +41,8 @@ if (_type isEqualTo DANGER_EXPLOSION) then {
     _explosions pushBack [time, _pos];
     if (count _explosions > 6) then {_explosions deleteAt 0;};
     (group _unit) setVariable [QGVAR(explosions), _explosions];
+    // under shelling the squad opens up: formations and bounds double their spacing for a while
+    (group _unit) setVariable [QGVAR(shelledTime), time];
 };
 [_unit, [0.1, 0.2, 0.3, 0.4] select _stressIndex] call EFUNC(main,addStress);
 if (_type isEqualTo DANGER_HIT) then {_unit setVariable [QEGVAR(main,lastHit), time];};

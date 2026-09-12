@@ -588,8 +588,9 @@ private _handle = [{
                 call _fnc_supportFire;
             };
 
-            // assault element along the covered route
-            ([_assault, _state get "route", _state get "routeIndex", "wedge", ASSAULT_SPACING, _objective] call EFUNC(main,doTeamMove)) params ["_arrived", "_index"];
+            // assault element along the covered route, spread out when shells have been landing
+            private _spacing = ASSAULT_SPACING * ([1, 2] select (time - (_group getVariable [QGVAR(shelledTime), -1e9]) < 60));
+            ([_assault, _state get "route", _state get "routeIndex", "wedge", _spacing, _objective] call EFUNC(main,doTeamMove)) params ["_arrived", "_index"];
             _state set ["routeIndex", _index];
             {
                 _x setUnitPos "UP";

@@ -38,6 +38,8 @@
 #define BOUND_TIMEOUT 18
 #define ARRIVED_DISTANCE 4
 #define RUSH_STAGGER 0.5
+#define SHELLED_SPREAD 2
+#define SHELLED_TIME 60
 #define COVER_SEARCH 8
 #define FIRE_TEAM_BEHIND 12
 #define FIRE_TEAM_CLOSE_ENOUGH 30
@@ -198,13 +200,15 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
     _slotUnits = _lateral apply {_slotUnits select (_x select 1)};
     private _slotCount = count _slotUnits;
     private _slots = [];
+    // shells landing lately: twice the spacing, one round should not take two men
+    private _spread = [1, SHELLED_SPREAD] select (time - (_group getVariable [QEGVAR(danger,shelledTime), -1e9]) < SHELLED_TIME);
     for "_i" from 0 to (_slotCount - 1) do {
         // slots from the far left to the far right: -n/2 .. n/2
         private _offset = _i - ((_slotCount - 1) / 2);
         private _slot = if (_moving isEqualTo TEAM_FIRE) then {
-            _anchor getPos [2.5 * _offset, _direction + 90]
+            _anchor getPos [2.5 * _spread * _offset, _direction + 90]
         } else {
-            (_anchor getPos [abs _offset, _direction + 180]) getPos [1.8 * _offset, _direction + 90]
+            (_anchor getPos [(abs _offset) * _spread, _direction + 180]) getPos [1.8 * _spread * _offset, _direction + 90]
         };
         _slots pushBack _slot;
     };
