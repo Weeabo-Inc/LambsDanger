@@ -11,7 +11,7 @@ Acceptance test, Performance budget, Fairness review.
 | 3.2 | Perception honesty | [`../FAIRNESS.md`](../FAIRNESS.md) | 2 | contract enforced by `tools/fairness_check.py` in CI; known breaches ledgered in `tools/fairness_allow.txt` |
 | 3.3 | Morale, suppression, cohesion | [`morale.md`](morale.md) | 3 | built in `hostis_agent`; test `tests/morale.Stratis` awaiting a run |
 | 3.4 | Dynamic tactical position selection | [`positions.md`](positions.md) | 3 | `findPositions` gained directness, a cell cache and `positionValid` |
-| 3.5 | Squad tactics | `tactics.md` | 4 | seeded by `lambs_danger_fnc_tactics*` (see ADR-0008) |
+| 3.5 | Squad tactics | [`tactics.md`](tactics.md) | 4 | lifecycle, planner, suppress and flank, hasty ambush, search in `hostis_squad`; test `tests/contact.Stratis` awaiting a run |
 | 3.6 | Combined arms | `combined-arms.md` | 7 | seeded by mechanised attack, air assault, vehicle brain |
 | 3.7 | Indirect fire and Director tools | `director.md` | 5 | seeded by the side board |
 | 3.8 | Adaptation and memory | `adaptation.md` | 7 | not started |

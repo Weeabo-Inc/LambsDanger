@@ -117,6 +117,8 @@ if (EGVAR(main,Loaded_WP)) then {
     [_group] call EFUNC(wp,taskCleanup);
 };
 if (!_wasDirected) then {_prevAttackEnabled = attackEnabled _group;};
+// the squad layer's tactic ends now, cleanly (ADR-0011: a Zeus order is an interrupt of class "now")
+if (!isNil "hostis_squad_fnc_tacticReset") then {[_group, "zeus directed move", "now"] call hostis_squad_fnc_tacticReset;};
 _group setVariable [QGVAR(isExecutingTactic), nil];
 _group setVariable [QGVAR(inCQB), nil];
 _group setVariable [QEGVAR(main,groupMemory), []];

@@ -61,7 +61,7 @@
 #define TEAM_ASSAULT 1
 #define TEAM_FIRE 2
 
-params [["_group", grpNull], ["_fireTeam", []], ["_assaultTeam", []], ["_posList", []], ["_target", [0, 0, 0]], ["_moving", TEAM_NONE], ["_boundStart", 0], ["_boundPositions", []], ["_vehicles", []], ["_token", -1]];
+params [["_group", grpNull], ["_fireTeam", []], ["_assaultTeam", []], ["_posList", []], ["_target", [0, 0, 0]], ["_moving", TEAM_NONE], ["_boundStart", 0], ["_boundPositions", []], ["_vehicles", []], ["_token", -1], ["_staticFire", false]];
 
 // exit! ~ also when a newer bound or tactic has taken the group over
 if (isNull _group || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), false])}) exitWith {};
@@ -128,7 +128,7 @@ private _covered = true;
 if ((_arrived || {_moving isEqualTo TEAM_NONE}) && {_fireTeam isNotEqualTo []} && {_assaultTeam isNotEqualTo []}) then {
     private _nextMovers = _assaultTeam;
     private _nextStatic = _fireTeam;
-    if (_moving isEqualTo TEAM_ASSAULT) then {
+    if (_moving isEqualTo TEAM_ASSAULT && {!_staticFire}) then {
         private _behindAssault = _assaultCentre getPos [FIRE_TEAM_BEHIND, _target getDir _assaultCentre];
         if (_fireCentre distance2D _behindAssault > FIRE_TEAM_CLOSE_ENOUGH) then {_nextMovers = _fireTeam; _nextStatic = _assaultTeam;};
     };
@@ -145,9 +145,10 @@ if ((_arrived || {_moving isEqualTo TEAM_NONE}) && {_fireTeam isNotEqualTo []} &
 
 if ((_arrived || {_moving isEqualTo TEAM_NONE}) && _covered) then {
 
-    // whose turn ~ the fire team moves up after the assault, unless it is close enough already
+    // whose turn ~ the fire team moves up after the assault, unless it is close enough already, or it is a
+    // base of fire that never moves (suppress and flank)
     private _next = TEAM_ASSAULT;
-    if (_moving isEqualTo TEAM_ASSAULT && {_fireTeam isNotEqualTo []}) then {
+    if (_moving isEqualTo TEAM_ASSAULT && {_fireTeam isNotEqualTo []} && {!_staticFire}) then {
         private _behindAssault = _assaultCentre getPos [FIRE_TEAM_BEHIND, _target getDir _assaultCentre];
         if (_fireCentre distance2D _behindAssault > FIRE_TEAM_CLOSE_ENOUGH) then {_next = TEAM_FIRE;};
     };
@@ -303,4 +304,4 @@ _vehicles = _vehicles select {alive _x && {canFire _x} && {(effectiveCommander _
 } forEach _vehicles;
 
 // next cycle
-[{_this call FUNC(doGroupBound)}, [_group, _fireTeamAll, _assaultTeamAll, _posList, _target, _moving, _boundStart, _boundPositions, _vehicles, _token], CYCLE_TIME] call CBA_fnc_waitAndExecute;
+[{_this call FUNC(doGroupBound)}, [_group, _fireTeamAll, _assaultTeamAll, _posList, _target, _moving, _boundStart, _boundPositions, _vehicles, _token, _staticFire], CYCLE_TIME] call CBA_fnc_waitAndExecute;

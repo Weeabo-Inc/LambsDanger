@@ -82,6 +82,31 @@ migrated into the layer addons per ADR-0008.
 `commanderReinforceRange`, `commanderMergeStrays`, `zeusWaypointDiscipline`,
 `zeusWaypointTimeout`, `aggression`, `dodgeCooldown`.
 
+## Milestone 4: layer 2, the Squad (`hostis_squad`)
+
+- **One tactic lifecycle** ([docs/systems/tactics.md](systems/tactics.md), ADR-0011):
+  registered tactics with precondition, start, monitor, abort, reset, commitment and
+  timeout; one monitor per running tactic; one reset that hands the men back and restores
+  the group's settings; interrupt classes now, blend, finish; a log with reasons in the
+  picture. Zeus directed moves and task cleanup reset through it. `hostis_squad_fnc_pause`
+  is the Zeus brake.
+- **The planner** replaces the reactive random plan of `tacticsAssess` for any group the
+  commander holds: break contact, hasty ambush, suppress and flank, bounding overwatch,
+  assault, suppress, search, by priority and precondition. The commander's defence tree
+  keeps running first for hold and defend intents and starts its tactics through the same
+  lifecycle.
+- **Suppress and flank**: base of fire from cover with a suppress list, manoeuvre element
+  bounds to a flank point chosen for cover, the bound halts while the base is not firing,
+  turns in from the flank, hands over to the building assault.
+- **Hasty ambush**: an L across the enemy's approach, gun on the short leg, hold fire until
+  150 m or fired upon.
+- **Search**: pairs to the edge of the last known position's error circle, never onto the
+  position itself.
+- Upstream `tacticsAssault`, `tacticsGarrison` and `tacticsHide` timer resets are guarded by
+  the lifecycle token so a stale timer never releases a later tactic's men.
+- `doGroupBound` gained a static base of fire mode.
+- Settings under HOSTIS Squad. Test: `tests/contact.Stratis`.
+
 ## Milestone 3: layer 1, the Agent (`hostis_agent`)
 
 - **Morale states per man** ([docs/systems/morale.md](systems/morale.md)): steady, suppressed,

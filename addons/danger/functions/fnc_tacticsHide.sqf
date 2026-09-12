@@ -36,8 +36,9 @@ _target = _target call CBA_fnc_getPos;
 // reset tactics
 [
     {
-        params [["_group", grpNull], ["_combatMode", "YELLOW"], ["_enableAttack", false], ["_formation", "WEDGE"]];
-        if (!isNull _group) then {
+        params [["_group", grpNull], ["_combatMode", "YELLOW"], ["_enableAttack", false], ["_formation", "WEDGE"], ["_token", -1]];
+        // a stale timer never touches a later tactic (ADR-0011)
+        if (!isNull _group && {(_group getVariable [QGVAR(tacticToken), -1]) isEqualTo _token}) then {
             _group setVariable [QGVAR(isExecutingTactic), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
             _group setCombatMode _combatMode;
@@ -46,7 +47,7 @@ _target = _target call CBA_fnc_getPos;
             {[_x, true] call FUNC(unitRelease);} forEach (units _group);
         };
     },
-    [_group, combatMode _group, attackEnabled _group, formation _group],
+    [_group, combatMode _group, attackEnabled _group, formation _group, _group getVariable [QGVAR(tacticToken), -1]],
     _delay
 ] call CBA_fnc_waitAndExecute;
 

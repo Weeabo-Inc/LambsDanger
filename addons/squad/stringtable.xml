@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="hostis">
+    <Package name="Squad">
+        <Key ID="STR_hostis_Squad_Settings_AmbushRange">
+            <English>Ambush spring range (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_AmbushRange_ToolTip">
+            <English>A hasty ambush holds its fire until the enemy is this close, or until it is fired upon.</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_Debug">
+            <English>Log tactics</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_DebugCat">
+            <English>Debug</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_Debug_ToolTip">
+            <English>Every tactic start, phase and end goes to the RPT with its reason. For testing only.</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_Enabled">
+            <English>Squad tactics</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_Enabled_ToolTip">
+            <English>The HOSTIS squad planner: suppress and flank, bounding overwatch, break contact, hasty ambush, search. Off leaves the upstream commander tree.</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_FlankOffset">
+            <English>Flank offset (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_FlankOffset_ToolTip">
+            <English>How far to the side of the enemy the manoeuvre element aims for before turning in.</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_SearchTime">
+            <English>Search time (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_SearchTime_ToolTip">
+            <English>How long a group sweeps a lost contact's last known area before giving up.</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_TacticCooldown">
+            <English>Tactic cooldown (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_TacticCooldown_ToolTip">
+            <English>The same tactic that just ended is not run again on the same ground for this long.</English>
+        </Key>
+        <Key ID="STR_hostis_Squad_Settings_TacticsCat">
+            <English>Tactics</English>
+        </Key>
+    </Package>
+</Project>

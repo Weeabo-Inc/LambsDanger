@@ -25,6 +25,9 @@ if (isNull _group || {!local _group}) exitWith {false};
 private _wasActive = !isNil {_group getVariable QGVAR(taskSnapshot)};
 _group setVariable [QGVAR(taskToken), (_group getVariable [QGVAR(taskToken), 0]) + 1];
 
+// the squad layer's tactic ends with the task (ADR-0011)
+if (!isNil "hostis_squad_fnc_tacticReset") then {[_group, "task cleanup", "now"] call hostis_squad_fnc_tacticReset;};
+
 // per frame handlers
 private _pfh = _group getVariable [QGVAR(defendPFH), -1];
 if (_pfh isNotEqualTo -1) then {

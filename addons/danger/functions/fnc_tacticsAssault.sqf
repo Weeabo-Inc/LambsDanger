@@ -53,8 +53,9 @@ _group setVariable [QGVAR(isExecutingTactic), true];
 // reset tactics ~ not when a deliberate attack owns the group, it restores everything itself
 [
     {
-        params [["_group", grpNull], ["_enableAttack", true], ["_isIRLaserOn", false], ["_speedMode", "NORMAL"], ["_formation", "WEDGE"]];
-        if (!isNull _group && {isNil {_group getVariable QGVAR(maneuver)}}) then {
+        params [["_group", grpNull], ["_enableAttack", true], ["_isIRLaserOn", false], ["_speedMode", "NORMAL"], ["_formation", "WEDGE"], ["_token", -1]];
+        // a stale timer never touches a later tactic (ADR-0011)
+        if (!isNull _group && {(_group getVariable [QGVAR(tacticToken), -1]) isEqualTo _token} && {isNil {_group getVariable QGVAR(maneuver)}}) then {
             _group setVariable [QGVAR(isExecutingTactic), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
             _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
@@ -64,7 +65,7 @@ _group setVariable [QGVAR(isExecutingTactic), true];
             {[_x, true] call FUNC(unitRelease);} forEach (units _group);
         };
     },
-    [_group, attackEnabled _group, _unit isIRLaserOn (currentWeapon _unit), speedMode _group, formation _group],
+    [_group, attackEnabled _group, _unit isIRLaserOn (currentWeapon _unit), speedMode _group, formation _group, _group getVariable [QGVAR(tacticToken), -1]],
     _delay
 ] call CBA_fnc_waitAndExecute;
 

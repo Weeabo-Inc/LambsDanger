@@ -54,6 +54,9 @@ addons/wp/functions/fnc_doHeliInsert.sqf|doWatch|pilot watches the landing zone
 addons/wp/functions/fnc_taskAssault.sqf|doWatch|watches the assault destination
 addons/wp/functions/fnc_taskAttack.sqf|doWatch|watches the objective
 addons/wp/functions/fnc_taskAttackAir.sqf|doWatch|pilot watches the landing zone
+addons/squad/functions/fnc_registerBuiltins.sqf|doWatch|the sprung ambush watches the picture's threat centre
+addons/squad/functions/fnc_registerBuiltins.sqf|doTarget|doTarget objNull clears held targets when the ambush springs
+addons/squad/functions/fnc_suppressAndFlank.sqf|doWatch|vehicles watch the picture's threat centre
 addons/wp/functions/fnc_taskRush.sqf|commandSuppressiveFire|suppresses an aircraft contact the group has seen itself (contactNearest returns the object only for seen contacts)
 addons/wp/functions/fnc_taskRush.sqf|doSuppressiveFire|suppresses a tank contact the group has seen itself
 #

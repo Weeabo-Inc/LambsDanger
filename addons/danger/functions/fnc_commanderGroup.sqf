@@ -68,18 +68,16 @@ private _role = _group getVariable [QGVAR(role), ""];
 private _threatPos = _picture get "threatPos";
 private _decision = "";
 
+// every tactic runs under the squad lifecycle (hostis_squad, ADR-0011): one monitor, one reset, one log
+private _ctx = [_group, _level] call HFUNC(squad,tacticContext);
 private _fnc_run = {
     params ["_name", "_tactic", "_pos", "_maxDuration"];
-    // the same tactic that just ended on the same ground is not run again straight away ~ that is the loop
-    // that shoves a squad about on a position it already holds
-    if (
-        (_picture get "lastTactic") isEqualTo _name
-        && {time - (_picture getOrDefault ["lastTacticTime", -1e9]) < TACTIC_COOLDOWN}
-        && {(_picture get "lastResult") in ["completed", "failed"]}
-    ) exitWith {_decision = format ["%1 (cooldown)", _name];};
-    [_group, _name, _pos, _maxDuration] call FUNC(tacticsMonitor);
-    [_group, _pos] call _tactic;
-    _decision = _name;
+    if (_pos isNotEqualTo []) then {_ctx set ["threatPos", _pos];};
+    if ([_group, _name, _ctx, "defence"] call HFUNC(squad,tacticStart)) then {
+        _decision = _name;
+    } else {
+        _decision = format ["%1 (refused)", _name];
+    };
 };
 private _onFoot = (units _group) select {isNull objectParent _x && {_x call EFUNC(main,isAlive)} && {!isPlayer _x}};
 
@@ -103,8 +101,10 @@ switch (true) do {
         };
     };
 
-    // alert ~ face it, get low, aggressive groups go and look
+    // alert ~ face it, get low, aggressive groups go and look; a hasty ambush or a search when the planner sees one
     case (_level isEqualTo 1): {
+        private _planned = [_group, _ctx] call HFUNC(squad,plan);
+        if (_planned isNotEqualTo "") exitWith {_decision = _planned;};
         if (_threatPos isNotEqualTo []) then {
             _group setFormDir (_leader getDir _threatPos);
             {if ((unitPos _x) isEqualTo "Auto") then {_x setUnitPosWeak "MIDDLE";};} forEach (units _group);
@@ -193,6 +193,11 @@ switch (true) do {
             };
             };
         };
+
+        // the squad planner: break contact, hasty ambush, suppress and flank, bound, assault, suppress, search,
+        // by priority and precondition (docs/systems/tactics.md); the tree below is the fallback
+        private _planned = [_group, _ctx] call HFUNC(squad,plan);
+        if (_planned isNotEqualTo "") exitWith {_decision = _planned;};
 
         // cautious posture ~ fire from where it stands, never closes
         if (_posture isEqualTo 0) exitWith {
