@@ -62,11 +62,14 @@ params [["_group", grpNull], ["_fireTeam", []], ["_assaultTeam", []], ["_posList
 if (isNull _group || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), false])}) exitWith {};
 if (_token isNotEqualTo (_group getVariable [QEGVAR(danger,boundToken), -1])) exitWith {};
 
-// update teams
-private _fnc_ready = {_x call FUNC(isAlive) && {!isPlayer _x} && {isNull objectParent _x} && {!(_x getVariable [QEGVAR(danger,disableAI), false])} && {(_x getVariable [QGVAR(survival), 0]) < time}};
-_fireTeam = _fireTeam select _fnc_ready;
-_assaultTeam = _assaultTeam select _fnc_ready;
-if (_fireTeam isEqualTo [] && {_assaultTeam isEqualTo []}) exitWith {};
+// update teams ~ the dead leave for good, a man looking after himself only for this cycle and rejoins after
+private _fnc_alive = {_x call FUNC(isAlive) && {!isPlayer _x} && {isNull objectParent _x} && {!(_x getVariable [QEGVAR(danger,disableAI), false])}};
+private _fnc_ready = {(_x getVariable [QGVAR(survival), 0]) < time};
+private _fireTeamAll = _fireTeam select _fnc_alive;
+private _assaultTeamAll = _assaultTeam select _fnc_alive;
+_fireTeam = _fireTeamAll select _fnc_ready;
+_assaultTeam = _assaultTeamAll select _fnc_ready;
+if (_fireTeamAll isEqualTo [] && {_assaultTeamAll isEqualTo []}) exitWith {};
 private _leader = leader _group;
 
 // one team left ~ it does both jobs, moving as the assault
@@ -324,4 +327,4 @@ _vehicles = _vehicles select {alive _x && {canFire _x} && {(effectiveCommander _
 } forEach _vehicles;
 
 // next cycle
-[{_this call FUNC(doGroupBound)}, [_group, _fireTeam, _assaultTeam, _posList, _target, _moving, _boundStart, _boundPositions, _vehicles, _token], CYCLE_TIME] call CBA_fnc_waitAndExecute;
+[{_this call FUNC(doGroupBound)}, [_group, _fireTeamAll, _assaultTeamAll, _posList, _target, _moving, _boundStart, _boundPositions, _vehicles, _token], CYCLE_TIME] call CBA_fnc_waitAndExecute;

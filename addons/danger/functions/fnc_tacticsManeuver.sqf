@@ -38,6 +38,9 @@
 #define SUPPORT_SPACING 5
 #define SHIFT_FIRE_DISTANCE 60
 #define PERIMETER_RADIUS 20
+#define CONSOLIDATE_OFFSET 35
+#define SECURITY_DISTANCE 45
+#define COUNTERATTACK_RANGE 150
 #define CLEAR_QUIET 30
 #define REACT_STRESS 0.5
 #define REACT_RANGE 150
@@ -154,6 +157,7 @@ private _state = createHashMapFromArray [
     ["dismountPos", _dismountPos],
     ["phaseTime", time],
     ["startTime", time],
+    ["startPos", _planFrom],
     ["endTime", time + _maxDuration],
     ["support", _support],
     ["assault", _assault],
@@ -231,7 +235,8 @@ private _handle = [{
                 private _taskDisabled = _x getVariable [QEGVAR(wp,disabledAI), []];
                 private _maneuverUnit = _x;
                 {if (!(_x in _taskDisabled)) then {_maneuverUnit enableAI _x;};} forEach ["SUPPRESSION", "TARGET", "AUTOTARGET", "AUTOCOMBAT"];
-                if (_result isNotEqualTo "completed") then {_x doFollow (leader _group);};
+                // a completed attack leaves the men where they consolidated, in cover, watching their sectors
+                if (_result isNotEqualTo "completed") then {_x doFollow (leader _group);} else {_x setUnitPos "DOWN";};
                 [_x] allowGetIn true;
             };
         } forEach _units;
@@ -639,29 +644,67 @@ private _handle = [{
                 if ((_state get "quietSince") < 0) then {_state set ["quietSince", time];};
                 if (time - (_state get "quietSince") > CLEAR_QUIET) then {
                     "consolidate" call _fnc_setPhase;
-                    // perimeter ~ sectors all round, facing out
+                    // the captured position is registered for the enemy's guns and rigged for his counterattack:
+                    // get off it. Consolidate 35 m to the side with the most cover, facing where the counterattack
+                    // will come from (the enemy's side of the objective), and post a pair further out to see it coming.
                     private _all = _assault + _support;
+                    private _threatDir = _picture get "threatDir";
+                    private _counterDir = if (_threatDir >= 0) then {_threatDir} else {(_state get "startPos") getDir _objective};
+                    private _counterOrigin = _objective getPos [COUNTERATTACK_RANGE, _counterDir];
+                    private _counterASL = (AGLToASL _counterOrigin) vectorAdd [0, 0, 1.5];
+                    private _best = _objective getPos [CONSOLIDATE_OFFSET, _counterDir + 180];
+                    private _bestScore = -1e9;
                     {
-                        private _bearing = _forEachIndex * (360 / count _all);
-                        private _spot = _objective getPos [PERIMETER_RADIUS, _bearing];
-                        private _empty = _spot findEmptyPosition [0, 5];
-                        if (_empty isNotEqualTo []) then {_spot = _empty;};
+                        private _candidate = _objective getPos [CONSOLIDATE_OFFSET, _counterDir + _x];
+                        if (!surfaceIsWater _candidate) then {
+                            private _cover = nearestTerrainObjects [_candidate, ["HOUSE", "WALL", "ROCK", "TREE", "BUSH", "HIDE", "FENCE"], 20, false, true];
+                            private _score = ((count _cover) min 6) + ([0, 3] select (terrainIntersectASL [(AGLToASL _candidate) vectorAdd [0, 0, 1], _counterASL])) - ([0, 2] select (isOnRoad _candidate));
+                            if (_score > _bestScore) then {_bestScore = _score; _best = _candidate;};
+                        };
+                    } forEach [180, 120, -120, 90, -90];
+                    _state set ["consolidatePos", _best];
+
+                    // security pair ~ the two riflemen nearest the enemy side, out towards the counterattack, in cover
+                    private _riflemen = _assault select {!(_x call EFUNC(main,isSupportGunner)) && {_x isNotEqualTo _leader}};
+                    if (count _riflemen < 2) then {_riflemen = _all select {_x isNotEqualTo _leader};};
+                    _riflemen = [_riflemen, [], {_x distance2D _counterOrigin}, "ASCEND"] call BIS_fnc_sortBy;
+                    private _security = _riflemen select [0, 2];
+                    private _opCentre = _objective getPos [SECURITY_DISTANCE, _counterDir];
+                    private _opSpots = [_opCentre, _counterOrigin, count _security, false, 20] call EFUNC(main,findDismountCover);
+                    {
+                        private _spot = (_opSpots param [_forEachIndex, [_opCentre, "DOWN"]]) select 0;
+                        _x setVariable [QGVAR(forceMove), true];
+                        _x setUnitPos "MIDDLE";
+                        _x doMove _spot;
+                        _x setVariable [QEGVAR(main,currentTask), "Security post", EGVAR(main,debug_functions)];
+                        [{params ["_unit", "_watch"]; if (_unit call EFUNC(main,isAlive)) then {_unit setUnitPos "DOWN"; _unit doWatch _watch;};}, [_x, _counterOrigin], 10 + random 4] call CBA_fnc_waitAndExecute;
+                    } forEach _security;
+
+                    // everyone else into cover around the consolidation position, sectors all round with the weight
+                    // of them looking the way the enemy will come
+                    private _rest = _all - _security;
+                    private _spots = [_best, _counterOrigin, count _rest, false, 30] call EFUNC(main,findDismountCover);
+                    {
+                        private _spot = (_spots param [_forEachIndex, [_best getPos [4 + _forEachIndex, _counterDir + 180], "DOWN"]]) select 0;
+                        // two thirds face the counterattack, the rest cover the flanks and the rear
+                        private _bearing = if (_forEachIndex % 3 isEqualTo 2) then {_counterDir + ([90, -90, 180] select (floor (_forEachIndex / 3) % 3))} else {_counterDir};
                         _x doMove _spot;
                         _x setUnitPos "MIDDLE";
                         _x setVariable [QEGVAR(main,currentTask), "Consolidating", EGVAR(main,debug_functions)];
-                        [{params ["_unit", "_spot", "_bearing"]; if (_unit call EFUNC(main,isAlive)) then {_unit doWatch (_spot getPos [50, _bearing]);};}, [_x, _spot, _bearing], 8 + random 4] call CBA_fnc_waitAndExecute;
-                    } forEach _all;
+                        [{params ["_unit", "_spot", "_bearing"]; if (_unit call EFUNC(main,isAlive)) then {_unit setUnitPos "DOWN"; _unit doWatch (_spot getPos [60, _bearing]);};}, [_x, _spot, _bearing], 8 + random 4] call CBA_fnc_waitAndExecute;
+                    } forEach _rest;
                     [_leader, "combat", "KeepFocused", 100] call EFUNC(main,doCallout);
                     if (_losses > 0) then {[{_this call EFUNC(main,doCallout)}, [_leader, "combat", "mandown", 100], 3] call CBA_fnc_waitAndExecute;};
-                    // carriers come up to the edge of the objective, still facing it
+                    // carriers pull back behind the consolidation position, hull towards the enemy side
                     {
-                        private _spot = _objective getPos [PERIMETER_RADIUS + 15 + (10 * _forEachIndex), _objective getDir _x];
+                        private _spot = _best getPos [25 + (12 * _forEachIndex), _counterDir + 180];
                         private _empty = _spot findEmptyPosition [0, 20, typeOf _x];
                         if (_empty isNotEqualTo []) then {_spot = _empty;};
                         (driver _x) doFollow _leader;
                         _x doMove _spot;
-                        _x doWatch _objective;
+                        _x doWatch _counterOrigin;
                     } forEach _vehicles;
+                    if (EGVAR(main,debug_functions)) then {["%1 MANEUVER %2: consolidating %3m off the objective, security %4m out towards %5", side _group, groupId _group, round (_best distance2D _objective), SECURITY_DISTANCE, round _counterDir] call EFUNC(main,debugLog);};
                 };
             } else {
                 _state set ["quietSince", -1];
@@ -677,7 +720,8 @@ private _handle = [{
                     [_group, _handle, _units, "completed"] call _fnc_end;
                     [_group, _vehicles] call EFUNC(main,doMountUp);
                 } else {
-                    [_group, "defend", _objective, 60] call FUNC(intentSet);
+                    // the ground to hold is where they consolidated, not the position they took
+                    [_group, "defend", _state getOrDefault ["consolidatePos", _objective], 60] call FUNC(intentSet);
                     [_group, _handle, _units, "completed"] call _fnc_end;
                 };
             };

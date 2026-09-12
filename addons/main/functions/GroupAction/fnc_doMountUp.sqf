@@ -19,6 +19,7 @@
  * Public: Yes
 */
 #define MOUNT_RANGE 300
+#define EMPTY_VEHICLE_RANGE 40
 
 params [["_group", grpNull, [grpNull, objNull]], ["_vehicles", [], [[]]]];
 
@@ -35,6 +36,13 @@ if (_vehicles isEqualTo []) then {
     } forEach ((nearestObjects [_leader, ["LandVehicle"], MOUNT_RANGE, true]) select {(_x getVariable [QGVAR(groupVehicle), grpNull]) isEqualTo _group});
 };
 _vehicles = _vehicles select {alive _x && {_x distance2D _leader < MOUNT_RANGE}};
+// nothing crewed: an empty truck or carrier parked next to the squad is theirs
+if (_vehicles isEqualTo []) then {
+    _vehicles = (nearestObjects [_leader, ["Car", "Tank", "Wheeled_APC_F"], EMPTY_VEHICLE_RANGE]) select {
+        alive _x && {canMove _x} && {(crew _x) isEqualTo []} && {locked _x < 2} && {(fullCrew [_x, "cargo"]) isNotEqualTo [] || {(_x emptyPositions "driver") > 0}}
+    };
+    _vehicles = _vehicles select [0, ((count (units _group)) / 4) max 1];
+};
 if (_vehicles isEqualTo []) exitWith {[]};
 
 // whoever is aboard stays aboard, even when nobody needs a seat

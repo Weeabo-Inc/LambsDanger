@@ -49,6 +49,8 @@
 params [["_heli", objNull, [objNull]], ["_lz", [], [[]]], ["_troops", [], [[]]], ["_exit", [], [[]]], ["_onDone", {}, [{}]]];
 
 if (isNull _heli || {!alive _heli} || {_lz isEqualTo []} || {!local _heli}) exitWith {false};
+// one set of hands on the controls at a time
+if (!isNil {_heli getVariable QGVAR(heliInsert)}) exitWith {false};
 private _pilot = driver _heli;
 if (isNull _pilot || {!alive _pilot}) exitWith {false};
 

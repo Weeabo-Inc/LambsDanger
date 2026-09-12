@@ -34,6 +34,13 @@ params [["_unit", objNull, [objNull]]];
 private _group = group _unit;
 if (_group call EFUNC(main,isDirected)) exitWith {false};
 
+// the reactive plan answers the first contact; once the commander has the group at engaged level it plans,
+// so two planners do not fight over the same men
+if (GVAR(commander) && {(([_group] call FUNC(pictureGet)) getOrDefault ["escalation", 0]) >= 2} && {_group in (missionNamespace getVariable [QGVAR(commanderGroups), []])}) exitWith {
+    _group setVariable [QGVAR(contact), time + 600];
+    false
+};
+
 // set variable
 _group setVariable [QGVAR(isExecutingTactic), true];
 _group setVariable [QGVAR(contact), time + 600];
