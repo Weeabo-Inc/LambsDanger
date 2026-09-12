@@ -58,10 +58,11 @@
 #define EMERGENCY_BACK 40
 #define EMERGENCY_SUPPORT 120
 #define EMERGENCY_TIMEOUT 15
-#define EMERGENCY_FAN_BACK 10
-#define EMERGENCY_FAN_WIDTH 20
 #define CRIPPLED_DAMAGE 0.7
-#define WRECK_CLEARANCE 25
+#define RALLY_DISTANCE 80
+#define RALLY_BACK 15
+#define RALLY_SPACING 4
+#define RALLY_TIMEOUT 35
 #define SUPPRESS_POSITIONS 10
 
 params ["_group", "_objective", ["_maxDuration", 420]];
@@ -478,54 +479,93 @@ private _handle = [{
             };
         };
 
-        // mechanized: troops out and behind the carrier, then fanned out left and right of it
-        // (after a contact: well clear of the carrier and into whatever cover is near, it draws the fire)
+        // mechanized: troops out and behind the carrier, then fanned out left and right of it.
+        // After a contact or a knocked-out carrier the whole element instead runs to one side, 80 m off the
+        // vehicle and its rockets and grenades, drops there, and carries the assault on from that rally point.
         case "dismount": {
             call _fnc_vehicleFire;
             private _lead = _vehicles param [0, objNull];
             private _emergency = _state getOrDefault ["emergency", false];
             private _anchor = if (isNull _lead) then {_state get "dismountPos"} else {getPosATL _lead};
-            // a wreck is left behind: the fan forms 25 m from it on the side away from the enemy
-            if (_state getOrDefault ["crippled", false]) then {
-                private _wreck = _state getOrDefault ["wreckPos", _anchor];
-                private _threat = _state getOrDefault ["threatPos", _objective];
-                _anchor = _wreck getPos [WRECK_CLEARANCE, _threat getDir _wreck];
-            };
+            if (_state getOrDefault ["crippled", false]) then {_anchor = _state getOrDefault ["wreckPos", _anchor];};
+            private _threat = _state getOrDefault ["threatPos", _objective];
             private _axis = _anchor getDir _objective;
             private _all = _assault + _support;
             private _onFoot = _all select {isNull objectParent _x};
+
+            // rally point ~ picked once: the side with more to hide behind and less of a view from the enemy
+            if (_emergency && {isNil {_state get "rallyPos"}}) then {
+                private _threatASL = (AGLToASL _threat) vectorAdd [0, 0, 1.5];
+                private _best = [];
+                private _bestScore = -1e9;
+                {
+                    private _candidate = (_anchor getPos [RALLY_DISTANCE, (_anchor getDir _threat) + _x]) getPos [RALLY_BACK, _threat getDir _anchor];
+                    private _cover = nearestTerrainObjects [_candidate, ["HOUSE", "WALL", "ROCK", "TREE", "BUSH", "HIDE", "FENCE"], 20, false, true];
+                    private _score = (count _cover min 5) + ([0, 3] select (terrainIntersectASL [(AGLToASL _candidate) vectorAdd [0, 0, 1], _threatASL])) - ([0, 2] select (isOnRoad _candidate)) + random 0.5;
+                    if (_score > _bestScore) then {_bestScore = _score; _best = _candidate;};
+                } forEach [90, -90];
+                private _empty = _best findEmptyPosition [0, 10];
+                if (_empty isNotEqualTo []) then {_best = _empty;};
+                _state set ["rallyPos", _best];
+                [_leader, "combat", "flank", 125] call EFUNC(main,doCallout);
+                if (EGVAR(main,debug_functions)) then {["%1 MANEUVER %2: rallying %3m off the carrier", side _group, groupId _group, round (_anchor distance2D _best)] call EFUNC(main,debugLog);};
+            };
+            if (_emergency) then {
+                _anchor = _state get "rallyPos";
+                _axis = _anchor getDir _objective;
+            };
+
             {
                 if (isNull objectParent _x) then {
                     private _slot = _all find _x;
                     private _sideSign = [1, -1] select ((_slot % 2) isEqualTo 1);
                     private _rank = floor (_slot / 2);
-                    // fan: alternate left and right of the carrier, a little ahead of it, prone
                     private _pos = if (_emergency) then {
-                        (_anchor getPos [EMERGENCY_FAN_BACK, _axis + 180]) getPos [EMERGENCY_FAN_WIDTH + (3 * _rank), _axis + (_sideSign * 90)]
+                        // tight cluster on the rally point, into cover where there is any
+                        private _spot = (_anchor getPos [2 * _rank, _axis + 180]) getPos [RALLY_SPACING * (_rank + 1), _axis + (_sideSign * 90)];
+                        private _cover = nearestTerrainObjects [_spot, ["HOUSE", "WALL", "ROCK", "TREE", "BUSH", "HIDE", "FENCE"], 10, false, true];
+                        if (_cover isNotEqualTo []) then {(_cover select 0) getPos [1.5, _threat getDir (_cover select 0)]} else {_spot}
                     } else {
+                        // fan: alternate left and right of the carrier, a little ahead of it, prone
                         (_anchor getPos [FAN_AHEAD, _axis]) getPos [FAN_WIDTH + (3 * _rank), _axis + (_sideSign * 90)]
-                    };
-                    if (_emergency) then {
-                        private _cover = nearestTerrainObjects [_pos, ["HOUSE", "WALL", "ROCK", "TREE", "BUSH", "HIDE", "FENCE"], 12, false, true];
-                        if (_cover isNotEqualTo []) then {_pos = (_cover select 0) getPos [1.5, _objective getDir (_cover select 0)];};
                     };
                     private _empty = _pos findEmptyPosition [0, 4];
                     if (_empty isNotEqualTo []) then {_pos = _empty;};
                     if (_x distance2D _pos > 3) then {
-                        _x setUnitPos "MIDDLE";
+                        // run for it: no stopping to shoot until on the rally point
+                        if (_emergency) then {
+                            _x disableAI "SUPPRESSION";
+                            _x disableAI "TARGET";
+                            _x disableAI "AUTOTARGET";
+                            _x doWatch objNull;
+                            _x setUnitPos "UP";
+                        } else {
+                            _x setUnitPos "MIDDLE";
+                        };
+                        _x forceSpeed -1;
                         _x doMove _pos;
                     } else {
+                        _x enableAI "SUPPRESSION";
+                        _x enableAI "TARGET";
+                        _x enableAI "AUTOTARGET";
                         _x setUnitPos "DOWN";
-                        _x doWatch _objective;
+                        _x doWatch _threat;
                     };
-                    _x setVariable [QEGVAR(main,currentTask), "Fanning out", EGVAR(main,debug_functions)];
+                    _x setVariable [QEGVAR(main,currentTask), ["Fanning out", "Running to the rally point"] select _emergency, EGVAR(main,debug_functions)];
                 } else {
                     _x action ["Eject", vehicle _x];
                 };
             } forEach _all;
-            private _fanWidth = [FAN_WIDTH, EMERGENCY_FAN_WIDTH] select _emergency;
-            private _fanned = count _onFoot isEqualTo count _all && {(_onFoot findIf {_x distance2D _anchor > _fanWidth + 15}) isEqualTo -1 && {(_onFoot findIf {_x distance2D _anchor < 4}) isEqualTo -1}};
-            if (_fanned || {time - (_state get "phaseTime") > FAN_TIMEOUT}) then {
+            private _fanWidth = [FAN_WIDTH, RALLY_SPACING * 3] select _emergency;
+            private _tooFar = (_onFoot findIf {_x distance2D _anchor > _fanWidth + 15}) isNotEqualTo -1;
+            private _stillAtVehicle = !_emergency && {(_onFoot findIf {_x distance2D _anchor < 4}) isNotEqualTo -1};
+            private _fanned = (count _onFoot) isEqualTo (count _all) && {!_tooFar} && {!_stillAtVehicle};
+            if (_fanned || {time - (_state get "phaseTime") > ([FAN_TIMEOUT, RALLY_TIMEOUT] select _emergency)}) then {
+                {
+                    _x enableAI "SUPPRESSION";
+                    _x enableAI "TARGET";
+                    _x enableAI "AUTOTARGET";
+                } forEach _onFoot;
                 // the carrier does not sit next to the infantry ~ it backs off to its fire position
                 if (_emergency) then {
                     {
