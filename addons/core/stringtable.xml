@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="hostis">
+    <Package name="Core">
+        <Key ID="STR_hostis_Core_Settings_ConfidenceFloor">
+            <English>Confidence floor</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ConfidenceFloor_ToolTip">
+            <English>Confidence never falls below this while the contact is remembered.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ConfidenceHalfLife">
+            <English>Confidence half-life (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ConfidenceHalfLife_ToolTip">
+            <English>Confidence in a contact halves every this many seconds without new evidence.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ContactMaxAge">
+            <English>Contact memory (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ContactMaxAge_ToolTip">
+            <English>A group forgets a contact this long after the last evidence. Until then it is "last known" and drives search.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_DebugCat">
+            <English>Debug</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_DebugPicture">
+            <English>Draw the picture on the map</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_DebugPicture_ToolTip">
+            <English>Every 5 seconds, one map marker per contact and one per threat centre for every HOSTIS group. For testing only.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_EngineReveal">
+            <English>Reveal reported contacts to the engine</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_EngineReveal_ToolTip">
+            <English>When a report arrives, reveal the reported unit to the receiving leader at knowledge 1 so his men look that way. Off until tested: the engine may raise it to the side's best knowledge instead.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ErrorCap">
+            <English>Position error cap (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ErrorCap_ToolTip">
+            <English>The circle never grows wider than this.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ErrorGrowth">
+            <English>Position error growth (m/s)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ErrorGrowth_ToolTip">
+            <English>How fast the circle around a moving contact's last known position grows. A contact last seen static grows five times slower.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_KnowledgeCat">
+            <English>Knowledge</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_LeaderlessFactor">
+            <English>Leaderless delay factor</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_LeaderlessFactor_ToolTip">
+            <English>Reports from a group that just lost its leader take this many times longer and are this many times likelier to be lost.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_LeaderlessTime">
+            <English>Leaderless time (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_LeaderlessTime_ToolTip">
+            <English>How long a group counts as leaderless after its leader falls.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_MergeRadius">
+            <English>Merge radius (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_MergeRadius_ToolTip">
+            <English>Reported contacts of one type this close together are treated as one contact.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_NetCat">
+            <English>Reports and radio net</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ReportDelay">
+            <English>Report delay (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ReportDelay_ToolTip">
+            <English>Base time before a contact report reaches another group.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ReportInterval">
+            <English>Report interval (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ReportInterval_ToolTip">
+            <English>A group sends its contacts at most this often.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ReportLossChance">
+            <English>Report loss chance</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ReportLossChance_ToolTip">
+            <English>Chance that a report never arrives. Tripled while the group has lost its leader, doubled while the sender is suppressed.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ReportSpeed">
+            <English>Report speed (m/s)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_ReportSpeed_ToolTip">
+            <English>One extra second of delay per this many metres between the groups.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_StoreCap">
+            <English>Contacts per group</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_StoreCap_ToolTip">
+            <English>Most contacts a group remembers. The weakest reported ones are dropped first.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_SweepRange">
+            <English>Sensor sweep range (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_SweepRange_ToolTip">
+            <English>How far the sweep asks the engine for targets the group's men have detected. It does not make them see further.</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_SweepUnits">
+            <English>Extra eyes per sweep</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_SweepUnits_ToolTip">
+            <English>How many men besides the leader, rotating, feed the picture each sweep.</English>
+        </Key>
+    </Package>
+</Project>

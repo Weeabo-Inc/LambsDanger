@@ -36,18 +36,19 @@ params [
 // functions ---
 
 private _fnc_rushOrders = {
-    params ["_group", "_target"];
+    params ["_group", "_target", "_targetPos"];
 
-    private _distance = (leader _group) distance _target;
+    private _distance = (leader _group) distance2D _targetPos;
+    private _seen = !isNull _target;
 
     // Helicopters -- suppress it!
-    if ((_distance < 200) && {(vehicle _target) isKindOf "Air"}) exitWith {
+    if (_seen && {_distance < 200} && {(vehicle _target) isKindOf "Air"}) exitWith {
         (units _group) commandSuppressiveFire _target;
     };
 
     // Tank -- hide or ready AT
     private _launcherUnits = [_group] call EFUNC(main,getLauncherUnits);
-    if ((_distance < 80) && {(vehicle _target) isKindOf "Tank"}) exitWith {
+    if (_seen && {_distance < 80} && {(vehicle _target) isKindOf "Tank"}) exitWith {
         {
             if (_x in _launcherUnits) then {
                 _x setUnitPos "MIDDLE";
@@ -61,10 +62,10 @@ private _fnc_rushOrders = {
         _group enableGunLights "forceOff";
     };
 
-    // adjust pos
+    // adjust pos ~ the believed position, not the man
     private _posMove = call {
-        private _posATL = getPosATL _target;
-        if ((insideBuilding _target) isEqualTo 1 || _distance < 20) exitWith {_posATL};
+        private _posATL = _targetPos;
+        if (_distance < 20 || {_seen && {(insideBuilding _target) isEqualTo 1}}) exitWith {_posATL};
         private _posEmpty = _posATL findEmptyPosition [0, 20, "O_MRAP_02_F"];
         if (_posEmpty isEqualTo []) exitWith {_posATL};
         _posEmpty
@@ -134,16 +135,16 @@ waitUntil {
     // cancelled by reset, cleanup or a newer task
     if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {true};
 
-    // find
-    private _target = [_group, _radius, _area, _pos, _onlyPlayers] call EFUNC(main,findClosestTarget);
+    // find ~ the group's own picture, never a scan of the map (FAIRNESS.md R4)
+    ([_group, _radius, _area, _pos] call HFUNC(core,contactNearest)) params ["_target", "_targetPos"];
 
     // act
-    if (isNull _target) then {
+    if (_targetPos isEqualTo []) then {
         sleep (_cycle * 4);
     } else {
-        [_group, _target] call _fnc_rushOrders;
-        if (EGVAR(main,debug_functions)) then { ["%1 taskRush: %2 targets %3 at %4M", side _group, groupId _group, name _target, floor (leader _group distance2D _target)] call EFUNC(main,debugLog); };
-        sleep (linearConversion [1000, 2000, (leader _group distance2D _target), _cycle, _cycle * 4, true]);
+        [_group, _target, _targetPos] call _fnc_rushOrders;
+        if (EGVAR(main,debug_functions)) then { ["%1 taskRush: %2 rushes %3 at %4M", side _group, groupId _group, ["a reported contact", name _target] select (!isNull _target), floor (leader _group distance2D _targetPos)] call EFUNC(main,debugLog); };
+        sleep (linearConversion [1000, 2000, (leader _group distance2D _targetPos), _cycle, _cycle * 4, true]);
     };
 
     // end

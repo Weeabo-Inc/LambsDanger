@@ -82,6 +82,41 @@ migrated into the layer addons per ADR-0008.
 `commanderReinforceRange`, `commanderMergeStrays`, `zeusWaypointDiscipline`,
 `zeusWaypointTimeout`, `aggression`, `dodgeCooldown`.
 
+## Milestone 2: layer 0, the knowledge model (`hostis_core`)
+
+- The group combat picture is now a contact store owned by `hostis_core`
+  ([docs/systems/knowledge.md](systems/knowledge.md)): records carry source, error radius,
+  confidence, strength, type, heading, activity, death and report chain; confidence decays
+  to a floor and error grows, so a contact becomes "last known" instead of vanishing after
+  90 s. `lambs_danger_fnc_pictureGet`, `pictureUpdate` and `pictureContacts` forward to it and
+  keep their signatures; contact records keep `select 0..3` compatible.
+- The sensor sweep (`hostis_core_fnc_contactSweep`) is the only code that asks the engine
+  where an enemy is, and it takes the engine's own error margin.
+- Information sharing is a modelled net: `lambs_main_fnc_doShareInformation` files the
+  sighting and calls `hostis_core_fnc_netSend`, which delays by distance, may lose the
+  report, widens the error, strips the enemy object and delivers to the receiving group's
+  owner. A group that lost its leader reports three times slower and lossier. Reports no
+  longer `reveal` at `lambs_main_maxRevealValue`; that setting now has no effect. A new
+  `hostis_core_engineReveal` setting (off) allows `reveal` at accuracy 1 only.
+- Deaths enter the picture from the DeadBody danger causes, not from `alive`.
+- The commander sweeps and reports every think; a report from another group puts a group
+  on alert but never makes it "engaged".
+- `taskHunt`, `taskRush` and `taskCreep` take their target from the group's own picture
+  (`hostis_core_fnc_contactNearest`) instead of scanning `allUnits`; the "players only"
+  option of their modules and functions is accepted and ignored.
+- The Zeus Diagnose report gains a Knowledge section; the `hostis_core_debugPicture`
+  setting draws every group's picture as map markers.
+- Deleted (ADR-0006, hostile only): the client keybinds for player-group AI, the settings
+  `lambs_danger_disableAIPlayerGroup`, `lambs_danger_disableAIPlayerGroupReaction`,
+  `lambs_main_disablePlayerGroupSuppression` and `lambs_main_debug_FSM_civ` (CBA logs an
+  unknown-setting line if a server config still names them), the civilian danger FSM and
+  its `Civilian_F` binding, and the dead functions `findClosestTarget`, `findCover`,
+  `doReposition`, `doAssaultCQB`, `brainAdjust`, `tacticsProfiles`, `tacticsCQB`,
+  `fsmAllowAnimation`, plus the pre-2.5.0 `lambs_danger_On*` event mirrors.
+- CI: `tools/fairness_check.py` fails on any restricted command not listed in
+  `tools/fairness_allow.txt`; the stringtable tools accept the `hostis` project name.
+- Test: `tests/knowledge.Stratis`.
+
 ## Documentation (milestone 1)
 
 - `docs/RESEARCH.md`, `docs/UPSTREAM-MAP.md` with `docs/map/*`, `docs/FAIRNESS.md`,

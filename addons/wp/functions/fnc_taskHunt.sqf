@@ -91,23 +91,23 @@ waitUntil {
     // cancelled by reset, cleanup or a newer task
     if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {true};
 
-    // find
-    private _target = [_group, _radius, _area, _pos, _onlyPlayers] call EFUNC(main,findClosestTarget);
+    // find ~ the group's own picture: what it has seen or been told, never a scan of the map (FAIRNESS.md R4)
+    ([_group, _radius, _area, _pos] call HFUNC(core,contactNearest)) params ["_target", "_targetPos"];
 
     // settings
     private _combat = (behaviour (leader _group)) isEqualTo "COMBAT";
     private _onFoot = isNull (objectParent (leader _group));
 
     // give orders
-    if (!isNull _target) then {
-        _group move (_target getPos [random (linearConversion [50, 1000, (leader _group) distance2D _target, 25, 300, true]), random 360]);
-        _group setFormDir ((leader _group) getDir _target);
+    if (_targetPos isNotEqualTo []) then {
+        _group move (_targetPos getPos [random (linearConversion [50, 1000, (leader _group) distance2D _targetPos, 25, 300, true]), random 360]);
+        _group setFormDir ((leader _group) getDir _targetPos);
         _group setSpeedMode "NORMAL";
         _group enableGunLights "forceOn";
         _group enableIRLasers true;
 
         // debug
-        if (EGVAR(main,debug_functions)) then {["%1 taskHunt: %2 targets %3 at %4M", side _group, groupId _group, name _target, floor (leader _group distance2D _target)] call EFUNC(main,debugLog);};
+        if (EGVAR(main,debug_functions)) then {["%1 taskHunt: %2 hunts %3 at %4M", side _group, groupId _group, ["a reported contact", name _target] select (!isNull _target), floor (leader _group distance2D _targetPos)] call EFUNC(main,debugLog);};
 
         // flare
         if (!_combat && _onFoot && {RND(0.8)}) then { [leader _group] call _fnc_flare; };

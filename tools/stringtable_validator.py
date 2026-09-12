@@ -16,7 +16,8 @@ import xml.etree.ElementTree as ET
 
 
 ######## GLOBALS #########
-PROJECT_NAME = "Lambs"
+# HOSTIS: the compatibility addons keep the Lambs project name, the layer addons use hostis
+PROJECT_NAMES = ["Lambs", "hostis"]
 ##########################
 
 
@@ -36,8 +37,9 @@ def check_stringtable(filepath):
         print("  ERROR: Invalid root tag '{}' found, must be 'Project'.".format(root.tag))
         errors += 1
 
-    if root.get("name") != PROJECT_NAME:
-        print("  ERROR: Invalid name attribute '{}' for Project tag, must be '{}'.".format(root.get("name"), PROJECT_NAME))
+    project_name = root.get("name")
+    if project_name not in PROJECT_NAMES:
+        print("  ERROR: Invalid name attribute '{}' for Project tag, must be one of {}.".format(project_name, PROJECT_NAMES))
         errors += 1
 
     # Verify that the root has a Package tag and its name attribute matches the component's folder name
@@ -64,7 +66,7 @@ def check_stringtable(filepath):
             keys.extend(container.findall("Key"))
 
         key_ids = []
-        key_prefix = "STR_{}_{}_".format(PROJECT_NAME, package_name)
+        key_prefix = "STR_{}_{}_".format(project_name, package_name)
 
         for key in keys:
             key_id = key.get("ID")

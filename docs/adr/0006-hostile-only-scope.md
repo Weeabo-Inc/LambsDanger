@@ -25,9 +25,10 @@ does not need, and some are dangerous here (a HOSTIS group must never obey a pla
   5. Any group containing a player, `playableUnits` member or `switchableUnits` member.
   6. Civilian side, always.
 - There is no opt-in for a player's side. No setting enables it.
-- Upstream player-facing code (`disableAIPlayerGroup*`, callouts to a player leader,
-  civilian brains) is deleted, not disabled, in milestone 2. The upstream setting names are
-  kept as no-ops for one release so `cba_settings.sqf` files do not error.
+- Upstream player-facing code (`disableAIPlayerGroup*`, the client keybinds, civilian
+  brains) is deleted, not disabled, in milestone 2. The setting declarations go with it: CBA
+  logs one line for an unknown key in a server's `cba_settings.sqf` and carries on, so no
+  no-op shims are kept. (Amended at milestone 2; the original text kept them one release.)
 
 ## Consequences
 

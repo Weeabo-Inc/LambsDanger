@@ -109,24 +109,6 @@
             <German>Debug</German>
             <Chinesesimp>Debug</Chinesesimp>
         </Key>
-        <Key ID="STR_Lambs_Main_Settings_DebugCiv">
-            <English>Debug Civ</English>
-            <Czech>Ladění Civilistů</Czech>
-            <Italian>Debug Civile</Italian>
-            <Polish>Debug Civ</Polish>
-            <Russian>Отладка Civ</Russian>
-            <German>Debug Zivilisten</German>
-            <Chinesesimp>Debug平民</Chinesesimp>
-        </Key>
-        <Key ID="STR_Lambs_Main_Settings_DebugCiv_ToolTip">
-            <English>Shows FSM debug messages for civilians</English>
-            <Czech>Zobrazí FSM ladící zprávy pro civilisty</Czech>
-            <Italian>Mostra i messaggi di debug FSM per i civili</Italian>
-            <Polish>Pokazuje komunikaty debugowania FSM dla cywilów</Polish>
-            <Russian>Показывает отладочные сообщения FSM для гражданских</Russian>
-            <German>Zeigt FSM Debug-Meldungen für Zivilisten</German>
-            <Chinesesimp>显示针对平民的FSM的Debug消息</Chinesesimp>
-        </Key>
         <Key ID="STR_Lambs_Main_Settings_DebugDraw">
             <English>Debug Draw</English>
             <Czech>Ladění vykreslování</Czech>
@@ -288,24 +270,6 @@
             <Russian>Вкл/Выкл обмен информацией между юнитами</Russian>
             <German>Schaltet das Teilen von Informationen zwischen Einheiten aus.</German>
             <Chinesesimp>切换单位之间的信息共享</Chinesesimp>
-        </Key>
-        <Key ID="STR_Lambs_Main_Settings_DisableSuppressionPlayerGroup">
-            <English>Disable suppression from player group</English>
-            <Czech>Vypne potlačovací palbu pro hráčskou skupinu</Czech>
-            <Italian>Disabilita la soppressione dal gruppo di giocatori</Italian>
-            <Polish>Wyłącz ogień zaporowy dla grupy gracza</Polish>
-            <Russian>Отключить подавление огнем  для группы игрока</Russian>
-            <German>Unterdrückungsfeuer für Spielergruppe deaktivieren</German>
-            <Chinesesimp>禁止小组火力压制</Chinesesimp>
-        </Key>
-        <Key ID="STR_Lambs_Main_Settings_DisableSuppressionPlayerGroup_ToolTip">
-            <English>Toggle autonomous suppression for units in player group</English>
-            <Czech>Přepne samostatnou potlačovací palbu pro jednotky v hráčské skupině</Czech>
-            <Italian>Attiva/disattiva la soppressione autonoma per le unità nel gruppo di giocatori</Italian>
-            <Polish>Przełącza autonomiczny ogień zaporowy dla jednostek w grupie gracza</Polish>
-            <Russian>Включить автономное подавление для юнитов в группе игрока</Russian>
-            <German>Autonomes Unterdrückungsfeuer für Einheiten der Spielergruppe umschalten</German>
-            <Chinesesimp>为玩家组中的单位切换自动火力压制</Chinesesimp>
         </Key>
         <Key ID="STR_Lambs_Main_Settings_IndoorMove">
             <English>Indoor Move Chance</English>

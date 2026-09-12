@@ -41,8 +41,11 @@ if (isNull _group || {!local _group}) exitWith {"gone"};
 private _leader = leader _group;
 if (isPlayer _leader || {!(_leader call EFUNC(main,isAlive))}) exitWith {"no leader"};
 
+// the men's own eyes feed the picture every think, and what is fresh goes out over the net
+private _picture = [_group] call HFUNC(core,contactSweep);
+[_group] call HFUNC(core,netSend);
+
 // the level is kept current even while somebody else runs the group ~ the side board reads it
-private _picture = [_group] call FUNC(pictureGet);
 private _intent = [_group] call FUNC(intentGet);
 _intent params ["_mode", "_objective", "_radius", "_posture", "", "_home"];
 private _level = [_group, _picture] call FUNC(commanderEscalation);

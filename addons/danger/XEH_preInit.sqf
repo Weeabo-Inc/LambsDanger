@@ -43,11 +43,13 @@ if (isNil QGVAR(dangerUntil)) then {
                 && {!(_x call EFUNC(main,isDirected))}
             ) then {
                 
-                // get pos of enemy if available
+                // the helper gets the reporter's belief, widened by the reporter's own error and the distance (FAIRNESS.md R4)
                 private _pos = [getPosASL _unit, (_unit targetKnowledge _target) select 6] select (_unit knowsAbout _target > 1.5);
 
                 // check for zero pos
                 if (_pos isEqualTo [0, 0, 0]) then {_pos = getPosASL _unit;};
+                private _error = (((_unit targetKnowledge _target) param [5, 25]) max 10) + 0.02 * (_unit distance2D _leader);
+                _pos = _pos getPos [random _error, random 360];
                 
                 // find free space
                 private _adjustPos = _pos findEmptyPosition [5, 35, "Land_BagBunker_Large_F"];

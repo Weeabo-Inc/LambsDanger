@@ -7,7 +7,20 @@ const xml = require("xml2js");
 const core = require('@actions/core');
 
 
-const PREFIX = "Lambs";
+// HOSTIS: the compatibility addons keep the Lambs prefix, the layer addons (whose
+// $PBOPREFIX$ is under z\hostis) use hostis
+const prefixCache = {};
+function prefixFor(module) {
+    if (!(module in prefixCache)) {
+        var prefix = "Lambs";
+        try {
+            var pboPrefix = fs.readFileSync(path.join("addons", module, "$PBOPREFIX$")).toString().toLowerCase();
+            if (pboPrefix.indexOf("\\hostis\\") !== -1) prefix = "hostis";
+        } catch (e) {}
+        prefixCache[module] = prefix;
+    }
+    return prefixCache[module];
+}
 
 var running = 0;
 var failedCount = 0;
@@ -63,9 +76,9 @@ function CheckStringtables() {
 
             var strName;
             if (match[1]) {
-                strName = `STR_${PREFIX}_${data.module}_${match[2]}`
+                strName = `STR_${prefixFor(data.module)}_${data.module}_${match[2]}`
             } else if (match[4] && match[5]) {
-                strName = `STR_${PREFIX}_${match[4]}_${match[5]}`
+                strName = `STR_${prefixFor(match[4])}_${match[4]}_${match[5]}`
             }
             if (!strName) continue;
 

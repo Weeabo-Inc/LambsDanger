@@ -7,8 +7,8 @@ Acceptance test, Performance budget, Fairness review.
 
 | Brief § | System | Note | Milestone | Status |
 |---|---|---|---|---|
-| 3.1 | Knowledge model | `knowledge.md` | 2 | not started |
-| 3.2 | Perception honesty | [`../FAIRNESS.md`](../FAIRNESS.md) | 2 | contract written, CI check pending |
+| 3.1 | Knowledge model | [`knowledge.md`](knowledge.md) | 2 | built in `hostis_core`; acceptance test `tests/knowledge.Stratis` awaiting a run |
+| 3.2 | Perception honesty | [`../FAIRNESS.md`](../FAIRNESS.md) | 2 | contract enforced by `tools/fairness_check.py` in CI; known breaches ledgered in `tools/fairness_allow.txt` |
 | 3.3 | Morale, suppression, cohesion | `morale.md` | 3 | not started (upstream stress and this fork's escalation exist; see map) |
 | 3.4 | Dynamic tactical position selection | `positions.md` | 3 | seeded by `lambs_main_fnc_findPositions` (see ADR-0010) |
 | 3.5 | Squad tactics | `tactics.md` | 4 | seeded by `lambs_danger_fnc_tactics*` (see ADR-0008) |

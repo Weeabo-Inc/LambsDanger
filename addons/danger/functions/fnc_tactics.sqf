@@ -17,11 +17,6 @@
 */
 params [["_unit", objNull, [objNull]], ["_target", objNull, [objNull]]];
 
-// CQB mode ~ disabled awaiting polish ~ nkenny
-//if (formation _unit in GVAR(cqb_formations)) exitWith {
-//    _unit call FUNC(tacticsCQB);
-//};
-
 private _group = group _unit;
 
 // check if group AI disabled
@@ -31,11 +26,8 @@ if (_group getVariable [QGVAR(disableGroupAI), false]) exitWith {false};
 private _contactState = _group getVariable [QGVAR(contact), 0];
 if (_contactState < time) exitWith {[_unit, _target] call FUNC(contact)};
 
-// ai profiles ~ here is where AI profiles will be extrapolated - nkenny
-// if (_unit call FUNC(tacticsProfiles)) exitWith {true};
-
 // Leader assessment ~ not while a Zeus directs the group
-if (!isPlayer (leader _unit) && {!(_group call EFUNC(main,isDirected))}) then {_unit call FUNC(tacticsAssess);};
+if (!(_group call EFUNC(main,isDirected))) then {_unit call FUNC(tacticsAssess);};
 
 // end
 true

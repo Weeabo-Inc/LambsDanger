@@ -71,34 +71,7 @@ GVAR(debug_TextFactor) = linearConversion [0.55, 0.7, getResolution select 5, 1,
     [_this select 1, QGVAR(OnFleeing), _this] call BIS_fnc_callScriptedEventHandler;
 }] call CBA_fnc_addEventHandler;
 
-/*
-    Moved Event Wrappers
-    Moved in v2.5.0
-    Removed with v2.7.0???
-*/
-[QGVAR(OnCheckBody), {
-    [_this select 0, QEGVAR(danger,OnCheckBody), _this] call BIS_fnc_callScriptedEventHandler;
-    [_this select 1, QEGVAR(danger,OnCheckBody), _this] call BIS_fnc_callScriptedEventHandler;
-    [QEGVAR(danger,OnCheckBody), _this] call CBA_fnc_localEvent;
-}] call CBA_fnc_addEventHandler;
-
-[QGVAR(OnPanic), {
-    [_this select 0, QEGVAR(danger,OnPanic), _this] call BIS_fnc_callScriptedEventHandler;
-    [_this select 1, QEGVAR(danger,OnPanic), _this] call BIS_fnc_callScriptedEventHandler;
-    [QEGVAR(danger,OnPanic), _this] call CBA_fnc_localEvent;
-}] call CBA_fnc_addEventHandler;
-
-[QGVAR(OnInformationShared), {
-    [_this select 0, QEGVAR(danger,OnInformationShared), _this] call BIS_fnc_callScriptedEventHandler;
-    [_this select 1, QEGVAR(danger,OnInformationShared), _this] call BIS_fnc_callScriptedEventHandler;
-    [QEGVAR(danger,OnInformationShared), _this] call CBA_fnc_localEvent;
-}] call CBA_fnc_addEventHandler;
-
-[QGVAR(OnFleeing), {
-    [_this select 0, QEGVAR(danger,OnFleeing), _this] call BIS_fnc_callScriptedEventHandler;
-    [_this select 1, QEGVAR(danger,OnFleeing), _this] call BIS_fnc_callScriptedEventHandler;
-    [QEGVAR(danger,OnFleeing), _this] call CBA_fnc_localEvent;
-}] call CBA_fnc_addEventHandler;
+// The pre-2.5.0 lambs_danger_On* event mirrors are gone; use the lambs_main_On* events.
 
 [QGVAR(doSwitchMove), {
     params [["_unit", objNull], ["_move", ""]];

@@ -24,7 +24,6 @@ if (
     (primaryWeapon _unit) isEqualTo ""
     || (currentCommand _unit) isEqualTo "Suppress"
     || terrainIntersectASL [_eyePos, _pos]
-    || (isPlayer (leader _unit) && GVAR(disablePlayerGroupSuppression))
     || {_checkLOS && {!([_unit, _pos, false] call FUNC(shouldSuppressPosition))}}
 ) exitWith {false};
 

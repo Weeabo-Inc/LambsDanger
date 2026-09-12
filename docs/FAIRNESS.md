@@ -84,9 +84,11 @@ Every pull request that touches `addons/` answers these in its description:
 5. Is the behaviour explicable in one sentence to a player after it killed them? Write the
    sentence in the PR.
 
-CI enforces the mechanical part: `tools/fairness_check.py` (to be added in milestone 2)
-greps `addons/` below the Director layer for the commands in items 1 to 3 and fails on any
-occurrence outside an allow-list file.
+CI enforces the mechanical part: `tools/fairness_check.py` scans every `.sqf` and `.fsm`
+under `addons/` (the debug folders excepted) for the commands in items 1 to 3 and fails on
+any occurrence not listed in `tools/fairness_allow.txt`. The allow list is the ledger: one
+line per file and command with the guard that makes it honest, or a `TODO milestone n`
+reason for a known breach. Adding a line is a review decision, not a formality.
 
 ## 3. Audit of the current tree
 
@@ -101,8 +103,8 @@ exact-state reads that are easy to route through the picture.
 
 | Where | What it does | Rule | Fix |
 |---|---|---|---|
-| `main/fnc_findClosestTarget.sqf:24,33-40` | Scans `allUnits` or `switchableUnits + playableUnits` (default players only) by side and distance, no knowledge check, returns the nearest by exact position | R1, R4 | milestone 2: deleted; `taskHunt`, `taskRush`, `taskCreep` take an area from the contact store or a Director intent |
-| `wp/fnc_taskCreep.sqf` | `reveal`s the target found above | R1 | milestone 2, with the above |
+| `main/fnc_findClosestTarget.sqf:24,33-40` | Scanned `allUnits` or `switchableUnits + playableUnits` (default players only) by side and distance, no knowledge check, returned the nearest by exact position | R1, R4 | **done, milestone 2**: deleted; `taskHunt`, `taskRush`, `taskCreep` take the best contact from the group's own picture (`hostis_core_fnc_contactNearest`) |
+| `wp/fnc_taskCreep.sqf` | `reveal`ed the target found above | R1 | **done, milestone 2** |
 | `wp/fnc_taskHunt.sqf` | `createVehicle`s an `F_20mm_Red` flare 200 m up when nobody has a UGL | R5 | milestone 2: flare only from a real UGL round |
 | `wp/fnc_taskCQB.sqf` | Teleports a stuck man 3.5 m when no player is within 50 m | R5 | milestone 4: on `unitOrder`, no teleport |
 | `main/UnitAction/fnc_doUGL.sqf:92` | `addMagazine (currentMagazine _unit)` nets one free magazine | R5 | milestone 3: load the flare on the muzzle directly |
@@ -111,11 +113,11 @@ exact-state reads that are easy to route through the picture.
 | `danger/fnc_tacticsAssess.sqf:91-224` | Exact `distance2D`, `getPos`, `eyePos`, `nearestObjects` around real enemies drive plan branches | R1 | milestone 4: folded into the commander, which reads the picture only |
 | `danger/fnc_brainVehicle.sqf:76,208,225,289,302` | Exact distance and `eyePos` of `_dangerCausedBy` in crew decisions | R1 | milestone 3 (LOS booleans may stay; distances go through the picture) |
 | `danger/fnc_contact.sqf:50` | `setFormDir (_unit getDir _enemy)`, an exact bearing | R1 | milestone 3: bearing to `getHideFrom` |
-| `danger/fnc_pictureUpdate.sqf:59`, `fnc_pictureContacts.sqf:26` | `alive` filter on contacts, instant death knowledge | R1 | milestone 2: death is a report like any other |
+| `danger/fnc_pictureUpdate.sqf:59`, `fnc_pictureContacts.sqf:26` | `alive` filter on contacts, instant death knowledge | R1 | **done, milestone 2**: deaths enter through `hostis_core_fnc_contactDeath` from the DeadBody causes |
 | `danger/fnc_tacticsReinforce.sqf:83-91` | Claims nearby empty vehicles into the group (`addVehicle`) | R5 | milestone 5: vehicle release is a Director grant |
 | `wp/fnc_moduleTarget.sqf`, `ZEN/fnc_setTarget.sqf` | A Dynamic Target `attachTo` a unit feeds that unit's exact position to assault, CQB and camp | R4 | milestone 6: static targets only |
-| `danger/XEH_preInit.sqf:47` | Shares the reporter's own `targetKnowledge` estimate verbatim to other groups | R4 | milestone 2: receiver adds error and delay |
-| `main/fnc_doShareInformation.sqf` | Engine `reveal` to nearby friendly leaders (value capped, so compliant today) | R4 | milestone 2: becomes a `contactReport` with error radius; `reveal` capped at 1 |
+| `danger/XEH_preInit.sqf:47` | Shared the reporter's own `targetKnowledge` estimate verbatim to other groups | R4 | **done, milestone 2**: the reinforce position is jittered by the reporter's error plus 2% of the distance |
+| `main/fnc_doShareInformation.sqf` | Engine `reveal` to nearby friendly leaders | R4 | **done, milestone 2**: files the sighting and calls `hostis_core_fnc_netSend`; `reveal` only at accuracy 1 behind `hostis_core_engineReveal` (off) |
 
 ### Compliant today
 

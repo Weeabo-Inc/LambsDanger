@@ -98,6 +98,9 @@ _lines pushBack format ["Last tactic %1 %2 | executing %3 | plan %4 | air %5",
     ["-", _maneuver getOrDefault ["phase", "?"]] select (!isNil "_maneuver"),
     ["-", _airTask getOrDefault ["phase", "?"]] select (!isNil "_airTask")
 ];
+// what the group believes about the enemy (hostis_core)
+_lines pushBack "<t color='#FFAA00'>Knowledge</t>";
+_lines append ([_group, 6] call HFUNC(core,pictureReport));
 _lines pushBack "<t color='#FFAA00'>Units</t>";
 
 // unit lines

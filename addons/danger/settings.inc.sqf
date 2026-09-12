@@ -1,23 +1,6 @@
 private _curCat = ELSTRING(main,Settings_MainCat);
-// Toggle advanced danger.fsm features on player group
-[
-    QGVAR(disableAIPlayerGroup),
-    "CHECKBOX",
-    [LSTRING(Settings_DisableDangerFSM), LSTRING(Settings_DisableDangerFSM_ToolTip)],
-    [COMPONENT_NAME, _curCat],
-    false,
-    0         // players may configure their own preferences
-] call CBA_fnc_addSetting;
-
-// Toggle reaction state danger.fsm features on player group
-[
-    QGVAR(disableAIPlayerGroupReaction),
-    "CHECKBOX",
-    [LSTRING(Settings_DisableReactPlayerGroup), LSTRING(Settings_DisableReactPlayerGroup_ToolTip)],
-    [COMPONENT_NAME, _curCat],
-    false,
-    0
-] call CBA_fnc_addSetting;
+// The upstream player-group settings (disableAIPlayerGroup, disableAIPlayerGroupReaction)
+// are gone: HOSTIS never runs a player's group (ADR-0006).
 
 // Toggles group manoevure phase initiated by AI squad leader
 [

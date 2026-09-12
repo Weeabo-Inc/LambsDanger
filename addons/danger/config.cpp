@@ -5,7 +5,7 @@ class CfgPatches {
         units[] = {QGVAR(SetRadio), QGVAR(DisableAI), QGVAR(ConfigureGroupAI), QGVAR(DirectedMove), QGVAR(Diagnose), QGVAR(Posture)};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"lambs_main"};
+        requiredAddons[] = {"lambs_main", "hostis_core"};
         author = ECSTRING(main,Team);
         VERSION_CONFIG;
     };

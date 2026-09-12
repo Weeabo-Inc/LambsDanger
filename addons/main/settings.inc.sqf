@@ -63,16 +63,6 @@ private _curCat = LSTRING(Settings_MainCat);
 // debug
 _curCat = LSTRING(Settings_SuppressionCat);
 
-// Toggle advanced danger.fsm features on player group
-[
-    QGVAR(disablePlayerGroupSuppression),
-    "CHECKBOX",
-    [LSTRING(Settings_DisableSuppressionPlayerGroup), LSTRING(Settings_DisableSuppressionPlayerGroup_ToolTip)],
-    [COMPONENT_NAME, _curCat],
-    false,
-    0
-] call CBA_fnc_addSetting;
-
 // Minimum range for suppression
 [
     QGVAR(minSuppressionRange),
@@ -203,16 +193,6 @@ _curCat = LSTRING(Settings_Debug);
     QGVAR(debug_functions),
     "CHECKBOX",
     [LSTRING(Settings_DebugFunctions), LSTRING(Settings_DebugFunctions_ToolTip)],
-    [COMPONENT_NAME, _curCat],
-    false,
-    1
-] call CBA_fnc_addSetting;
-
-// FSM level debug messages for civilian fsm
-[
-    QGVAR(debug_FSM_civ),
-    "CHECKBOX",
-    [LSTRING(Settings_DebugCiv), LSTRING(Settings_DebugCiv_ToolTip)],
     [COMPONENT_NAME, _curCat],
     false,
     1

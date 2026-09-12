@@ -1,0 +1,77 @@
+# HOSTIS fairness allow list (docs/FAIRNESS.md section 2, tools/fairness_check.py)
+# <path>|<command>|<reason>
+# A reason starting with TODO is a known breach and names the milestone that removes it.
+#
+# R1: the group may only look at, target or fire on what its own sensors gave it.
+addons/core/XEH_preInit.sqf|reveal|receiver-side suspicion at accuracy 1 only, guarded by knowsAbout < 1 and the engineReveal setting
+addons/danger/functions/fnc_brainForced.sqf|doWatch|watches the danger position the FSM handed the unit
+addons/danger/functions/fnc_brainHide.sqf|doWatch|watches the scream or body position the FSM handed the unit
+addons/danger/functions/fnc_brainVehicle.sqf|doWatch|watches getHideFrom of a target the crew already knows
+addons/danger/functions/fnc_commanderGroup.sqf|doTarget|doTarget on a contact object from the group's own picture (seen)
+addons/danger/functions/fnc_commanderGroup.sqf|doWatch|watches the picture's threat centre
+addons/danger/functions/fnc_directedMoveWatchdog.sqf|doWatch|watches the Zeus waypoint direction
+addons/danger/functions/fnc_tacticsAssault.sqf|doWatch|watches the assault position from the picture
+addons/danger/functions/fnc_tacticsAssess.sqf|doWatch|watches getHideFrom of a target from the leader's own targets
+addons/danger/functions/fnc_tacticsAttack.sqf|doFire|TODO milestone 4: tactic deleted (engine attack on a real object)
+addons/danger/functions/fnc_tacticsAttack.sqf|doTarget|TODO milestone 4: tactic deleted
+addons/danger/functions/fnc_tacticsAttack.sqf|doWatch|TODO milestone 4: tactic deleted
+addons/danger/functions/fnc_tacticsBound.sqf|doWatch|watches the bound objective from the picture
+addons/danger/functions/fnc_tacticsHide.sqf|doFire|launcher men fire on armour from the leader's own targets [true, 600]
+addons/danger/functions/fnc_tacticsHide.sqf|doTarget|launcher men target armour from the leader's own targets [true, 600]
+addons/danger/functions/fnc_tacticsHide.sqf|doWatch|watches the threat position from the picture
+addons/danger/functions/fnc_tacticsManeuver.sqf|doWatch|watches objective and picture positions during the deliberate attack
+addons/danger/functions/fnc_unitCycle.sqf|doWatch|watches the sector or threat position held in the soldier machine record
+addons/danger/functions/fnc_unitRelease.sqf|doWatch|doWatch objNull to release the man's gaze
+addons/danger/functions/fnc_unitThink.sqf|doWatch|watches the position the machine chose for the man
+addons/eventhandlers/functions/fnc_explosionEH.sqf|doWatch|watches the explosion position the engine event gave the unit
+addons/main/functions/GroupAction/fnc_doGroupBound.sqf|doWatch|watches the bound objective
+addons/main/functions/GroupAction/fnc_doGroupCommandoDeploy.sqf|doWatch|watches the deployment position
+addons/main/functions/GroupAction/fnc_doGroupFlank.sqf|doWatch|watches the flank objective from the picture
+addons/main/functions/GroupAction/fnc_doGroupStaticDeploy.sqf|doWatch|watches findNearestEnemy (engine knowledge) or the deployment position
+addons/main/functions/GroupAction/fnc_doGroupStaticFind.sqf|doWatch|watches the static weapon to man
+addons/main/functions/GroupAction/fnc_doGroupStaticPack.sqf|doWatch|watches the gunner to pack with
+addons/main/functions/GroupAction/fnc_doGroupSuppress.sqf|doWatch|watches the suppression position from the picture
+addons/main/functions/GroupAction/fnc_doTeamMove.sqf|doWatch|watches the route direction
+addons/main/functions/UnitAction/fnc_doAssault.sqf|doWatch|watches getHideFrom of a target the unit already has
+addons/main/functions/UnitAction/fnc_doCallArtillery.sqf|doWatch|watches the fire mission position the caller chose from its own picture
+addons/main/functions/UnitAction/fnc_doCasualtyDrag.sqf|doWatch|watches the casualty and the cover position
+addons/main/functions/UnitAction/fnc_doCheckBody.sqf|doWatch|watches the body being checked
+addons/main/functions/UnitAction/fnc_doGrenade.sqf|doWatch|watches the grenade target position the caller already holds
+addons/main/functions/UnitAction/fnc_doLauncherFire.sqf|doWatch|watches the launcher target position the caller already holds
+addons/main/functions/UnitAction/fnc_doSmoke.sqf|doWatch|watches the smoke throw direction
+addons/main/functions/UnitAction/fnc_doSuppress.sqf|doSuppressiveFire|fire control primitive on a position the caller holds; milestone 3 feeds it scored suppress positions
+addons/main/functions/UnitAction/fnc_doSuppress.sqf|doWatch|watches the suppression position
+addons/main/functions/UnitAction/fnc_doUGL.sqf|doTarget|targets the scripted flare dummy, not an enemy
+addons/main/functions/UnitAction/fnc_doUGL.sqf|doWatch|watches the scripted flare dummy
+addons/main/functions/UnitAction/fnc_doUGL.sqf|reveal|reveals the scripted flare dummy, not an enemy
+addons/main/functions/VehicleAction/fnc_doVehicleAssault.sqf|doWatch|watches getHideFrom of a target the crew already knows
+addons/main/functions/VehicleAction/fnc_doVehicleRotate.sqf|doWatch|watches getHideFrom of findNearestEnemy (engine knowledge)
+addons/main/functions/VehicleAction/fnc_doVehicleSuppress.sqf|doSuppressiveFire|vehicle fire control on a position the caller holds
+addons/main/functions/VehicleAction/fnc_doVehicleSuppress.sqf|doWatch|watches the suppression position
+addons/wp/functions/fnc_doArtillery.sqf|doWatch|the gun watches the fire mission position
+addons/wp/functions/fnc_doAssaultUnitReset.sqf|doWatch|TODO milestone 4: function deleted (doWatch objNull on reset)
+addons/wp/functions/fnc_doHeliInsert.sqf|doWatch|pilot watches the landing zone
+addons/wp/functions/fnc_taskAssault.sqf|doWatch|watches the assault destination
+addons/wp/functions/fnc_taskAttack.sqf|doWatch|watches the objective
+addons/wp/functions/fnc_taskAttackAir.sqf|doWatch|pilot watches the landing zone
+addons/wp/functions/fnc_taskRush.sqf|commandSuppressiveFire|suppresses an aircraft contact the group has seen itself (contactNearest returns the object only for seen contacts)
+addons/wp/functions/fnc_taskRush.sqf|doSuppressiveFire|suppresses a tank contact the group has seen itself
+#
+# R3: skill is never raised.
+addons/main/functions/fnc_applyStress.sqf|setSkill|only lowers aimingAccuracy below the recorded base; TODO milestone 3: replaced by behavioural consequences
+#
+# R4: nothing below the Director reads the player list.
+addons/danger/functions/fnc_tacticsReinforce.sqf|allDeadMen|TODO milestone 5: body search moves to the death events of the contact store
+addons/main/functions/UnitAction/fnc_doCheckBody.sqf|allDeadMen|scan for a body near a position the unit already knows; TODO milestone 3: fed from the death events
+#
+# R5: no teleport, no free ammunition, no spawning next to players.
+addons/main/functions/GroupAction/fnc_doGroupCommandoDeploy.sqf|createVehicle|creates the weapon holder for a mortar the team carried in its bags
+addons/main/functions/UnitAction/fnc_doUGL.sqf|addMagazine|TODO milestone 3: free magazine, load the flare directly
+addons/main/functions/UnitAction/fnc_doUGL.sqf|createVehicle|scripted flare aim dummy 200 m up, not a unit
+addons/main/functions/UnitAction/fnc_doUGL.sqf|setPos|positions the scripted flare aim dummy
+addons/wp/functions/fnc_taskCQB.sqf|setVehiclePosition|TODO milestone 4: the unstick teleport goes with the rewrite on unitOrder
+addons/wp/functions/fnc_taskCamp.sqf|setVehiclePosition|Zeus asked for the teleport (task option), R5 exception
+addons/wp/functions/fnc_taskDefend.sqf|setVehiclePosition|Zeus asked for the teleport (task option), R5 exception
+addons/wp/functions/fnc_taskGarrison.sqf|setVehiclePosition|Zeus asked for the teleport (task option), R5 exception
+addons/wp/functions/fnc_taskHunt.sqf|createVehicle|TODO milestone 5: flare conjured without a UGL round
+addons/wp/functions/fnc_taskPatrol.sqf|setVehiclePosition|Zeus asked for the teleport (task option), R5 exception

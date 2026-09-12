@@ -437,24 +437,6 @@
             <German>Schaltet die Fähigkeit der KI-Gruppe um, autonom Rauchgranaten zu verwenden, um Gruppenmanöver zu verbergen</German>
             <Chinesesimp>切换AI小组自动使用烟雾弹掩护小组的功能</Chinesesimp>
         </Key>
-        <Key ID="STR_Lambs_Danger_Settings_DisableDangerFSM">
-            <English>Disable danger.fsm for player group</English>
-            <Czech>Vypne danger.fsm pro hráčskou skupinu</Czech>
-            <Italian>Disabilitare danger.fsm per il gruppo di giocatori</Italian>
-            <Polish>Wyłącz danger.fsm dla grupy gracza</Polish>
-            <Russian>Отключить danger.fsm для группы игрока</Russian>
-            <German>Danger.fsm für Spielergruppe deaktivieren</German>
-            <Chinesesimp>禁止玩家所在小组使用danger.fsm</Chinesesimp>
-        </Key>
-        <Key ID="STR_Lambs_Danger_Settings_DisableDangerFSM_ToolTip">
-            <English>Toggle advanced danger.fsm features on player group</English>
-            <Czech>Přepíná pokročilé funkce danger.fsm ve skupině hráčů</Czech>
-            <Italian>Attiva/disattiva le funzionalità avanzate di danger.fsm nel gruppo di giocatori</Italian>
-            <Polish>Przełącz zaawansowane opcje danger.fsm na grupie gracza</Polish>
-            <Russian>Переключить особый danger.fsm для группы игрока</Russian>
-            <German>Erweiterte danger.fsm Funktionen für Spielergruppe umschalten</German>
-            <Chinesesimp>为玩家所在小组切换高级danger.fsm功能</Chinesesimp>
-        </Key>
         <Key ID="STR_Lambs_Danger_Settings_DisableGroupManoevures">
             <English>Disable autonomous group manoeuvres</English>
             <Czech>Vypíná nezávislé skupinové manévry</Czech>
@@ -472,24 +454,6 @@
             <Russian>Переключает фазу группового маневра, инициированную командиром отряда ИИ. Отключение этого  не позволит лидеру группы ИИ добавлять приказы о маневрах для обхода и подавления огнем зданий.</Russian>
             <German>Gruppenmanöver-Phase die durch den Gruppenführer initiiert wird. Das Ausschalten dieser Option deaktiviert Befehle des Gruppenführers Gebäude zu flankieren oder niederzuhalten.</German>
             <Chinesesimp>切换由AI组长发起的小组操作阶段.禁用此功能将阻止AI组长添加机动命令来到侧翼和压制建筑物.</Chinesesimp>
-        </Key>
-        <Key ID="STR_Lambs_Danger_Settings_DisableReactPlayerGroup">
-            <English>Disable reaction state on player group</English>
-            <Czech>Vypne reakční stav ve skupině hráčů</Czech>
-            <Italian>Disabilita lo stato di reazione sul gruppo di giocatori</Italian>
-            <Polish>Wyłącz stan reakcji dla grupy gracza</Polish>
-            <Russian>Отключить состояние реакции для группы игрока</Russian>
-            <German>Reaktionszustand für Spielergruppe ausschalten</German>
-            <Chinesesimp>禁用玩家所在小组的反应状态</Chinesesimp>
-        </Key>
-        <Key ID="STR_Lambs_Danger_Settings_DisableReactPlayerGroup_ToolTip">
-            <English>Toggle Reaction phase on units in player group</English>
-            <Czech>Přepíná reakční stav jednotek ve skupině hráčů</Czech>
-            <Italian>Attiva/disattiva la fase di reazione sulle unità nel gruppo di giocatori</Italian>
-            <Polish>Przełącza fazę reakcji dla jednostek w grupie gracza</Polish>
-            <Russian>Переключить фазу реакции для юнитов в группе игрока</Russian>
-            <German>Reaktionsphase für Spielergruppe ausschalten</German>
-            <Chinesesimp>切换玩家所在小组中单位的反应阶段</Chinesesimp>
         </Key>
         <Key ID="STR_Lambs_Danger_Settings_DisableStaticDeployment">
             <English>Disable units deploying static weapons</English>

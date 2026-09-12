@@ -35,7 +35,12 @@ private _threatPos = _picture get "threatPos";
 private _intent = [_group] call FUNC(intentGet);
 
 private _level = 0;
-if (_age < ALERT_AGE || {(_group getVariable [QGVAR(alertTime), -1e9]) > time - ALERT_AGE}) then {_level = 1;};
+// a report from another group puts the group on alert, only its own senses make it engaged
+if (
+    _age < ALERT_AGE
+    || {(_group getVariable [QGVAR(alertTime), -1e9]) > time - ALERT_AGE}
+    || {time - (_picture getOrDefault ["lastReport", -1e9]) < ALERT_AGE}
+) then {_level = 1;};
 if (_age < ENGAGED_AGE) then {_level = 2;};
 if (
     _level isEqualTo 2

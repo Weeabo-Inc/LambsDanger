@@ -73,8 +73,11 @@ if ([_unit, "isBusy"] call FUNC(unitState) || {([_unit, "state", "Idle"] call FU
 // check bodies ~ enemy group!
 if (_type isEqualTo DANGER_DEADBODY) exitWith {
 
-    // if dead body found -- check nearby buildings!
+    // the picture learns of the death from the body, never from the engine (C-61)
     private _group = group _unit;
+    [_group, _pos] call HFUNC(core,contactDeath);
+
+    // if dead body found -- check nearby buildings!
     private _groupMemory = _group getVariable [QEGVAR(main,groupMemory), []];
     if (_groupMemory isEqualTo []) then {
         _group setVariable [QEGVAR(main,groupMemory), [_pos, 15, true] call EFUNC(main,findBuildings)];

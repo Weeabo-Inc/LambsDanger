@@ -1,6 +1,14 @@
 #include "\x\cba\addons\main\script_macros_common.hpp"
 
 #define DFUNC(var1) TRIPLES(ADDON,fnc,var1)
+
+// Calls from the compatibility addons into the HOSTIS layer addons (ADR-0002).
+//   HFUNC(core,contactsGet)  -> hostis_core_fnc_contactsGet
+//   HGVAR(core,debugPicture) -> hostis_core_debugPicture
+#define HFUNC(var1,var2) TRIPLES(hostis,var1,DOUBLES(fnc,var2))
+#define HGVAR(var1,var2) TRIPLES(hostis,var1,var2)
+#define QHFUNC(var1,var2) QUOTE(HFUNC(var1,var2))
+#define QHGVAR(var1,var2) QUOTE(HGVAR(var1,var2))
 #define RND(var) random 1 > var
 
 #define AI_AMMO_USAGE_FLAG_LIGHT 1

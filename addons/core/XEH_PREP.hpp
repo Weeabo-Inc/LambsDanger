@@ -1,1 +1,13 @@
-// Layer 0, knowledge. Functions arrive in milestone 2 (docs/systems/knowledge.md).
+// Layer 0, knowledge (docs/systems/knowledge.md)
+PREP(pictureGet);
+PREP(pictureRefresh);
+PREP(pictureReport);
+PREP(contactReport);
+PREP(contactType);
+PREP(contactSweep);
+PREP(contactsGet);
+PREP(contactDeath);
+PREP(contactNearest);
+PREP(netParams);
+PREP(netSend);
+PREP(debugDraw);

@@ -62,7 +62,8 @@ private _plan = [];
 // combat picture ~ remember what was seen, and keep planning on recent contacts after losing sight of them
 private _picture = [_group, _enemies] call FUNC(pictureUpdate);
 if (_enemies isEqualTo []) then {
-    _enemies = ([_group, 60] call FUNC(pictureContacts)) apply {_x select 0};
+    // only contacts the group has seen itself carry an object; reports are positions
+    _enemies = (([_group, 60] call FUNC(pictureContacts)) select {!isNull (_x select 0)}) apply {_x select 0};
 };
 
 // leader assess EH

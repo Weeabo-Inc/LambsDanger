@@ -41,10 +41,10 @@ params [
 // functions ---
 
 private _fnc_creepOrders = {
-    params ["_group", "_target"];
+    params ["_group", "_target", "_targetPos"];
 
-    // distance
-    private _newDist = (leader _group) distance2D _target;
+    // distance ~ to the believed position
+    private _newDist = (leader _group) distance2D _targetPos;
     private _in_forest = ((selectBestPlaces [getPos (leader _group), 2, "(forest + trees)*0.5", 1, 1]) select 0) select 1;
 
     // danger mode? go for it!
@@ -52,14 +52,13 @@ private _fnc_creepOrders = {
         _group setCombatMode "RED";
         {
             _x setUnitPos "MIDDLE";
-            _x doMove (getPosATL _target);
+            _x doMove _targetPos;
             true
         } count (units _group);
     };
 
     // vehicle? wait for it
-    if (_newDist < 150 && {vehicle _target isKindOf "Landvehicle"}) exitWith {
-        _group reveal _target;
+    if (_newDist < 150 && {!isNull _target} && {vehicle _target isKindOf "Landvehicle"}) exitWith {
         { _x setUnitPos "DOWN"; true } count (units _group);
     };
 
@@ -72,7 +71,7 @@ private _fnc_creepOrders = {
     // move
     private _i = 0;
     {
-        _x doMove (_target getPos [_i, random 360]);
+        _x doMove (_targetPos getPos [_i, random 360]);
         _i = _i + random 10;
         true
     } count (units _group);
@@ -120,17 +119,17 @@ waitUntil {
     // cancelled by reset, cleanup or a newer task
     if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {true};
 
-    // find
-    private _target = [_group, _radius, _area, _pos, _onlyPlayers] call EFUNC(main,findClosestTarget);
+    // find ~ the group's own picture, never a scan of the map (FAIRNESS.md R4)
+    ([_group, _radius, _area, _pos] call HFUNC(core,contactNearest)) params ["_target", "_targetPos"];
 
     // act
-    if (isNull _target) then {
+    if (_targetPos isEqualTo []) then {
         _group setCombatMode "GREEN";
         sleep (_cycle * 4);
     } else {
-        [_group, _target] call _fnc_creepOrders;
+        [_group, _target, _targetPos] call _fnc_creepOrders;
         if (EGVAR(main,debug_functions)) then {
-            ["%1 taskCreep: %2 targets %3 (%4) at %5 Meters -- Stealth %6/%7", side _group, groupId _group, name _target, _group knowsAbout _target, floor (leader _group distance2D _target), ((selectBestPlaces [getPos leader _group, 2, "(forest + trees)*0.5", 1, 1]) select 0) select 1, str(unitPos leader _group)] call EFUNC(main,debugLog);
+            ["%1 taskCreep: %2 stalks %3 at %4 Meters -- Stealth %5/%6", side _group, groupId _group, ["a reported contact", name _target] select (!isNull _target), floor (leader _group distance2D _targetPos), ((selectBestPlaces [getPos leader _group, 2, "(forest + trees)*0.5", 1, 1]) select 0) select 1, str(unitPos leader _group)] call EFUNC(main,debugLog);
         };
         sleep _cycle;
     };

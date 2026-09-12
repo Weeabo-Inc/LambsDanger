@@ -19,4 +19,3 @@ fleeing _this
 || currentCommand _this in ["ATTACK", "GET IN", "ACTION", "HEAL", "REARM", "JOIN"]
 || !(_this call EFUNC(main,isAlive))
 || (_this getVariable ["ace_medical_ai_healQueue", []]) isNotEqualTo []
-|| {GVAR(disableAIPlayerGroup) && {isPlayer leader _this}}

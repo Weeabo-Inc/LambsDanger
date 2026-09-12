@@ -1,7 +1,11 @@
 #include "script_component.hpp"
 /*
- * Author: nkenny
- * Unit shares information with nearby allies modified by current radio settings
+ * Author: nkenny, bluefield-creator
+ * A unit passes a sighting to nearby friendly groups. The sighting is filed in the unit's
+ * own group picture first, then sent over the modelled net (hostis_core_fnc_netSend):
+ * delayed by distance, lossy, widened in error, and carrying a position rather than a
+ * target. Nothing is revealed to the engine here (FAIRNESS.md R4); see the
+ * hostis_core engineReveal setting.
  *
  * Arguments:
  * 0: unit sharing information <OBJECT>
@@ -17,12 +21,6 @@
  *
  * Public: No
 */
-#define SHARE_DELAY_BASE 1.5
-#define SHARE_DELAY_PER_METRE 150
-#define SHARE_SHOUT_RANGE 80
-#define SHARE_ROUGH_VALUE 1.5
-#define SHARE_RADIO_VALUE 2.5
-
 params ["_unit", ["_target", objNull], ["_range", 350], ["_override", false]];
 
 // nil or captured
@@ -50,85 +48,31 @@ private _stopShare = false;
 if (_stopShare) exitWith {false};
 
 _unit setVariable [QGVAR(currentTarget), _target, GVAR(debug_functions)];
-//_unit setVariable [QGVAR(currentTask), "Share Information", GVAR(debug_functions)]; // do not update task -- sharing information is secondary info ~ nkenny
 
-// find units
+// what this man knows goes into his group's picture, then out over the net
 private _group = group _newUnit;
-private _side = side _group;
-private _groups = allGroups select {
-    private _leader = leader _x;
-    _leader distance2D _newUnit < _newRange
-    && {simulationEnabled (vehicle _leader)}
-    && {((side _x) getFriend _side) > 0.6}
-    && {(behaviour _leader) isNotEqualTo "CARELESS"}
-    && {!isPlayer _leader}
-    && {_x isNotEqualTo _group}
+private _records = [];
+if (!isNull _target) then {
+    [_group, [_target], "seen", _unit] call HFUNC(core,contactSweep);
+    _records = ([_group, 5] call HFUNC(core,contactsGet)) select {(_x select 0) isEqualTo _target};
 };
+private _groups = [_group, _records, [-1, _newRange] select _override] call HFUNC(core,netSend);
 
-// share information ~ a report takes time to pass on and loses detail with distance;
-// groups without a radio link only get a rough position beyond shouting range
-if !(isNull _target) then {
-    private _knowsAbout = (_newUnit knowsAbout _target) min GVAR(maxRevealValue);
-    {
-        private _receiver = leader _x;
-        private _distance = _newUnit distance2D _receiver;
-        private _delay = SHARE_DELAY_BASE + (_distance / SHARE_DELAY_PER_METRE);
-        private _value = _knowsAbout;
-        if (_distance > SHARE_SHOUT_RANGE) then {
-            _value = _value min ([SHARE_ROUGH_VALUE, SHARE_RADIO_VALUE] select _radio);
-        };
-        [
-            {
-                params ["_group", "_target", "_value"];
-                private _receiver = leader _group;
-                if (isNull _receiver || {!alive _target}) exitWith {};
-                [_receiver, [_target, _value]] remoteExec ["reveal", _receiver];
-            },
-            [_x, _target, _value],
-            _delay
-        ] call CBA_fnc_waitAndExecute;
-    } forEach (_groups select {_newUnit distance2D (leader _x) < GVAR(combatShareRange)});
-};
-
-[QGVAR(OnInformationShared), [_newUnit, group _newUnit, _target, _groups]] call FUNC(eventCallback);
+[QGVAR(OnInformationShared), [_newUnit, _group, _target, _groups]] call FUNC(eventCallback);
 
 // play animation
 if (
     RND(0.2)
     && {_newRange > 100}
+    && {!isNull _target}
     && {_newUnit distance2D _target > 4}
 ) then {
     [_newUnit, "HandSignalRadio"] call FUNC(doGesture);
 };
 
 // debug
-if (EGVAR(main,debug_functions)) then {
-    // debug message
-    ["%1 share information (%2 knows %3 to %4 groups @ %5m range)", side _newUnit, name _newUnit, (_newUnit knowsAbout _target) min GVAR(maxRevealValue), count _groups, round _range] call FUNC(debugLog);
-
-    // debug marker
-    private _zm = [_newUnit, [_newRange, _newRange], _newUnit call FUNC(debugMarkerColor), "Border"] call FUNC(zoneMarker);
-    private _zmm = [_newUnit, [_newRange min GVAR(combatShareRange), _newRange min GVAR(combatShareRange)], _newUnit call FUNC(debugMarkerColor), "SolidBorder"] call FUNC(zoneMarker);
-    _zmm setMarkerAlphaLocal 0.3;
-    private _markers = [_zm, _zmm];
-
-    // enemy units
-    {
-        private _m = [_unit getHideFrom _x, "", _x call FUNC(debugMarkerColor), "mil_triangle"] call FUNC(dotMarker);
-        _m setMarkerSizeLocal [0.5, 0.5];
-        _m setMarkerDirLocal (getDir _x);
-        _m setMarkerTextLocal str (_unit knowsAbout _x);
-        _markers pushBack _m;
-    } forEach ((units _target) select {_unit knowsAbout _x > 0});
-
-    // friendly units
-    {
-        private _m = [_x, "", _x call FUNC(debugMarkerColor), "mil_triangle"] call FUNC(dotMarker);
-        _m setMarkerSizeLocal [0.5, 0.5];
-        _m setMarkerDirLocal (getDir _x);
-        _markers pushBack _m;
-    } forEach units _unit;
-    [{{deleteMarker _x;true} count _this;}, _markers, 60] call CBA_fnc_waitAndExecute;
+if (GVAR(debug_functions)) then {
+    ["%1 share information (%2 reports %3 contact(s) to %4 groups @ %5m range)", side _newUnit, name _newUnit, count _records, count _groups, round _newRange] call FUNC(debugLog);
 };
 
 // end

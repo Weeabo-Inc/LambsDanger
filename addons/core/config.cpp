@@ -5,7 +5,7 @@ class CfgPatches {
         units[] = {};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"cba_main", "lambs_main", "lambs_danger", "lambs_wp"};
+        requiredAddons[] = {"cba_main", "lambs_main"};
         author = "bluefield-creator";
         VERSION_CONFIG;
     };
