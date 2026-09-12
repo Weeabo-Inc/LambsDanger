@@ -102,16 +102,27 @@ if (EGVAR(main,debug_functions)) then {
     // come down only once nearly over the spot, otherwise hold the approach height
     private _verticalError = if (_distance > 25 && {(_pos select 2) < APPROACH_HEIGHT * 3}) then {(APPROACH_HEIGHT * 3) - (_pos select 2)} else {_error select 2};
     _desired set [2, (((_verticalError * GAIN_VERTICAL) max -_maxDown) min MAX_UP)];
-    private _velocity = velocity _heli;
+    private _velocity = _state param [3, velocity _heli];
     private _new = (_velocity vectorMultiply (1 - SMOOTHING)) vectorAdd (_desired vectorMultiply SMOOTHING);
-    _heli setVelocity _new;
+    _state set [3, _new];
 
     // attitude ~ level, a slight lean into the motion, heading kept
     private _dir = vectorDir _heli;
     _dir set [2, 0];
     if (vectorMagnitude _dir < 0.1) then {_dir = [0, 1, 0];};
+    _dir = vectorNormalized _dir;
     private _up = vectorNormalized ([0, 0, 1] vectorAdd ([_new select 0, _new select 1, 0] vectorMultiply LEAN));
-    _heli setVectorDirAndUp [vectorNormalized _dir, _up];
+
+    // fly it kinematically ~ the helicopter's own hover logic cancels plain velocity changes
+    private _posASL = getPosASL _heli;
+    private _step = _new vectorMultiply diag_deltaTime;
+    _heli setVelocityTransformation [_posASL, _posASL vectorAdd _step, _new, _new, _dir, _dir, _up, _up, 1];
+
+    // a line every couple of seconds so the RPT shows what the controller is doing
+    if (EGVAR(main,debug_functions) && {time > (_state param [4, 0])}) then {
+        _state set [4, time + 2];
+        ["heli insert: %1 %2 ~ %3m out, %4m up, %5 m/s", typeOf _heli, _phase, round _distance, round (_pos select 2), round (vectorMagnitude _new)] call EFUNC(main,debugLog);
+    };
 
     switch (_phase) do {
         case "descend": {
@@ -143,6 +154,6 @@ if (EGVAR(main,debug_functions)) then {
             };
         };
     };
-}, 0, [_heli, _lz, _troops, _exit, _onDone, ["descend", time, -1]]] call CBA_fnc_addPerFrameHandler;
+}, 0, [_heli, _lz, _troops, _exit, _onDone, ["descend", time, -1, velocity _heli, 0]]] call CBA_fnc_addPerFrameHandler;
 
 true
