@@ -111,7 +111,9 @@ switch (_phase) do {
         if (unitReady (driver _heli)) then {(driver _heli) doMove _lz;};
         if (_heli distance2D _lz < START_INSERT) then {
             _air set ["phase", "land"];
-            private _troops = (units _group) select {(vehicle _x) isEqualTo _heli && {_x isNotEqualTo (driver _heli)} && {!(_x in [gunner _heli, commander _heli])} && {!((fullCrew [_heli, "turret"] select {!(_x select 4)}) apply {_x select 0} find _x > -1)}};
+            // everyone aboard who is not flying or manning a weapon gets off
+            private _aircrew = [driver _heli, gunner _heli, commander _heli] + (((fullCrew [_heli, "turret"]) select {!(_x select 4)}) apply {_x select 0});
+            private _troops = (units _group) select {(vehicle _x) isEqualTo _heli && {!(_x in _aircrew)}};
             private _exit = _lz getPos [400, _pos getDir _lz];
             [_heli, _lz, _troops, _exit, {
                 params ["_heli", "_troopsOut", "_aborted"];
