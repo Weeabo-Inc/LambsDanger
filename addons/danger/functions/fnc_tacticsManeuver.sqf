@@ -143,6 +143,7 @@ private _state = createHashMapFromArray [
     ["mounted", _mounted],
     ["dismountPos", _dismountPos],
     ["phaseTime", time],
+    ["startTime", time],
     ["endTime", time + _maxDuration],
     ["support", _support],
     ["assault", _assault],
@@ -531,8 +532,16 @@ private _handle = [{
 
         case "consolidate": {
             if (time - (_state get "phaseTime") > 12) then {
-                [_group, "defend", _objective, 60] call FUNC(intentSet);
-                [_group, _handle, _units, "completed"] call _fnc_end;
+                // nothing was ever seen here ~ a mechanized group mounts up again instead of digging in
+                private _nothingFound = (_picture get "lastContact") < (_state get "startTime");
+                if (_mechanized && _nothingFound) then {
+                    [_group, "free"] call FUNC(intentSet);
+                    [_group, _handle, _units, "completed"] call _fnc_end;
+                    [_group, _vehicles] call EFUNC(main,doMountUp);
+                } else {
+                    [_group, "defend", _objective, 60] call FUNC(intentSet);
+                    [_group, _handle, _units, "completed"] call _fnc_end;
+                };
             };
         };
     };

@@ -37,6 +37,8 @@ if (_wasActive && {local _group}) then {
     // group orders
     _group enableAttack _prevAttackEnabled;
     _group setVariable [QEGVAR(main,currentTactic), nil, EGVAR(main,debug_functions)];
+    _group setVariable [QGVAR(directedMounting), nil];
+    [_group] call EFUNC(main,doMountRelease);
 
     // strict mode switched the FSM off ~ only undo that where we did it
     {

@@ -93,9 +93,12 @@ if (_arrived) exitWith {
     };
 };
 
+// still mounting up ~ nothing to chase yet
+if (!isNil {_group getVariable QGVAR(directedMounting)}) exitWith {};
+
 // stragglers ~ a follower that stopped to shoot or fell far behind is told to catch up
 {
-    if (_x isNotEqualTo _leader && {(currentCommand _x) isEqualTo "Suppress" || {_x distance2D _leader > 50}}) then {
+    if (_x isNotEqualTo _leader && {isNull objectParent _x} && {(currentCommand _x) isEqualTo "Suppress" || {_x distance2D _leader > 50}}) then {
         _x doWatch objNull;
         _x doFollow _leader;
     };

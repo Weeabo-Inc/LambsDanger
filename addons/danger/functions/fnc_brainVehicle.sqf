@@ -207,6 +207,7 @@ if (_armored && {!isNull _dangerCausedBy}) exitWith {
         _validTarget
         && {_cargo isNotEqualTo []}
         && {!(_unit call EFUNC(main,isDirected))}
+        && {!(_vehicle getVariable [QEGVAR(main,keepMounted), false])}
         && {speed _vehicle < 10}
         && {_distance < 350}
         && {_unit knowsAbout _dangerCausedBy > 2 || {_distance < 220}}

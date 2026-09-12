@@ -22,6 +22,7 @@
 */
 #define WAYPOINT_WAIT 5
 #define POSITION_TOLERANCE 2
+#define MOUNT_TIMEOUT 45
 
 params [["_group", grpNull, [grpNull, objNull]], ["_wpIndex", -1, [0]], ["_curatorOwner", -1, [0]], ["_hops", 0, [0]]];
 
@@ -138,7 +139,31 @@ if (!(_leader call EFUNC(main,isAlive))) then {
 // group orders ~ attack stays off so nobody breaks formation to chase targets, AWARE so they actually travel
 _group enableAttack false;
 if ((behaviour _leader) isEqualTo "COMBAT") then {_group setBehaviourStrong "AWARE";};
-_group setCurrentWaypoint _waypoint;
+
+// a group with vehicles mounts up first and stays aboard until it arrives; the vehicles roll once everyone is in
+private _boarding = [_group] call EFUNC(main,doMountUp);
+if (_boarding isNotEqualTo []) then {
+    _group setVariable [QGVAR(directedMounting), time];
+    {if (!isNull objectParent _x) then {doStop (driver (vehicle _x));};} forEach (units _group);
+    [
+        {
+            params ["_group", "_boarding"];
+            isNull _group || {(_boarding findIf {alive _x && {isNull objectParent _x}}) isEqualTo -1}
+        },
+        {
+            params ["_group", "", "_waypoint"];
+            if (isNull _group) exitWith {};
+            _group setVariable [QGVAR(directedMounting), nil];
+            {if (!isNull objectParent _x) then {(driver (vehicle _x)) doFollow (leader _group);};} forEach (units _group);
+            _group setCurrentWaypoint _waypoint;
+            _group setVariable [QGVAR(directedProgress), [(leader _group) distance2D (waypointPosition _waypoint), CBA_missionTime, 0, false]];
+        },
+        [_group, _boarding, _waypoint],
+        MOUNT_TIMEOUT
+    ] call CBA_fnc_waitUntilAndExecute;
+} else {
+    _group setCurrentWaypoint _waypoint;
+};
 
 // state
 _group setVariable [QGVAR(directedMove), [_wpIndex, _wpPos, CBA_missionTime + GVAR(zeusWaypointTimeout), _curatorOwner, GVAR(zeusWaypointDiscipline), _prevAttackEnabled], true];

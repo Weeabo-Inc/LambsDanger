@@ -43,6 +43,8 @@ SUBPREP(GroupAction,doGroupBound);
 SUBPREP(GroupAction,doGroupFlank);
 SUBPREP(GroupAction,doGroupHide);
 SUBPREP(GroupAction,doGroupSuppress);
+SUBPREP(GroupAction,doMountRelease);
+SUBPREP(GroupAction,doMountUp);
 SUBPREP(GroupAction,doTeamMove);
 SUBPREP(GroupAction,doGroupStaticDeploy);
 SUBPREP(GroupAction,doGroupStaticFind);

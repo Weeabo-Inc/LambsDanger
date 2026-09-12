@@ -98,11 +98,11 @@ _group move _travelPos;
 
 private _handle = [{
     params ["_args", "_handle"];
-    _args params ["_group", "_pos", "_radius", "_token", "_wpIndex", "_curatorOwner", "_state"];
+    _args params ["_group", "_pos", "_radius", "_token", "_wpIndex", "_curatorOwner", "_state", "_startTime"];
     _state params ["_phase", "_heldSince"];
 
     private _fnc_end = {
-        params ["_group", "_handle", "_token", "_wpIndex", "_curatorOwner", "_reason", "_pos", "_radius"];
+        params ["_group", "_handle", "_token", "_wpIndex", "_curatorOwner", "_reason", "_pos", "_radius", ["_startTime", 0]];
         [_handle] call CBA_fnc_removePerFrameHandler;
         if (isNull _group) exitWith {};
         _group setVariable [QGVAR(attackPFH), nil];
@@ -117,9 +117,15 @@ private _handle = [{
         // the objective is now the group's ground
         [_group, ["free", "defend"] select (_reason isEqualTo "objective held"), _pos, _radius] call EFUNC(danger,intentSet);
 
-        // carry on with the route the Zeus laid out
+        // carry on with the route the Zeus laid out ~ as a directed move, so a mounted group mounts up first
         if (_wpIndex >= 0 && {_wpIndex + 1 < count (waypoints _group)}) then {
-            _group setCurrentWaypoint [_group, _wpIndex + 1];
+            [_group, _wpIndex + 1, _curatorOwner] call EFUNC(danger,directedMoveSet);
+        } else {
+            // nothing found and nowhere else to go ~ a mounted group gets back in its vehicles
+            if (_reason isEqualTo "objective held" && {(([_group] call EFUNC(danger,pictureGet)) get "lastContact") < _startTime}) then {
+                [_group] call EFUNC(main,doMountUp);
+                [_group, "free"] call EFUNC(danger,intentSet);
+            };
         };
         if (_curatorOwner >= 0) then {
             [_curatorOwner, format [localize ELSTRING(danger,Feedback_AttackDone), groupId _group]] call EFUNC(danger,directedMoveFeedback);
@@ -158,7 +164,7 @@ private _handle = [{
     } else {
         _state set [1, -1];
     };
-    if (_held) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "objective held", _pos, _radius] call _fnc_end;};
+    if (_held) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "objective held", _pos, _radius, _startTime] call _fnc_end;};
 
     // a tactic this task started (fire and movement or the building sweep) ~ let it work
     private _executing = _group getVariable [QEGVAR(danger,isExecutingTactic), false];
@@ -199,7 +205,7 @@ private _handle = [{
     };
     // stragglers ~ anyone who stopped to shoot or fell far behind is told to catch up
     {
-        if (_x isNotEqualTo _leader && {(currentCommand _x) isEqualTo "Suppress" || {_x distance2D _leader > 50}}) then {
+        if (_x isNotEqualTo _leader && {isNull objectParent _x} && {(currentCommand _x) isEqualTo "Suppress" || {_x distance2D _leader > 50}}) then {
             _x doWatch objNull;
             _x doFollow _leader;
         };
@@ -207,7 +213,7 @@ private _handle = [{
     if (unitReady _leader || {((expectedDestination _leader) select 1) isEqualTo "DoNotPlan"}) then {
         _group move (_group getVariable [QGVAR(attackTravelPos), _pos]);
     };
-}, CYCLE_TIME, [_group, _pos, _radius, _token, _wpIndex, _curatorOwner, ["approach", -1]]] call CBA_fnc_addPerFrameHandler;
+}, CYCLE_TIME, [_group, _pos, _radius, _token, _wpIndex, _curatorOwner, ["approach", -1], time]] call CBA_fnc_addPerFrameHandler;
 
 _group setVariable [QGVAR(attackPFH), _handle];
 
