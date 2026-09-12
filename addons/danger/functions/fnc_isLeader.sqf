@@ -15,6 +15,7 @@
  * Public: No
 */
 params ["_unit"];
-getSuppression _unit < 0.2
+// assertive leaders keep planning while under fire
+getSuppression _unit < ([0.2, 0.6] select (GVAR(aggression) > 0))
 && ((leader _unit) isEqualTo _unit || {!((leader _unit) call EFUNC(main,isAlive))})
 && {!(group _unit getVariable [QGVAR(isExecutingTactic), false])}

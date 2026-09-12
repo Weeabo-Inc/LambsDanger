@@ -27,6 +27,7 @@ if (isNull _group) exitWith {false};
 if (_group isEqualType objNull) then {_group = group _group;};
 if ((units _group) isEqualTo []) exitWith {false};
 private _unit = leader _group;
+if (_group call EFUNC(main,isDirected)) exitWith {false};
 
 // find target
 _target = _target call CBA_fnc_getPos;
@@ -58,6 +59,7 @@ _group setVariable [QGVAR(isExecutingTactic), true];
                 _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
                 _x setVariable [QGVAR(forceMove), nil];
                 _x setUnitPos "AUTO";
+                _x allowGetIn true;
                 _x doFollow (leader _x);
             } forEach (units _group);
         };
@@ -117,7 +119,7 @@ _units allowGetIn false;
 _group setFormDir (_unit getDir _target);
 _group setFormation "FILE";
 {
-    _x setUnitPos "DOWN";
+    _x setUnitPos (_x call EFUNC(main,getLowStance));
     _x forceSpeed -1;
     _x setVariable [QGVAR(forceMove), true];
 } forEach (_units select {isNull objectParent _x});

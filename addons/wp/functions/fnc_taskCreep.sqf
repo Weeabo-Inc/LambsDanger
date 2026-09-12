@@ -85,6 +85,9 @@ private _fnc_creepOrders = {
 if (!local _group) exitWith {false};
 if (_group isEqualType objNull) then { _group = group _group; };
 
+// task lifecycle
+private _token = [_group, "taskCreep"] call FUNC(taskBegin);
+
 // orders
 _group setBehaviour "AWARE";
 _group setFormation "WEDGE";    //Might revert to DIAMOND
@@ -112,7 +115,10 @@ _group setVariable [QEGVAR(main,currentTactic), "taskCreep", EGVAR(main,debug_fu
 waitUntil {
 
     // performance
-    waitUntil {sleep 1; simulationEnabled leader _group};
+    waitUntil {sleep 1; simulationEnabled (leader _group) || {[_group, _token] call FUNC(taskIsCancelled)}};
+
+    // cancelled by reset, cleanup or a newer task
+    if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {true};
 
     // find
     private _target = [_group, _radius, _area, _pos, _onlyPlayers] call EFUNC(main,findClosestTarget);
@@ -130,6 +136,7 @@ waitUntil {
     };
     // end
     ((units _group) findIf {_x call EFUNC(main,isAlive)} == -1)
+    || {[_group, _token] call FUNC(taskIsCancelled)}
 };
 
 // end

@@ -20,6 +20,7 @@ params ["_unit", ["_target", objNull], ["_range", GVAR(cqbRange)], ["_delay", 18
 
 // update tactics and contact state
 private _group = group _unit;
+if (_group call EFUNC(main,isDirected)) exitWith {[]};
 _group setVariable [QGVAR(isExecutingTactic), true];
 _group setVariable [QEGVAR(main,currentTactic), "CQB clearing", EGVAR(main,debug_functions)];
 _group setVariable [QGVAR(contact), time + 300];
@@ -31,7 +32,7 @@ _group setVariable [QGVAR(contact), time + 300];
         if (!isNull _group) then {
             _group setVariable [QGVAR(isExecutingTactic), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
-            _group enableAttack _attackEnabled;
+            _group enableAttack (_attackEnabled || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
         };
     },
     [_group, attackEnabled _unit],

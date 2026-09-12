@@ -24,6 +24,7 @@ if (isNull _group) exitWith {false};
 if (_group isEqualType objNull) then {_group = group _group;};
 if ((units _group) isEqualTo []) exitWith {false};
 private _unit = leader _group;
+if (_group call EFUNC(main,isDirected)) exitWith {false};
 
 // known enemy
 private _enemy = _unit findNearestEnemy _unit;
@@ -36,7 +37,7 @@ private _pos = if (isNull _enemy) then {_unit getPos [300, getDir _unit]} else {
         if (!isNull _group) then {
             _group setVariable [QGVAR(isExecutingTactic), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
-            _group enableAttack _enableAttack;
+            _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
         };
     },
     [_group, attackEnabled _group],
@@ -71,11 +72,16 @@ if (count _units > 2) then {
             // set group task
             _group setVariable [QEGVAR(main,currentTactic), "Holding!", EGVAR(main,debug_functions)];
 
-            // gesture wildly!
-            [_unit, "gestureCeaseFire"] call EFUNC(main,doGesture);
+            if (GVAR(aggression) > 0 && {!isNull _enemy}) then {
+                // assertive groups hit back instead of hiding
+                [_group, _enemy] call FUNC(tacticsAttack);
+            } else {
+                // gesture wildly!
+                [_unit, "gestureCeaseFire"] call EFUNC(main,doGesture);
 
-            // execute hiding
-            [_units, _pos, "holding"] call EFUNC(main,doGroupHide);
+                // execute hiding
+                [_units, _pos, "holding"] call EFUNC(main,doGroupHide);
+            };
 
             // debug
             if (EGVAR(main,debug_functions)) then {

@@ -114,6 +114,9 @@ if (_units isNotEqualTo [] && { _group getVariable [QEGVAR(danger,isExecutingTac
         [_group, _units, _vehicles, _posList],
         6 + random 2
     ] call CBA_fnc_waitAndExecute;
+} else {
+    // cycle over ~ release the forced speeds set above
+    {_x forceSpeed -1;} forEach _units;
 };
 
 // end

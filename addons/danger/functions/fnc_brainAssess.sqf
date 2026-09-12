@@ -25,7 +25,8 @@ params ["_unit", ["_target", objNull]];
 
 // timeout
 private _timeout = time + 2;
-private _suppressed = (getSuppression _unit) isNotEqualTo 0;
+// assertive units keep repositioning under light fire; -1 (suppression disabled) counts as not suppressed
+private _suppressed = (getSuppression _unit) > ([0, 0.5] select (GVAR(aggression) > 0));
 
 // check if stopped
 if (
@@ -35,6 +36,12 @@ if (
     || (currentCommand _unit) isEqualTo "STOP"
     || (combatMode _unit) in ["BLUE", "GREEN"]
 ) exitWith {_timeout};
+
+// directed by a Zeus ~ no sympathetic assaults, drop the building memory so the FSM stops re-queueing assessments
+if (_unit call EFUNC(main,isDirected)) exitWith {
+    (group _unit) setVariable [QEGVAR(main,groupMemory), []];
+    _timeout
+};
 
 // group memory
 private _groupMemory = (group _unit) getVariable [QEGVAR(main,groupMemory), []];

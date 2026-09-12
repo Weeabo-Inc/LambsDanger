@@ -34,8 +34,8 @@ if (_contactState < time) exitWith {[_unit, _target] call FUNC(contact)};
 // ai profiles ~ here is where AI profiles will be extrapolated - nkenny
 // if (_unit call FUNC(tacticsProfiles)) exitWith {true};
 
-// Leader assessment
-if (!isPlayer (leader _unit)) then {_unit call FUNC(tacticsAssess);};
+// Leader assessment ~ not while a Zeus directs the group
+if (!isPlayer (leader _unit) && {!(_group call EFUNC(main,isDirected))}) then {_unit call FUNC(tacticsAssess);};
 
 // end
 true

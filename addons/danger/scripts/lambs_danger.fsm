@@ -513,7 +513,7 @@ class FSM
                         itemno = 25;
                         init = /*%FSM<STATEINIT""">*/"" \n
                          "// has group memory" \n
-                         "if (_queue isEqualTo [] && {((group _this) getVariable [""lambs_main_groupMemory"", []]) isNotEqualTo []} ) then {" \n
+                         "if (_queue isEqualTo [] && {((group _this) getVariable [""lambs_main_groupMemory"", []]) isNotEqualTo []} && {!(_this call lambs_main_fnc_isDirected)}) then {" \n
                          "    _queue pushBack [10, ASLtoAGL (getPosASL _this), time + lambs_danger_dangerUntil, _dangerCausedBy];" \n
                          "};" \n
                          "" \n

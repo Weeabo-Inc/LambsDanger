@@ -28,7 +28,10 @@ if (_units isEqualTo []) exitWith {false};
     _unit setVariable [QEGVAR(main,currentTask), format ["Hide (%1)", _action], EGVAR(main,debug_functions)];
 
     // force movement!
-    if (getSuppression _unit > 0.4 || {_unit distance2D _pos > 25}) then {_unit setUnitPos selectRandom ["MIDDLE", "DOWN", "DOWN"];};
+    if (getSuppression _unit > 0.4 || {_unit distance2D _pos > 25}) then {
+        private _lowStance = _unit call FUNC(getLowStance);
+        _unit setUnitPos selectRandom ["MIDDLE", _lowStance, _lowStance];
+    };
     _unit setVariable [QEGVAR(danger,forceMove), true];
     [
         {

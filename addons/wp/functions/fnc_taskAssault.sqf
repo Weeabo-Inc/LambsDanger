@@ -37,6 +37,9 @@ params [
 if (!local _group) exitWith {false};
 _group = _group call CBA_fnc_getGroup;
 
+// task lifecycle
+private _token = [_group, ["taskAssault", "taskRetreat"] select _retreat] call FUNC(taskBegin);
+
 // sort wp
 if (_useWaypoint) then {
     _pos = [_group, (currentWaypoint _group) min ((count waypoints _group) - 1)];
@@ -70,12 +73,14 @@ _group setFormation "LINE";
 // sort units
 {
     _x setVariable [QEGVAR(danger,disableAI), true];
+    _x setVariable [QGVAR(setDisableAI), true];
     _x setVariable [QEGVAR(danger,forceMove), true];
     _x disableAI "TARGET";
     _x disableAI "WEAPONAIM";
     _x disableAI "FSM";
     _x disableAI "COVER";
     _x disableAI "SUPPRESSION";
+    _x setVariable [QGVAR(disabledAI), ["TARGET", "WEAPONAIM", "FSM", "COVER", "SUPPRESSION"] + (["AUTOTARGET", "FIREWEAPON"] select _retreat)];
 
     // variable
     _x setVariable [QEGVAR(main,currentTask), ["Rushing Assault", "Rushing Retreat"] select _retreat, EGVAR(main,debug_functions)];
@@ -118,11 +123,11 @@ _group setFormation "LINE";
         [
             {
                 params ["_args", "_handle"];
-                _args params ["_unit", "_group", "_retreat", "_threshold"];
+                _args params ["_unit", "_group", "_retreat", "_threshold", "_token"];
                 private _destination = (_group getVariable [QGVAR(taskAssaultDestination), getPos _unit]) call CBA_fnc_getPos;
 
                 // exit
-                if (!alive _unit || {_unit distance2D _destination < _threshold} || {_destination isEqualTo [0,0,0]}) exitWith {
+                if (!alive _unit || {_unit distance2D _destination < _threshold} || {_destination isEqualTo [0,0,0]} || {[_group, _token] call FUNC(taskIsCancelled)}) exitWith {
 
                     // group
                     private _groupMembers = _group getVariable [QGVAR(taskAssaultMembers), []];
@@ -152,7 +157,7 @@ _group setFormation "LINE";
                 _unit setUnitPos (["UP", "MIDDLE"] select (RND(0.85) || (stance _unit) isEqualTo "PRONE"));
             },
             _cycle - 0.5 + random 1.2,
-            [_x, _group, _retreat, _threshold]
+            [_x, _group, _retreat, _threshold, _token]
         ] call CBA_fnc_addPerFrameHandler;
         _x setVariable [QGVAR(taskAssault), true];
     };
@@ -163,7 +168,7 @@ _group setFormation "LINE";
 waitUntil {
 
     // reset option
-    if ((units _group) isEqualTo []) exitWith {true};
+    if ((units _group) isEqualTo [] || {[_group, _token] call FUNC(taskIsCancelled)}) exitWith {true};
 
     // adjust pos
     private _wPos = _pos call CBA_fnc_getPos;
@@ -207,15 +212,12 @@ waitUntil {
     // delay and end
     sleep _cycle;
     _group getVariable [QGVAR(taskAssaultMembers), []] isEqualTo []
+    || {[_group, _token] call FUNC(taskIsCancelled)}
 };
 
-// clean up
-_group setVariable [QGVAR(taskAssaultDestination), nil];
-_group setVariable [QGVAR(taskAssaultMembers), nil];
-_group setFormation "WEDGE";
-_group setBehaviour "AWARE";
-_group setCombatMode "YELLOW";
-_group enableAttack true;
+// clean up ~ a cancelled task was already cleaned up by whoever cancelled it
+if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {true};
+[_group] call FUNC(taskCleanup);
 
 // debug
 if (EGVAR(main,debug_functions)) then {

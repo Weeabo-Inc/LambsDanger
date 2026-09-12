@@ -206,6 +206,7 @@ if (_armored && {!isNull _dangerCausedBy}) exitWith {
     if (
         _validTarget
         && {_cargo isNotEqualTo []}
+        && {!(_unit call EFUNC(main,isDirected))}
         && {speed _vehicle < 10}
         && {_distance < 350}
         && {_unit knowsAbout _dangerCausedBy > 2 || {_distance < 220}}
@@ -263,8 +264,8 @@ if (_armored && {!isNull _dangerCausedBy}) exitWith {
         [_timeout + _delay] + _causeArray
     };
 
-    // tank assault
-    if (_attack && _slow && {(getUnitState _unit) in ["OK", "DELAY", "WAIT"]}) then {
+    // tank assault ~ not while a Zeus directs the group
+    if (_attack && _slow && {(getUnitState _unit) in ["OK", "DELAY", "WAIT"]} && {!(_unit call EFUNC(main,isDirected))}) then {
 
         // rotate
         private _rotate = [_unit, _dangerPos] call EFUNC(main,doVehicleRotate);

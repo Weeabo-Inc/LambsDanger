@@ -35,11 +35,12 @@ if (isNil QGVAR(dangerUntil)) then {
     {
         private _leader = leader _x;
         if (local _leader) then {
-            // reinforce
+            // reinforce ~ never while a Zeus directs the group
             if (
                 !isNull _target
                 && {_x getVariable [QGVAR(enableGroupReinforce), false]}
                 && {(_x getVariable [QGVAR(enableGroupReinforceTime), -1]) < time }
+                && {!(_x call EFUNC(main,isDirected))}
             ) then {
                 
                 // get pos of enemy if available
@@ -64,6 +65,44 @@ if (isNil QGVAR(dangerUntil)) then {
             };
         };
     } forEach (_groups select {(side _x) isEqualTo (side _unit)});
+}] call CBA_fnc_addEventHandler;
+
+// Zeus directed moves ~ raised on the curator client, handled on the group owner
+[QGVAR(directedMove), {
+    _this call FUNC(directedMoveSet);
+}] call CBA_fnc_addEventHandler;
+
+[QGVAR(directedDeleted), {
+    _this call FUNC(directedMoveDeleted);
+}] call CBA_fnc_addEventHandler;
+
+[QGVAR(directedRelease), {
+    _this call FUNC(directedMoveRelease);
+}] call CBA_fnc_addEventHandler;
+
+[QGVAR(diagnose), {
+    params [["_group", grpNull, [grpNull]], ["_curatorOwner", -1, [0]]];
+    if (isNull _group || {!local _group} || {_curatorOwner < 0}) exitWith {};
+    [QGVAR(diagnoseResult), [groupId _group, _group call FUNC(directedMoveDiagnose)], _curatorOwner] call CBA_fnc_targetEvent;
+}] call CBA_fnc_addEventHandler;
+
+// feedback for curators ~ handled on the curator client
+[QGVAR(curatorFeedback), {
+    params [["_text", "", [""]]];
+    if (isNull (findDisplay 312)) then {
+        systemChat _text;
+    } else {
+        [objNull, _text] call BIS_fnc_showCuratorFeedbackMessage;
+    };
+}] call CBA_fnc_addEventHandler;
+
+[QGVAR(diagnoseResult), {
+    params [["_groupId", "", [""]], ["_text", "", [""]]];
+    hintSilent parseText _text;
+    private _plain = _text regexReplace ["<[^>]+>", ""];
+    copyToClipboard (_plain regexReplace ["<br/>", endl]);
+    diag_log text format ["LAMBS diagnose %1: %2", _groupId, _plain];
+    systemChat format ["LAMBS: diagnosis of %1 shown in hint and copied to clipboard", _groupId];
 }] call CBA_fnc_addEventHandler;
 
 ADDON = true;

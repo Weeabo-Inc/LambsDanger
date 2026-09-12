@@ -13,6 +13,14 @@ PREP(isLeader);
 
 PREP(contact);
 
+PREP(directedMoveDeleted);
+PREP(directedMoveDiagnose);
+PREP(directedMoveFeedback);
+PREP(directedMoveRelease);
+PREP(directedMoveSet);
+PREP(directedMoveWatchdog);
+PREP(zeusWaypointInit);
+
 PREP(tactics);
 PREP(tacticsAssault);
 PREP(tacticsAssess);
@@ -27,14 +35,20 @@ PREP(tacticsReinforce);
 PREP(tacticsSuppress);
 
 SUBPREP(ZeusModules,moduleConfigureGroupAI);
+SUBPREP(ZeusModules,moduleDiagnose);
+SUBPREP(ZeusModules,moduleDirectedMove);
 SUBPREP(ZeusModules,moduleDisableAI);
 SUBPREP(ZeusModules,moduleSetRadio);
 
+SUBPREP(ZEN,setDiagnose);
 SUBPREP(ZEN,setDisableAI);
 SUBPREP(ZEN,setDisableGroupAI);
+SUBPREP(ZEN,setFollowWaypoints);
 SUBPREP(ZEN,setHasRadio);
 SUBPREP(ZEN,setReinforcement);
+SUBPREP(ZEN,setResumeBehaviour);
 SUBPREP(ZEN,showHasRadio);
 SUBPREP(ZEN,showReinforcement);
+SUBPREP(ZEN,showResumeBehaviour);
 SUBPREP(ZEN,showSetDisableAI);
 SUBPREP(ZEN,showSetDisableGroupAI);

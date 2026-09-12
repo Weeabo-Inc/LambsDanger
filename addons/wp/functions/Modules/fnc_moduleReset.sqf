@@ -35,7 +35,7 @@ switch (_mode) do {
             if (_error isEqualTo "") then {
                 if (_group isEqualType objNull) then { _group = group _group; };
                 [objNull, format ["%1 reset", groupId _group]] call BIS_fnc_showCuratorFeedbackMessage;
-                [QGVAR(taskReset), [_group], leader _group] call CBA_fnc_targetEvent;
+                [QGVAR(taskReset), [_group, true, true], leader _group] call CBA_fnc_targetEvent;
             } else {
                 [objNull, _error] call BIS_fnc_showCuratorFeedbackMessage;
             };
@@ -46,7 +46,7 @@ switch (_mode) do {
             private _groups = synchronizedObjects _logic apply {group _x};
             _groups = _groups arrayIntersect _groups;
             {
-                [QGVAR(taskReset), [_x], leader _x] call CBA_fnc_targetEvent;
+                [QGVAR(taskReset), [_x, true, true], leader _x] call CBA_fnc_targetEvent;
             } forEach _groups;
         };
     };

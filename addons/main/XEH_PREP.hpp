@@ -22,6 +22,7 @@ PREP(findClosestTarget);
 PREP(initModules);
 
 PREP(isAlive);
+PREP(isDirected);
 PREP(isIndoor);
 PREP(isNight);
 
@@ -30,6 +31,7 @@ PREP(parseData);
 
 PREP(removeEventhandlers);
 PREP(getCompatibleThrowMuzzle);
+PREP(getLowStance);
 
 SUBPREP(GroupAction,doGroupFlank);
 SUBPREP(GroupAction,doGroupHide);

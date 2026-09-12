@@ -42,6 +42,9 @@ private _leaderAlone = ( ( _units - crew _leader) findIf { _x distanceSqr _leade
 private _index = -1;
 private _checkCount = 3;
 
+// units spread out on a line across the direction of the target instead of stacking on one spot
+private _spreadDir = if (_posList isEqualTo []) then {getDir _leader} else {_overwatch getDir (_posList select 0)};
+
 {
     private _unit = _x;
     private _suppressed = (getSuppression _unit) > 0.5;
@@ -58,8 +61,11 @@ private _checkCount = 3;
     _unit setUnitPos _unitPos;
     _unit setVariable [QEGVAR(danger,forceMove), !_suppressed];
 
-    // move
-    _unit doMove (_overwatch vectorAdd [_forEachIndex, _forEachIndex, 0]);
+    // move ~ alternate sides, 3 m apart
+    private _movePos = _overwatch getPos [3 * ceil (_forEachIndex / 2), _spreadDir + ([90, -90] select ((_forEachIndex % 2) isEqualTo 0))];
+    private _emptyPos = _movePos findEmptyPosition [0, 4];
+    if (_emptyPos isNotEqualTo []) then {_movePos = _emptyPos;};
+    _unit doMove _movePos;
     _unit setVariable [QGVAR(currentTask), "Group Flank", GVAR(debug_functions)];
 
     // check suppress position

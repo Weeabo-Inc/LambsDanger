@@ -1,0 +1,104 @@
+#include "script_component.hpp"
+/*
+ * Author: bluefield-creator
+ * Builds a report explaining why a group may not be moving: likely causes first, then the
+ * group state and one line per unit. Runs on the machine that owns the group.
+ *
+ * Arguments:
+ * 0: Group, or a unit of the group <GROUP> or <OBJECT>
+ *
+ * Return Value:
+ * Structured text source, lines separated by <br/> <STRING>
+ *
+ * Example:
+ * [group bob] call lambs_danger_fnc_directedMoveDiagnose;
+ *
+ * Public: Yes
+*/
+#define HOLDING_WAYPOINTS ["HOLD", "GUARD", "SENTRY", "DISMISS", "SUPPORT"]
+#define SUPPRESSED 0.5
+
+params [["_group", grpNull, [grpNull, objNull]]];
+
+if (_group isEqualType objNull) then {_group = group _group;};
+if (isNull _group) exitWith {"No group"};
+if (!local _group) exitWith {format ["%1 is not local to this machine (owner %2)", groupId _group, groupOwner _group]};
+
+private _leader = leader _group;
+private _units = units _group;
+private _waypoints = waypoints _group;
+private _current = currentWaypoint _group;
+private _hasWaypoint = _current < count _waypoints;
+private _wpType = "";
+private _wpName = "";
+if (_hasWaypoint) then {
+    _wpType = waypointType (_waypoints select _current);
+    _wpName = waypointName (_waypoints select _current);
+};
+
+// likely causes, most decisive first
+private _causes = [];
+if (!(_leader call EFUNC(main,isAlive))) then {_causes pushBack "Leader is dead or unconscious: the group has nobody to follow";};
+if (_wpType in HOLDING_WAYPOINTS) then {
+    _causes pushBack format ["Current waypoint %1 is %2%3: the group will not advance past it on its own", _current, _wpType, ["", format [" (placed by LAMBS %1)", _wpName]] select (_wpName isNotEqualTo "")];
+};
+if (!(_leader checkAIFeature "PATH")) then {_causes pushBack "Leader pathfinding (PATH) is disabled, typically by a garrison or camp task";};
+if (!(_leader checkAIFeature "MOVE")) then {_causes pushBack "Leader movement (MOVE) is disabled";};
+if ((currentCommand _leader) isEqualTo "STOP") then {_causes pushBack "Leader has a STOP command";};
+if (_hasWaypoint && {!(_wpType in HOLDING_WAYPOINTS)} && {((expectedDestination _leader) select 1) isEqualTo "DoNotPlan"}) then {
+    _causes pushBack "Leader is not planning a path although a waypoint remains";
+};
+if (_group getVariable [QGVAR(isExecutingTactic), false]) then {
+    _causes pushBack format ["LAMBS tactic in progress: %1", _group getVariable [QEGVAR(main,currentTactic), "unknown"]];
+};
+if (EGVAR(main,Loaded_WP) && {!isNil {_group getVariable QEGVAR(wp,taskSnapshot)}}) then {
+    _causes pushBack format ["LAMBS task running: %1", _group getVariable [QEGVAR(main,currentTactic), "unknown"]];
+};
+if (_group call EFUNC(main,isDirected)) then {
+    _causes pushBack format ["Zeus directed move to waypoint %1 is active", (_group getVariable [QGVAR(directedMove), [-1]]) select 0];
+};
+if (attackEnabled _group && {(currentCommand _leader) isEqualTo "ATTACK"}) then {_causes pushBack "Leader is attacking a target (engine attack order)";};
+if (fleeing _leader) then {_causes pushBack "Group is fleeing";};
+if ((behaviour _leader) isEqualTo "STEALTH") then {_causes pushBack "Behaviour STEALTH: movement is very slow";};
+if ((behaviour _leader) isEqualTo "COMBAT") then {_causes pushBack "Behaviour COMBAT: bounding overwatch is slow, set AWARE on the waypoint for speed";};
+if ((combatMode _group) in ["BLUE", "GREEN"]) then {_causes pushBack format ["Combat mode %1: units hold fire", combatMode _group];};
+if (!simulationEnabled _leader) then {_causes pushBack "Simulation is disabled (dynamic simulation or hidden)";};
+if (_group getVariable [QGVAR(disableGroupAI), false]) then {_causes pushBack "LAMBS group AI is disabled for this group";};
+private _suppressed = _units select {getSuppression _x > SUPPRESSED};
+if (getSuppression _leader > SUPPRESSED) then {_causes pushBack format ["Leader is suppressed (%1)", getSuppression _leader toFixed 2];};
+if (_suppressed isNotEqualTo []) then {_causes pushBack format ["%1 of %2 units are suppressed", count _suppressed, count _units];};
+if (_causes isEqualTo []) then {_causes pushBack "No blocking state found: the group should be moving";};
+
+// group line
+private _lines = [
+    format ["<t size='1.1'>%1 %2</t> owner %3", side _group, groupId _group, groupOwner _group],
+    format ["Waypoint %1 of %2 %3 | attack %4 | %5 / %6 / %7 | %8", _current, count _waypoints, _wpType, attackEnabled _group, behaviour _leader, speedMode _group, combatMode _group, formation _group],
+    "<t color='#FFAA00'>Likely causes</t>"
+];
+_lines append (_causes apply {"- " + _x});
+_lines pushBack "<t color='#FFAA00'>Units</t>";
+
+// unit lines
+{
+    private _flags = [];
+    if (!(_x checkAIFeature "PATH")) then {_flags pushBack "noPATH";};
+    if (!(_x checkAIFeature "MOVE")) then {_flags pushBack "noMOVE";};
+    if (!(_x checkAIFeature "ANIM")) then {_flags pushBack "noANIM";};
+    if (_x getVariable [QGVAR(forceMove), false]) then {_flags pushBack "forced";};
+    if (_x getVariable [QGVAR(disableAI), false]) then {_flags pushBack "fsmOff";};
+    if (fleeing _x) then {_flags pushBack "fleeing";};
+    if (!(_x call EFUNC(main,isAlive))) then {_flags pushBack "down";};
+    if (isPlayer _x) then {_flags pushBack "player";};
+    _lines pushBack format [
+        "%1: %2 | ready %3 | %4 | %5 | %6m",
+        name _x,
+        [currentCommand _x, "-"] select ((currentCommand _x) isEqualTo ""),
+        unitReady _x,
+        [getUnitState _x, "player"] select (isPlayer _x),
+        [_flags joinString " ", "-"] select (_flags isEqualTo []),
+        round (_x distance2D _leader)
+    ];
+} forEach _units;
+
+// end
+_lines joinString "<br/>"

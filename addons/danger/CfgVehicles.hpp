@@ -69,4 +69,40 @@ class CfgVehicles {
             };
         };
     };
+
+    class GVAR(DirectedMove) : Module_F {
+        author = "LAMBS Dev Team";
+        _generalMacro = QGVAR(DirectedMove);
+        scope = 1;
+        scopeCurator = 2;
+        displayName = CSTRING(Module_DirectedMove_DisplayName);
+        isGlobal = 0;
+        category = "Lambs_Danger_Cat";
+        icon = "\a3\3den\Data\CfgWaypoints\move_ca.paa";
+        function = QFUNC(moduleDirectedMove);
+        class EventHandlers {
+            class CBA_Extended_EventHandlers: CBA_Extended_EventHandlers_base {};
+            class ADDON {
+                init = QUOTE(call EFUNC(main,initModules));
+            };
+        };
+    };
+
+    class GVAR(Diagnose) : Module_F {
+        author = "LAMBS Dev Team";
+        _generalMacro = QGVAR(Diagnose);
+        scope = 1;
+        scopeCurator = 2;
+        displayName = CSTRING(Module_Diagnose_DisplayName);
+        isGlobal = 0;
+        category = "Lambs_Danger_Cat";
+        icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa";
+        function = QFUNC(moduleDiagnose);
+        class EventHandlers {
+            class CBA_Extended_EventHandlers: CBA_Extended_EventHandlers_base {};
+            class ADDON {
+                init = QUOTE(call EFUNC(main,initModules));
+            };
+        };
+    };
 };

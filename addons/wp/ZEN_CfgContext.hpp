@@ -13,6 +13,16 @@ class ZEN_context_menu_actions {
             statement = QUOTE([ARR_2(_groups,_objects)] call FUNC(setArtilleryRegister));
             icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa";
         };
+        class TaskAssault {
+            displayName = CSTRING(Module_TaskAssault_DisplayName);
+            statement = QUOTE([ARR_3(_groups,_objects,_position)] call FUNC(setAssault));
+            icon = "\a3\ui_f\data\GUI\Cfg\CommunicationMenu\attack_ca.paa";
+        };
+        class TaskDefend {
+            displayName = CSTRING(Module_TaskDefend_DisplayName);
+            statement = QUOTE([ARR_2(_groups,_objects)] call FUNC(setDefend));
+            icon = "\a3\3DEN\Data\CfgWaypoints\Guard_ca.paa";
+        };
         class TaskCamp {
             displayName = CSTRING(Module_TaskCamp_DisplayName);
             statement = QUOTE([ARR_2(_groups,_objects)] call FUNC(setCamp));

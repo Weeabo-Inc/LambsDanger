@@ -85,6 +85,9 @@ private _fnc_rushOrders = {
 if (!local _group) exitWith {false};
 if (_group isEqualType objNull) then { _group = group _group; };
 
+// task lifecycle
+private _token = [_group, "taskRush"] call FUNC(taskBegin);
+
 // orders
 _group setSpeedMode "FULL";
 //_group setFormation "DIAMOND";
@@ -93,6 +96,7 @@ _group allowFleeing 0;
 {
     _x disableAI "AUTOCOMBAT";
     _x disableAI "FSM";
+    _x setVariable [QGVAR(disabledAI), ["AUTOCOMBAT", "FSM"]];
 
     // fired EH
     private _firedEH = _x addEventHandler ["Fired", {
@@ -125,7 +129,10 @@ _group setVariable [QEGVAR(main,currentTactic), "taskRush", EGVAR(main,debug_fun
 waitUntil {
 
     // performance
-    waitUntil { sleep 1; simulationEnabled (leader _group); };
+    waitUntil { sleep 1; simulationEnabled (leader _group) || {[_group, _token] call FUNC(taskIsCancelled)} };
+
+    // cancelled by reset, cleanup or a newer task
+    if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {true};
 
     // find
     private _target = [_group, _radius, _area, _pos, _onlyPlayers] call EFUNC(main,findClosestTarget);
@@ -141,6 +148,7 @@ waitUntil {
 
     // end
     ((units _group) findIf {_x call EFUNC(main,isAlive)} == -1)
+    || {[_group, _token] call FUNC(taskIsCancelled)}
 
 };
 

@@ -29,6 +29,7 @@ params [["_unit", objNull, [objNull]]];
 
 // check if group AI disabled
 private _group = group _unit;
+if (_group call EFUNC(main,isDirected)) exitWith {false};
 
 // set variable
 _group setVariable [QGVAR(isExecutingTactic), true];
@@ -53,7 +54,8 @@ private _plan = [];
 
 // sort plans
 _pos = [];
-if !(_enemies isEqualTo [] || {_unitCount < random 4}) then {
+// assertive groups plan whatever their size
+if !(_enemies isEqualTo [] || {GVAR(aggression) isEqualTo 0 && {_unitCount < random 4}}) then {
     scopeName "conditionScope";
 
     // sort nearest enemies
@@ -154,7 +156,7 @@ if !(_enemies isEqualTo [] || {_unitCount < random 4}) then {
         && {!(terrainIntersectASL [_eyePos vectorAdd [0, 0, 5], eyePos _x])}
     };
     if (_farHigherTarget isNotEqualTo -1) exitWith {
-        _plan append [TACTICS_SUPPRESS, TACTICS_HIDE, TACTICS_HIDE];
+        _plan append ([[TACTICS_SUPPRESS, TACTICS_HIDE, TACTICS_HIDE], [TACTICS_SUPPRESS, TACTICS_HIDE, TACTICS_ASSAULT]] select (GVAR(aggression) > 0));
         _pos = _unit getHideFrom (_enemies select _farHigherTarget);
     };
 
@@ -182,6 +184,7 @@ if !(_enemies isEqualTo [] || {_unitCount < random 4}) then {
 
         // basic plan
         _plan append [TACTICS_FLANK, TACTICS_FLANK, TACTICS_SUPPRESS];
+        if (GVAR(aggression) > 0) then {_plan pushBack TACTICS_ASSAULT;};
         _pos = _unit getHideFrom (_enemies select _fortifiedTarget);
 
         // combatmode

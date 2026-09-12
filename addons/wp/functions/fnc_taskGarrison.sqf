@@ -34,7 +34,7 @@ params [
     ["_area", [], [[]]],
     ["_teleport", TASK_GARRISON_TELEPORT, [false]],
     ["_sortBasedOnHeight", TASK_GARRISON_SORTBYHEIGHT, [false]],
-    ["_exitCondition", TASK_GARRISON_EXITCONDITIONS - 2, [0]],
+    ["_exitCondition", TASK_GARRISON_EXITCONDITIONS, [0]],
     ["_patrol", TASK_GARRISON_PATROL, [false]]
 ];
 
@@ -45,6 +45,9 @@ if (_group isEqualType objNull) then { _group = group _group; };
 // sort pos
 if (_pos isEqualTo []) then {_pos = _group;};
 _pos = _pos call CBA_fnc_getPos;
+
+// task lifecycle
+private _token = [_group, "taskGarrison"] call FUNC(taskBegin);
 
 // find guns
 private _weapons = nearestObjects [_pos, ["Landvehicle"], _radius, true];
@@ -147,7 +150,7 @@ private _fnc_addEventHandler = {
     params ["_unit", "_type"];
     if (_type == 0) exitWith {};
     if (_type == -2) then {
-        _type = floor (random 4);
+        _type = 1 + floor (random 4); // Hit, Fired, FiredNear or Suppressed
     };
 
     // variables
@@ -159,6 +162,7 @@ private _fnc_addEventHandler = {
             private _handle = _unit addEventHandler ["Hit", {
                 params ["_unit"];
                 [_unit, "PATH"] remoteExec ["enableAI", _unit];
+                _unit setVariable [QGVAR(disabledAI), nil];
                 _unit setCombatMode "RED";
                 [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
                 _unit setVariable [QGVAR(eventhandlers), nil];
@@ -169,6 +173,7 @@ private _fnc_addEventHandler = {
             private _handle = _unit addEventHandler ["Fired", {
                 params ["_unit"];
                 [_unit, "PATH"] remoteExec ["enableAI", _unit];
+                _unit setVariable [QGVAR(disabledAI), nil];
                 _unit setCombatMode "RED";
                 [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
                 _unit setVariable [QGVAR(eventhandlers), nil];
@@ -180,6 +185,7 @@ private _fnc_addEventHandler = {
                 params ["_unit", "_shooter", "_distance"];
                 if (side _unit != side _shooter && {_distance < (10 + random 10)}) then {
                     [_unit, "PATH"] remoteExec ["enableAI", _unit];
+                    _unit setVariable [QGVAR(disabledAI), nil];
                     _unit doMove (getPosATL _shooter);
                     _unit setCombatMode "RED";
                     [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
@@ -192,6 +198,7 @@ private _fnc_addEventHandler = {
             private _handle = _unit addEventHandler ["Suppressed", {
                 params ["_unit"];
                 [_unit, "PATH"] remoteExec ["enableAI", _unit];
+                _unit setVariable [QGVAR(disabledAI), nil];
                 _unit setCombatMode "RED";
                 [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
                 _unit setVariable [QGVAR(eventhandlers), nil];
@@ -216,6 +223,7 @@ private _fnc_addEventHandler = {
         } else {
             _x setVehiclePosition [_house, [], 0, "CAN_COLLIDE"];
             _x disableAI "PATH";
+            _x setVariable [QGVAR(disabledAI), ["PATH"]];
             _x setUnitPos selectRandom ["UP", "UP", "MIDDLE"];
 
             // look away from nearest building
@@ -230,14 +238,16 @@ private _fnc_addEventHandler = {
         _x doMove _house;
         [
             {
-                params ["_unit", ""];
-                unitReady _unit
+                params ["_unit", "", "_token"];
+                unitReady _unit || {[group _unit, _token] call FUNC(taskIsCancelled)}
             }, {
-                params ["_unit", "_target"];
+                params ["_unit", "_target", "_token"];
+                if ([group _unit, _token] call FUNC(taskIsCancelled)) exitWith {};
                 if (surfaceIsWater (getPosASL _unit) || (_unit distance _target > 1.5)) exitWith { _unit doFollow (leader _unit); };
                 _unit disableAI "PATH";
+                _unit setVariable [QGVAR(disabledAI), ["PATH"]];
                 _unit setUnitPos selectRandom ["UP", "UP", "MIDDLE"];
-            }, [_x, _house]
+            }, [_x, _house, _token]
         ] call CBA_fnc_waitUntilAndExecute;
     };
 
@@ -255,6 +265,7 @@ private _fnc_addEventHandler = {
 _pos set [2, 0]; // Stop Waypoints from Flying
 private _wp = _group addWaypoint [_pos, _radius / 5];
 _wp setWaypointType "HOLD";
+_wp setWaypointName QGVAR(garrison);
 _wp setWaypointCompletionRadius _radius;
 
 // debug

@@ -25,20 +25,20 @@ if (
 ) exitWith {false};
 
 // get buildings
-private _buildings = (group _unit) getVariable [QGVAR(inCQB), []];
+private _buildings = (group _unit) getVariable [QEGVAR(danger,inCQB), []];
 _buildings = _buildings select {count (_x getVariable [QGVAR(CQB_cleared_) + str (side _unit), [0, 0]]) > 0};
 
 // exit on no buildings -- middle unit pos
 if (_buildings isEqualTo []) exitWith {
     _unit doFollow leader _unit;
     [_unit, leader _unit] call FUNC(doAssaultSpeed);
-    if (_unit getVariable [QGVAR(forceMove), false]) then {_unit setVariable [QGVAR(forceMove), nil];}; // reset forceMove status!
+    if (_unit getVariable [QEGVAR(danger,forceMove), false]) then {_unit setVariable [QEGVAR(danger,forceMove), nil];}; // reset forceMove status!
     false
 };
 
 // settings
 _unit setUnitPosWeak "UP";
-_unit setVariable [QGVAR(forceMove), true];
+_unit setVariable [QEGVAR(danger,forceMove), true];
 
 // variables
 _unit setVariable [QGVAR(currentTarget), objNull, GVAR(debug_functions)];
@@ -93,7 +93,7 @@ if (RND(0.95) || {_unit distance _buildingPosSelected < 1.6}) then {
 
 // update group variable
 if (_buildingPos isEqualTo []) then {
-    (group _unit) setVariable [QGVAR(inCQB), _buildings - [_building]];
+    (group _unit) setVariable [QEGVAR(danger,inCQB), _buildings - [_building]];
 };
 
 // repeat
@@ -102,7 +102,7 @@ if (_buildingPos isNotEqualTo []) then {
 // or end
 } else {
     // remove force move!
-    _unit setVariable [QGVAR(forceMove), nil];
+    _unit setVariable [QEGVAR(danger,forceMove), nil];
 };
 
 // debug

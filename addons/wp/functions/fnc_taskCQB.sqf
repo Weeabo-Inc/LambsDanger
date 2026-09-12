@@ -175,6 +175,9 @@ if (_useWaypoint) then {
     _pos = [_group ,(currentWaypoint _group) min ((count waypoints _group) - 1)];
 };
 
+// task lifecycle
+private _token = [_group, "taskCQB"] call FUNC(taskBegin);
+
 // orders
 _group setSpeedMode "FULL";
 _group setFormation "FILE";
@@ -182,8 +185,10 @@ _group enableAttack false;
 _group allowFleeing 0;
 {
     _x setVariable [QEGVAR(danger,disableAI), true];
+    _x setVariable [QGVAR(setDisableAI), true];
     _x disableAI "AUTOCOMBAT";
     _x disableAI "SUPPRESSION";
+    _x setVariable [QGVAR(disabledAI), ["AUTOCOMBAT", "SUPPRESSION"]];
     _x enableIRLasers true;
     true
 } count units _group;
@@ -195,7 +200,10 @@ _group setVariable [QEGVAR(main,currentTactic), "taskCQB", EGVAR(main,debug_func
 waitUntil {
 
     // performance
-    waitUntil {sleep 1; simulationEnabled (leader _group)};
+    waitUntil {sleep 1; simulationEnabled (leader _group) || {[_group, _token] call FUNC(taskIsCancelled)}};
+
+    // cancelled by reset, cleanup or a newer task
+    if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {true};
 
     // get wp position
     private _wPos = _pos call CBA_fnc_getPos;
@@ -218,15 +226,13 @@ waitUntil {
 
     // end
     ((units _group) findIf {_x call EFUNC(main,isAlive)} == -1)
+    || {[_group, _token] call FUNC(taskIsCancelled)}
 
 };
 
-// reset
-{
-    _x setVariable [QEGVAR(danger,disableAI), nil];
-    _x setUnitPos "AUTO";
-    _x doFollow (leader _x);
-} forEach units _group;
+// reset ~ a cancelled task was already cleaned up by whoever cancelled it
+if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {true};
+[_group] call FUNC(taskCleanup);
 
 // debug
 if (EGVAR(main,debug_functions)) then {["%1 taskCQB: CQB DONE version 0.3", side _group] call EFUNC(main,debugLog);};

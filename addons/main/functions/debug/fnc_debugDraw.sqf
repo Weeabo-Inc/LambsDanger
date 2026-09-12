@@ -232,6 +232,10 @@ private _posCam = positionCameraToWorld [0, 0, 0];
         if (_unit getVariable [QEGVAR(danger,forceMove), false]) then {
             _textData append ["<t color='#FF4000'>Forced AI</t>", "<br/>"];
         };
+        if (_unit call FUNC(isDirected)) then {
+            private _directed = (group _unit) getVariable [QEGVAR(danger,directedMove), [0, [], 0]];
+            _textData append [format ["<t color='#40C0FF'>Directed move: wp %1 (%2s left)</t>", _directed select 0, round ((_directed select 2) - CBA_missionTime)], "<br/>"];
+        };
         if (fleeing _unit) then {
             _textData append ["<t color='#FFC0CB'>Fleeing</t>", "<br/>"];
         };

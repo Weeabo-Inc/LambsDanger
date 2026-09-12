@@ -18,7 +18,7 @@
 params [["_unit", objNull, [objNull]], ["_enemy", objNull, [objNull]]];
 
 // only leader
-if !((leader _unit) isEqualTo _unit || {_unit call EFUNC(main,isAlive)}) exitWith {false};
+if !((leader _unit) isEqualTo _unit && {_unit call EFUNC(main,isAlive)}) exitWith {false};
 
 // identify enemy
 if (isNull _enemy) then {
@@ -46,6 +46,19 @@ _group setVariable [QEGVAR(main,currentTactic), "Contact!", EGVAR(main,debug_fun
 _group enableAttack false;
 _group setFormation (_group getVariable [QGVAR(dangerFormation), formation _unit]);
 _group setFormDir (_unit getDir _enemy);
+
+// assertive groups get their attack orders back once the first reaction is over
+if (GVAR(aggression) > 0) then {
+    [
+        {
+            if (!isNull _this && {!(_this getVariable [QGVAR(isExecutingTactic), false])} && {!(_this call EFUNC(main,isDirected))}) then {
+                _this enableAttack true;
+            };
+        },
+        _group,
+        30
+    ] call CBA_fnc_waitAndExecute;
+};
 
 // call event system
 [QGVAR(onContact), [_unit, _group, _enemy]] call EFUNC(main,eventCallback);
@@ -76,8 +89,8 @@ if (count _units > 2) then {
     }, [_unit, _enemy, _stealth], 1 + random 4
 ] call CBA_fnc_waitAndExecute;
 
-// units stealthy or indoor units stay inside
-if ((_unit checkAIFeature "PATH") && (_stealth || {[_unit] call EFUNC(main,isIndoor)})) then {
+// units stealthy or indoor units stay inside ~ not while a Zeus directs the group
+if ((_unit checkAIFeature "PATH") && {!(_group call EFUNC(main,isDirected))} && {_stealth || {[_unit] call EFUNC(main,isIndoor)}}) then {
     private _buildings = [leader _unit, 35, true, true] call EFUNC(main,findBuildings);
     _group setVariable [QEGVAR(main,groupMemory), _buildings, false];
 };
@@ -87,9 +100,10 @@ if ((_unit checkAIFeature "PATH") && (_stealth || {[_unit] call EFUNC(main,isInd
     if ((unitPos _x) isEqualTo "Auto") then {_x setUnitPosWeak "MIDDLE";};
 } forEach _units;
 
-// leader seeks cover
+// leader seeks cover ~ not while a Zeus directs the group
 if (
     ((expectedDestination _unit) select 1) isEqualTo "DoNotPlan"
+    && {!(_group call EFUNC(main,isDirected))}
 ) then {
     private _cover = nearestTerrainObjects [ _unit, ["BUSH", "TREE", "SMALL TREE", "HOUSE", "ROCK", "WALL", "FENCE"], 35, false, true ];
     if (_cover isNotEqualTo []) then {

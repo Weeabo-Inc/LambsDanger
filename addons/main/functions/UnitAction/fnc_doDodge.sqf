@@ -19,25 +19,29 @@
 
 params ["_unit", ["_pos", [0, 0, 0]]];
 
-// ACE3 captive exit
+// ACE3 captive exit, dodge cooldown
 if (
     GVAR(disableAIDodge)
     || {!(_unit checkAIFeature "MOVE")}
     || {!(_unit checkAIFeature "PATH")}
     || {((currentWeapon _unit) isNotEqualTo (primaryWeapon _unit))}
+    || {(_unit getVariable [QGVAR(dodgeTime), -1]) > time}
 ) exitWith {false};
 
 // dodge
 _unit setVariable [QGVAR(currentTask), "Dodge!", GVAR(debug_functions)];
 _unit setVariable [QGVAR(currentTarget), _pos, GVAR(debug_functions)];
+_unit setVariable [QGVAR(dodgeTime), time + (missionNamespace getVariable [QEGVAR(danger,dodgeCooldown), 0])];
 
 // settings
 private _stance = stance _unit;
 private _dir = _unit getRelDir _pos;
 private _still = (speed _unit) isEqualTo 0;
+private _assertive = (missionNamespace getVariable [QEGVAR(danger,aggression), 0]) > 0;
+private _directed = _unit call FUNC(isDirected);
 
-// prone override
-if (_still && {_stance isEqualTo "PRONE"} && {!(lineIntersects [eyePos _unit, (eyePos _unit) vectorAdd [0, 0, 7]])}) exitWith {
+// prone override ~ assertive units only roll when they are being suppressed
+if (_still && {_stance isEqualTo "PRONE"} && {!_assertive || {getSuppression _unit > 0.5}} && {!(lineIntersects [eyePos _unit, (eyePos _unit) vectorAdd [0, 0, 7]])}) exitWith {
     [_unit, ["EvasiveLeft", "EvasiveRight"] select (_dir > 180), true] call FUNC(doGesture);
     true
 };
@@ -56,14 +60,15 @@ if (_stance isEqualTo "STAND") then {_unit setUnitPosWeak "MIDDLE";};
 // chose anim
 private _anim = call {
 
-    // drop down
-    if !(_nearDistance || _still) exitWith {
-        _unit setUnitPosWeak "DOWN";
-        "Down"
+    // drop down ~ not while a Zeus directs the group, assertive units crouch instead of diving
+    if (!(_nearDistance || _still) && {!_directed}) exitWith {
+        private _lowStance = _unit call FUNC(getLowStance);
+        _unit setUnitPosWeak _lowStance;
+        [["Down"], ["TactLB", "TactRB"]] select (_lowStance isEqualTo "MIDDLE")
     };
 
     // move back ~ more checks because sometimes we want the AI to move forward in CQB - nkenny
-    if (_still  && { !_nearDistance } && {_dir > 320 || { _dir < 40 }}) exitWith {
+    if (_still && {!_nearDistance} && {!_directed} && {_dir > 320 || { _dir < 40 }}) exitWith {
         [["FastB", "FastLB", "FastRB"], ["TactB", "TactLB","TactRB"]] select (getSuppression _unit > 0.7);
     };
 

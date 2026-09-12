@@ -19,10 +19,14 @@ params ["_unit", ["_retreat", false]];
 
 _unit setVariable [QEGVAR(danger,disableAI), nil];
 _unit setVariable [QEGVAR(danger,forceMove), nil];
+_unit setVariable [QGVAR(setDisableAI), nil];
+_unit setVariable [QGVAR(disabledAI), nil];
+_unit setVariable [QGVAR(taskAssault), nil];
 
 // stance
 _unit forceSpeed -1;
 _unit setUnitPos "AUTO";
+_unit allowGetIn true;
 _unit doMove (getPosASL _unit);
 _unit doFollow (leader _unit);
 
@@ -32,6 +36,7 @@ _unit enableAI "COVER";
 _unit enableAI "SUPPRESSION";
 _unit enableAI "TARGET";
 _unit enableAI "WEAPONAIM";
+_unit enableAI "AUTOCOMBAT";
 
 // eventhandlers
 [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);

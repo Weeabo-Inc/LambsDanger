@@ -37,6 +37,7 @@ if (
     _still
     && _stealth
     && _holdFire
+    && {!(_unit call EFUNC(main,isDirected))}
 ) exitWith {
     [_unit, _target] call EFUNC(main,doHide);
     _timeout + 2
@@ -56,10 +57,11 @@ if (
 // distance + group memory
 private _distance = _unit distance2D _target;
 
-// near, go for CQB
+// near, go for CQB ~ not while a Zeus directs the group
 if (
     _distance < GVAR(cqbRange)
     && _unit checkAIFeature "PATH"
+    && {!(_unit call EFUNC(main,isDirected))}
     && (vehicle _target) isKindOf "CAManBase"
     && {_target call EFUNC(main,isAlive)}
 ) exitWith {

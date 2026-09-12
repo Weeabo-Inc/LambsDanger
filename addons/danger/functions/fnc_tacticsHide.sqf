@@ -27,6 +27,7 @@ if (isNull _group) exitWith {false};
 if (_group isEqualType objNull) then {_group = group _group;};
 if ((units _group) isEqualTo []) exitWith {false};
 private _unit = leader _group;
+if (_group call EFUNC(main,isDirected)) exitWith {false};
 
 // find target
 _target = _target call CBA_fnc_getPos;
@@ -39,7 +40,7 @@ _target = _target call CBA_fnc_getPos;
             _group setVariable [QGVAR(isExecutingTactic), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
             _group setCombatMode _combatMode;
-            _group enableAttack _enableAttack;
+            _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
             _group setFormation _formation;
             (units _group) doFollow (leader _group)
         };

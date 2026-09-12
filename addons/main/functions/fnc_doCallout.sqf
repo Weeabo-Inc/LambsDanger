@@ -137,4 +137,4 @@ if (GVAR(debug_functions)) then {
 };
 
 // set time until next callout
-_unit setVariable [QGVAR(calloutTime), time + 4, true];
+_unit setVariable [QGVAR(calloutTime), time + 4]; // only read on the owning machine; time is not comparable across machines

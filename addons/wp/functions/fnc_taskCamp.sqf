@@ -44,6 +44,9 @@ private _units = (units _group) select {!isPlayer _x && {isNull objectParent _x}
 if (_pos isEqualTo []) then { _pos = _group; };
 _pos = _pos call CBA_fnc_getPos;
 
+// task lifecycle
+private _token = [_group, "taskCamp"] call FUNC(taskBegin);
+
 // orders
 _group setBehaviour "SAFE";
 _group setSpeedMode "LIMITED";
@@ -85,7 +88,7 @@ if (_patrol) then {
     } else {
         private _area2 = +_area;
         _area2 set [0, (_area2 select 0) * 2];
-        _area2 set [0, (_area2 select 1) * 2];
+        _area2 set [1, (_area2 select 1) * 2];
         [_patrolGroup, _pos, _range * 2, 4, _area2, true, false, _teleport] call FUNC(taskPatrol);
     };
 
@@ -200,12 +203,14 @@ private _dir = random 360;
         params ["_unit"];
         unitReady _unit
     }, {
-        params ["_unit", "_target", "_center", "_anim"];
+        params ["_unit", "_target", "_center", "_anim", "_token"];
+        if ([group _unit, _token] call FUNC(taskIsCancelled)) exitWith {};
         if (surfaceIsWater (getPosASL _unit) || (_unit distance2D _target > 1)) exitWith { _unit doFollow (leader _unit); };
         [_unit, _anim, 2] call EFUNC(main,doAnimation);
 
         _unit disableAI "ANIM";
         _unit disableAI "PATH";
+        _unit setVariable [QGVAR(disabledAI), ["ANIM", "PATH"]];
         _unit setDir (_unit getDir _center);
         _unit setUnitPos "MIDDLE";
         private _handleHit = _unit addEventHandler ["Hit", {
@@ -221,12 +226,13 @@ private _dir = random 360;
             [QGVAR(taskCampReset), _unit, _unit] call CBA_fnc_targetEvent;
         }];
         _unit setVariable [QGVAR(eventhandlers), [["Hit", _handleHit], ["FiredNear", _handleFiredNear], ["Suppressed", _handleSuppressed]]];
-    }, [_x, _campPos, _pos, selectRandom _anims]] call CBA_fnc_waitUntilAndExecute;
+    }, [_x, _campPos, _pos, selectRandom _anims, _token]] call CBA_fnc_waitUntilAndExecute;
 } forEach _units;
 
 // waypoint and end state
 private _wp = _group addWaypoint [_pos, 0];
 _wp setWaypointType "SENTRY";
+_wp setWaypointName QGVAR(camp);
 _wp setWaypointStatements ["true", "
     if (local this) then {
         {
@@ -251,6 +257,7 @@ private _wp2Type = switch (_exitWP) do {
     default {"HOLD"};
 };
 _wp2 setWaypointType _wp2Type;
+_wp2 setWaypointName QGVAR(camp);
 
 // debug
 if (EGVAR(main,debug_functions)) then {

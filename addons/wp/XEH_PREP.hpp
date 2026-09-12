@@ -3,6 +3,9 @@ PREP(doAssaultUnitReset);
 PREP(sideHasArtillery);
 PREP(taskArtillery);
 PREP(taskArtilleryRegister);
+PREP(taskBegin);
+PREP(taskCleanup);
+PREP(taskIsCancelled);
 PREP(taskAssault);
 PREP(taskCamp);
 PREP(taskCQB);
@@ -30,6 +33,7 @@ SUBPREP(Modules,moduleDefend);
 
 
 SUBPREP(ZEN,setArtilleryRegister);
+SUBPREP(ZEN,setAssault);
 SUBPREP(ZEN,setCamp);
 SUBPREP(ZEN,setCQB);
 SUBPREP(ZEN,setCreep);

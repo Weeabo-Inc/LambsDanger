@@ -78,7 +78,7 @@ if (_dangerPos isNotEqualTo [0, 0, 1.8]) then {
                     if (lineIntersects [_dangerPos, _posASL vectorAdd [0, 0, 1], _unit]) then {
                         _stances pushBack "MIDDLE";
                         // check up position
-                        if (lineIntersects [_dangerPos, _posASL vectorAdd [0, 0, 1], _unit]) then {
+                        if (lineIntersects [_dangerPos, _posASL vectorAdd [0, 0, 1.7], _unit]) then {
                             _stances pushBack "UP";
                         };
                     };

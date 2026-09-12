@@ -33,12 +33,16 @@ private _timeout = time + 1.4;
 // ACE3
 _unit setVariable ["ace_medical_ai_lastHit", CBA_missionTime];
 
-// cover move when explosion
+// cover move when explosion ~ not while a Zeus directs the group; assertive units only sometimes duck on visible fire
+private _assertive = GVAR(aggression) > 0;
 if (
-    getSuppression _unit > 0.5
-    || (getUnitState _unit) isEqualTo "REPLAN"
-    || (currentCommand _unit) isEqualTo "STOP"
-    || (_type isEqualTo DANGER_FIRE)
+    !(_unit call EFUNC(main,isDirected))
+    && {
+        getSuppression _unit > 0.5
+        || (getUnitState _unit) isEqualTo "REPLAN"
+        || (currentCommand _unit) isEqualTo "STOP"
+        || {(_type isEqualTo DANGER_FIRE) && {!_assertive || {RND(0.7)}}}
+    }
 ) exitWith {
     [_unit] call EFUNC(main,doCover);
     _timeout + 1

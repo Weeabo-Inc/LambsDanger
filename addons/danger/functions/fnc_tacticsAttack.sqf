@@ -25,6 +25,7 @@ if (isNull _group) exitWith {false};
 if (_group isEqualType objNull) then {_group = group _group;};
 if ((units _group) isEqualTo []) exitWith {false};
 private _unit = leader _group;
+if (_group call EFUNC(main,isDirected)) exitWith {false};
 
 // position
 if (_target isEqualType []) then {

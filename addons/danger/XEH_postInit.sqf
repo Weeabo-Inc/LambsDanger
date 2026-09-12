@@ -19,3 +19,6 @@
     [_this select 0, QGVAR(OnReinforce), _this] call BIS_fnc_callScriptedEventHandler;
     [_this select 1, QGVAR(OnReinforce), _this] call BIS_fnc_callScriptedEventHandler;
 }] call CBA_fnc_addEventHandler;
+
+// Zeus waypoints become directed moves
+call FUNC(zeusWaypointInit);

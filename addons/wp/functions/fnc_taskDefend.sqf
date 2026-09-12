@@ -24,9 +24,7 @@
  * Public: Yes
 */
 
-if !(canSuspend) exitWith {
-    _this spawn FUNC(taskDefend);
-};
+if (canSuspend) exitWith { [FUNC(taskDefend), _this] call CBA_fnc_directCall; };
 
 params [
     ["_group", grpNull, [grpNull, objNull]],
@@ -47,6 +45,9 @@ if (_group isEqualType objNull) then { _group = group _group; };
 if (_pos isEqualTo []) then {_pos = leader _group;};
 _pos = _pos call CBA_fnc_getPos;
 
+// task lifecycle
+private _token = [_group, "taskDefend"] call FUNC(taskBegin);
+
 // orders
 _group enableAttack false;
 _group setFormation (["DIAMOND", "LINE"] select _stealth);
@@ -60,6 +61,7 @@ _group setVariable [QEGVAR(main,currentTactic), "taskDefend", EGVAR(main,debug_f
 // orders
 private _wp = _group addWaypoint [_pos, 0, 0];
 _wp setWaypointType "HOLD";
+_wp setWaypointName QGVAR(defend);
 
 // find defensive spots
 private _defensivePos = [];
@@ -187,8 +189,23 @@ _group setVariable [QGVAR(defendUpdate), time];
 
 private _handle = [
     {
-        params ["_args"];
-        _args params ["_group", "_pos", "_radius", "_defensivePos"];
+        params ["_args", "_handle"];
+        _args params ["_group", "_pos", "_radius", "_defensivePos", "_token", "_waypointCount"];
+
+        // end ~ cancelled, all dead, or the waypoints changed (a Zeus gave new orders)
+        private _cancelled = [_group, _token] call FUNC(taskIsCancelled);
+        if (
+            _cancelled
+            || {(units _group) findIf {_x call EFUNC(main,isAlive)} == -1}
+            || {count (waypoints _group) isNotEqualTo _waypointCount}
+        ) exitWith {
+            [_handle] call CBA_fnc_removePerFrameHandler;
+            if (!isNull _group) then {
+                _group setVariable [QGVAR(defendPFH), nil];
+                // a cancelled task was already cleaned up by whoever cancelled it
+                if (!_cancelled) then {[_group] call FUNC(taskCleanup);};
+            };
+        };
 
         // get variables
         private _defendUpdate = _group getVariable [QGVAR(defendUpdate), time];
@@ -303,8 +320,9 @@ private _handle = [
         };
     },
     8,
-    [_group, _pos, _radius, _defensivePos]
+    [_group, _pos, _radius, _defensivePos, _token, count (waypoints _group)]
 ] call CBA_fnc_addPerFrameHandler;
+_group setVariable [QGVAR(defendPFH), _handle];
 
 // cover debug
 if (EGVAR(main,debug_functions)) then {
@@ -315,31 +333,6 @@ if (EGVAR(main,debug_functions)) then {
         _mList pushBack _marker;
     } forEach _defensivePos;
     [{[{deleteMarker _x} forEach _this]}, _mList, 60] call CBA_fnc_waitAndExecute;
-};
-
-// count waypoints
-private _waypointCount = count (waypoints _group);
-
-// waypoint loop
-waitUntil {
-
-    // performance
-    waitUntil { sleep 2; simulationEnabled (leader _group) };
-
-    // alive or waypoints changed
-    (units _group) findIf {_x call EFUNC(main,isAlive)} == -1
-    || {count (waypoints _group) isNotEqualTo _waypointCount}
-};
-
-// remove handler
-[_handle] call CBA_fnc_removePerFrameHandler;
-
-// reset
-if (!isNull _group) then {
-
-    // reset
-    {[_x] call FUNC(doAssaultUnitReset)} forEach (units _group);
-
 };
 
 // end

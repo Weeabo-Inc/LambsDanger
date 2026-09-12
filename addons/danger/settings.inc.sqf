@@ -108,6 +108,52 @@ _curCat = LSTRING(Settings_GeneralCat);
     1
 ] call CBA_fnc_addSetting;
 
+// Zeus
+_curCat = LSTRING(Settings_ZeusCat);
+
+// What a Zeus placed waypoint does to a LAMBS group
+[
+    QGVAR(zeusWaypointDiscipline),
+    "LIST",
+    [LSTRING(Settings_ZeusWaypointDiscipline), LSTRING(Settings_ZeusWaypointDiscipline_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [[0, 1, 2], [LSTRING(Settings_ZeusWaypointDiscipline_Off), LSTRING(Settings_ZeusWaypointDiscipline_Move), LSTRING(Settings_ZeusWaypointDiscipline_Strict)], 1],
+    1
+] call CBA_fnc_addSetting;
+
+// Time after which a directed move is abandoned
+[
+    QGVAR(zeusWaypointTimeout),
+    "SLIDER",
+    [LSTRING(Settings_ZeusWaypointTimeout), LSTRING(Settings_ZeusWaypointTimeout_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [60, 1800, 600, 0],
+    1
+] call CBA_fnc_addSetting;
+
+// Aggression
+_curCat = LSTRING(Settings_AggressionCat);
+
+// Stance and planning discipline
+[
+    QGVAR(aggression),
+    "LIST",
+    [LSTRING(Settings_Aggression), LSTRING(Settings_Aggression_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [[0, 1], [LSTRING(Settings_Aggression_Default), LSTRING(Settings_Aggression_Assertive)], 1],
+    1
+] call CBA_fnc_addSetting;
+
+// Minimum time between two dodge reactions of the same unit
+[
+    QGVAR(dodgeCooldown),
+    "SLIDER",
+    [LSTRING(Settings_DodgeCooldown), LSTRING(Settings_DodgeCooldown_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [0, 15, 6, 1],
+    1
+] call CBA_fnc_addSetting;
+
 /*
 TEMPORARILY DISABLED FOR VERSION 2.5 RELEASE
 WAITING BETTER OR OTHER SOLUTION

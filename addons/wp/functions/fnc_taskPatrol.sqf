@@ -45,6 +45,9 @@ if (_group isEqualType objNull) then { _group = group _group; };
 if (_pos isEqualTo []) then { _pos = _group; };
 _pos = _pos call CBA_fnc_getPos;
 
+// task lifecycle
+[_group, "taskPatrol"] call FUNC(taskBegin);
+
 // remove all waypoints
 [_group] call CBA_fnc_clearWaypoints;
 
@@ -103,6 +106,7 @@ for "_i" from 1 to _waypointCount do {
     if (surfaceIsWater _pos2) then { _pos2 = _pos };
     _wp = _group addWaypoint [_pos2, 10];
     _wp setWaypointType "MOVE";
+    _wp setWaypointName QGVAR(patrol);
     _wp setWaypointTimeout [8, 10, 15];
     _wp setWaypointCompletionRadius 10;
     _wp setWaypointStatements ["true", "if (local this) then {(group this) enableGunLights 'forceOn';}"];

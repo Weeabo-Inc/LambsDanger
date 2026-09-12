@@ -72,7 +72,7 @@ _unit doWatch _pos;
 
 // all others ~ go straight down
 [QEGVAR(main,doSwitchMove), [_unit, "AmovPercMsprSlowWrflDf_AmovPpneMstpSrasWrflDnon"]] call CBA_fnc_globalEvent;
-_unit setUnitPosWeak "DOWN";
+_unit setUnitPosWeak (_unit call EFUNC(main,getLowStance));
 
 // end
 true

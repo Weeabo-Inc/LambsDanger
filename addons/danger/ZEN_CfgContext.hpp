@@ -45,5 +45,22 @@ class ZEN_context_menu_actions {
             displayName = CSTRING(Context_DisableReinforcement);
             args = 0;
         };
+
+        class FollowWaypoints {
+            displayName = CSTRING(Context_FollowWaypoints);
+            statement = QUOTE([ARR_3(_groups,_objects,_position)] call FUNC(setFollowWaypoints));
+            icon = "\a3\3den\Data\CfgWaypoints\move_ca.paa";
+        };
+        class ResumeBehaviour {
+            displayName = CSTRING(Context_ResumeBehaviour);
+            statement = QUOTE([ARR_2(_groups,_objects)] call FUNC(setResumeBehaviour));
+            condition = QUOTE([ARR_2(_groups,_objects)] call FUNC(showResumeBehaviour));
+            icon = "\a3\3den\Data\CfgWaypoints\cycle_ca.paa";
+        };
+        class Diagnose {
+            displayName = CSTRING(Context_Diagnose);
+            statement = QUOTE([ARR_2(_groups,_objects)] call FUNC(setDiagnose));
+            icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\intel_ca.paa";
+        };
     };
 };

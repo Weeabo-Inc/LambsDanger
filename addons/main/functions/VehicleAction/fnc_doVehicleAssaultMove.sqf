@@ -26,11 +26,13 @@ private _vehicle = vehicle _unit;
 if (_distance < 0) then {_distance = _vehicle distance _pos};
 if (isNull _target) then {_target = _vehicle;};
 
-// cannot move or moving or enemy too close or too far away
+// already moving or attacking ~ leave the current order (possibly a Zeus waypoint) alone
+if ((currentCommand _vehicle) in ["MOVE", "ATTACK"]) exitWith {false};
+
+// cannot move or enemy too close or too far away
 if (
     !canMove _vehicle
     || { (fuel _vehicle) < 0.1 }
-    || { (currentCommand _vehicle) in ["MOVE", "ATTACK"] }
     || {_distance < (precision _vehicle)}
     || {_distance > 200}
     ) exitWith {

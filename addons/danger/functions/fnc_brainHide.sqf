@@ -45,6 +45,12 @@ if (_type isEqualTo DANGER_SCREAM) exitWith {
 // check if stopped
 if (!(_unit checkAIFeature "PATH")) exitWith {-1};
 
+// directed by a Zeus ~ look, but keep moving
+if (_unit call EFUNC(main,isDirected)) exitWith {
+    _unit doWatch _pos;
+    _timeout
+};
+
 // check bodies ~ own group!
 if (_type isEqualTo DANGER_DEADBODYGROUP) exitWith {
 
@@ -88,7 +94,7 @@ if (_type isEqualTo DANGER_DEADBODY) exitWith {
 };
 
 // drop down into cover
-_unit setUnitPosWeak "DOWN";
+_unit setUnitPosWeak (_unit call EFUNC(main,getLowStance));
 
 // end
 _timeout

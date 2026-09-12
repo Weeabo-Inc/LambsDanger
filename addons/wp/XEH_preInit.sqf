@@ -79,13 +79,14 @@ if (isServer) then {
 }] call CBA_fnc_addEventhandler;
 
 [QGVAR(taskDefend), {
-    _this spawn FUNC(taskDefend);
+    _this call FUNC(taskDefend);
 }] call CBA_fnc_addEventhandler;
 
 [QGVAR(taskCampReset), {
     params ["_unit"];
     _unit enableAI 'ANIM';
     _unit enableAI 'PATH';
+    _unit setVariable [QGVAR(disabledAI), nil];
     [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
     _unit setVariable [QGVAR(eventhandlers), nil];
     [_unit, "", 2] call EFUNC(main,doAnimation);

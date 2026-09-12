@@ -28,7 +28,7 @@ if (
 
 // do nothing when already inside
 if (RND(GVAR(indoorMove)) && {_unit call FUNC(isIndoor)}) exitWith {
-    _unit setUnitPosWeak "DOWN";
+    _unit setUnitPosWeak (_unit call FUNC(getLowStance));
     doStop _unit;
     false
 };
@@ -45,12 +45,13 @@ _unit setVariable [QGVAR(currentTask), "Hide!", GVAR(debug_functions)];
 // set speed
 _unit forceSpeed 24;
 
-// set stance reset
+// set stance and speed reset
 [
     {
         if (alive _this) then {
             _this setUnitPos "AUTO";
-            _this setUnitPosWeak "DOWN";
+            _this setUnitPosWeak (_this call FUNC(getLowStance));
+            _this forceSpeed -1;
         };
     },
     _unit,
@@ -74,7 +75,7 @@ if ( RND(0.2) && { _buildings isNotEqualTo [] } ) exitWith {
 };
 
 // hide
-_unit setUnitPos "DOWN";
+_unit setUnitPos (_unit call FUNC(getLowStance));
 
 // check for rear-cover
 private _cover = nearestTerrainObjects [ _unit getPos [5, _pos getDir _unit], ["BUSH", "TREE", "SMALL TREE", "HIDE", "WALL", "FENCE"], 15, false, true ];
@@ -95,12 +96,16 @@ if (surfaceIsWater _targetPos) exitWith {
     false
 };
 
-// cover move or stay put
+// cover move or stay put ~ the stop is bounded so the unit rejoins its formation on its own
+private _fnc_stopThenFollow = {
+    doStop _this;
+    [{if (alive _this) then {_this doFollow (leader _this);};}, _this, 20 + random 10] call CBA_fnc_waitAndExecute;
+};
 if (_unit distanceSqr _targetPos > 1.5) then {
     _unit doMove _targetPos;
-    [{unitReady _this}, {doStop _this}, _unit, 2] call CBA_fnc_waitUntilAndExecute;
+    [{unitReady _this}, _fnc_stopThenFollow, _unit, 2] call CBA_fnc_waitUntilAndExecute;
 } else {
-    doStop _unit;
+    _unit call _fnc_stopThenFollow;
 };
 
 // debug
