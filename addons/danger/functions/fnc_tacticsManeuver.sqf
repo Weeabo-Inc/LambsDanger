@@ -515,11 +515,23 @@ private _handle = [{
                 _axis = _anchor getDir _objective;
             };
 
+            // the side a man fans to is the side he is already on, so nobody runs across the others;
+            // his rank on that side follows his distance from the axis
+            private _left = [];
+            private _right = [];
+            {
+                private _rel = (getPosATL _x) vectorDiff _anchor;
+                private _lateral = ((_rel select 0) * cos _axis) - ((_rel select 1) * sin _axis);
+                [_left, _right] select (_lateral >= 0) pushBack [abs _lateral, _all find _x];
+            } forEach _all;
+            _left sort true;
+            _right sort true;
             {
                 if (isNull objectParent _x) then {
                     private _slot = _all find _x;
-                    private _sideSign = [1, -1] select ((_slot % 2) isEqualTo 1);
-                    private _rank = floor (_slot / 2);
+                    private _onRight = (_right findIf {(_x select 1) isEqualTo _slot}) isNotEqualTo -1;
+                    private _sideSign = [-1, 1] select _onRight;
+                    private _rank = ([_left, _right] select _onRight) findIf {(_x select 1) isEqualTo _slot};
                     private _pos = if (_emergency) then {
                         // tight cluster on the rally point, into cover where there is any
                         private _spot = (_anchor getPos [2 * _rank, _axis + 180]) getPos [RALLY_SPACING * (_rank + 1), _axis + (_sideSign * 90)];

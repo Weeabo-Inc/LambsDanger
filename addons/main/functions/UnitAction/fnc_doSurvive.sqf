@@ -21,7 +21,7 @@
  *
  * Public: No
 */
-#define COOLDOWN 5
+#define COOLDOWN 8
 #define COVER_RANGE 15
 #define BREAK_RANGE 32
 #define BREAK_MIN 20
@@ -57,6 +57,16 @@ if (_level >= 3 && {(_unit targets [true, FIGHT_RANGE]) isNotEqualTo []}) exitWi
     _unit setVariable [QGVAR(currentTask), "Fighting for his life", GVAR(debug_functions)];
     [_unit, _target] call FUNC(doAssault);
     true
+};
+
+// already flat behind something: stay there, hopping between bushes is what gets you killed
+if (
+    _level < 3
+    && {(stance _unit) isEqualTo "PRONE"}
+    && {(nearestTerrainObjects [_unit, ["BUSH", "TREE", "SMALL TREE", "HIDE", "WALL", "ROCK", "FENCE", "HOUSE"], 4, false, true]) isNotEqualTo [] || {_unit call FUNC(isIndoor)}}
+) exitWith {
+    _unit setVariable [QGVAR(currentTask), "Head down", GVAR(debug_functions)];
+    false
 };
 
 private _awayDir = _threatPos getDir _unit;

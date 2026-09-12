@@ -35,8 +35,9 @@
 #define BOUND_LENGTH_FAR 50
 #define BOUND_LENGTH_OPEN 70
 #define NEAR_DISTANCE 150
-#define BOUND_TIMEOUT 15
+#define BOUND_TIMEOUT 18
 #define ARRIVED_DISTANCE 4
+#define RUSH_STAGGER 0.5
 #define COVER_SEARCH 8
 #define FIRE_TEAM_BEHIND 12
 #define FIRE_TEAM_CLOSE_ENOUGH 30
@@ -154,8 +155,9 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
     };
 
     if (_moving isEqualTo TEAM_ASSAULT) then {
-        // next bound from the assault team's centre, longer when there is nothing to stop at anyway
-        private _length = [BOUND_LENGTH_FAR, BOUND_LENGTH_NEAR] select _near;
+        // next bound from the assault team's centre, longer when there is nothing to stop at anyway; the
+        // length varies a little each time so the legs do not look measured out
+        private _length = ([BOUND_LENGTH_FAR, BOUND_LENGTH_NEAR] select _near) * (0.8 + random 0.4);
         ([_assaultCentre, _length] call _fnc_pickBound) params ["_pick", "_score"];
         if (_score < OPEN_SCORE && {!_near}) then {
             _pick = ([_assaultCentre, BOUND_LENGTH_OPEN] call _fnc_pickBound) select 0;
@@ -168,48 +170,66 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
         [_fireTeam] call _fnc_smoke;
     };
 
-    // formation slots
+    // formation slots ~ the leader takes the apex of the V, everyone else is ordered left to right as they stand,
+    // so the man on the left gets the left slot and nobody crosses the line of his neighbour
+    private _slotUnits = _movingUnits - [_leader];
+    private _lateral = _slotUnits apply {
+        private _rel = (getPosATL _x) vectorDiff _anchor;
+        [((_rel select 0) * cos _direction) - ((_rel select 1) * sin _direction), _slotUnits find _x]
+    };
+    _lateral sort true;
+    _slotUnits = _lateral apply {_slotUnits select (_x select 1)};
+    private _slotCount = count _slotUnits;
+    private _slots = [];
+    for "_i" from 0 to (_slotCount - 1) do {
+        // slots from the far left to the far right: -n/2 .. n/2
+        private _offset = _i - ((_slotCount - 1) / 2);
+        private _slot = if (_moving isEqualTo TEAM_FIRE) then {
+            _anchor getPos [2.5 * _offset, _direction + 90]
+        } else {
+            (_anchor getPos [abs _offset, _direction + 180]) getPos [1.8 * _offset, _direction + 90]
+        };
+        _slots pushBack _slot;
+    };
+
     _boundPositions = [];
     {
-        private _pos = if (_moving isEqualTo TEAM_FIRE && {_x isEqualTo _leader}) then {
-            // apex of the V, behind the gunners
+        private _unit = _x;
+        private _pos = if (_unit isEqualTo _leader) then {
             _anchor getPos [4, _direction + 180]
         } else {
-            private _slot = if (_moving isEqualTo TEAM_FIRE) then {
-                (_movingUnits - [_leader]) find _x
-            } else {
-                _forEachIndex
-            };
-            private _row = ceil (_slot / 2);
-            private _side = [90, -90] select ((_slot % 2) isEqualTo 1);
-            if (_moving isEqualTo TEAM_FIRE) then {
-                // gunners and medic side by side on the front line, 2.5 m out, alternating sides
-                _anchor getPos [2.5 * (floor (_slot / 2) + 1), _direction + _side]
-            } else {
-                // tight wedge: 1.5 m sideways, 1 m back per row
-                (_anchor getPos [_row, _direction + 180]) getPos [1.5 * _row, _direction + _side]
-            }
+            _slots select (_slotUnits find _unit)
         };
         private _emptyPos = _pos findEmptyPosition [0, 3];
         if (_emptyPos isNotEqualTo []) then {_pos = _emptyPos;};
         _boundPositions pushBack _pos;
 
-        _x setVariable [QEGVAR(danger,forceMove), true];
-        // the moving team sprints: no shooting, no aiming, no stopping for incoming fire until it is on its slot
-        _x disableAI "SUPPRESSION";
-        _x disableAI "TARGET";
-        _x disableAI "AUTOTARGET";
-        _x doWatch objNull;
-        _x setUnitPos "UP";
-        _x forceSpeed -1;
-        _x doMove _pos;
-        _x setVariable [QGVAR(currentTask), ["Assault team bounding", "Fire team moving up"] select (_moving isEqualTo TEAM_FIRE), GVAR(debug_functions)];
+        _unit setVariable [QEGVAR(danger,forceMove), true];
+        _unit setVariable [QGVAR(currentTask), ["Assault team bounding", "Fire team moving up"] select (_moving isEqualTo TEAM_FIRE), GVAR(debug_functions)];
+
+        // not all on the same frame: the first man goes, the next follows half a second later, like a buddy rush
+        [
+            {
+                params ["_unit", "_pos", "_group"];
+                if (!(_unit call FUNC(isAlive)) || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), false])}) exitWith {};
+                // the moving team sprints: no shooting, no aiming, no stopping for incoming fire until it is on its slot
+                _unit disableAI "SUPPRESSION";
+                _unit disableAI "TARGET";
+                _unit disableAI "AUTOTARGET";
+                _unit doWatch objNull;
+                _unit setUnitPos "UP";
+                _unit forceSpeed -1;
+                _unit doMove _pos;
+            },
+            [_unit, _pos, _group],
+            (_forEachIndex * RUSH_STAGGER) + random RUSH_STAGGER
+        ] call CBA_fnc_waitAndExecute;
 
         // the moment it arrives it drops prone and starts shooting again
         [
             {
-                params ["_unit", "_pos"];
-                !(_unit call FUNC(isAlive)) || {_unit distance2D _pos < ARRIVED_DISTANCE} || {unitReady _unit}
+                params ["_unit", "_pos", "", "", "", "_startAfter"];
+                !(_unit call FUNC(isAlive)) || {time > _startAfter && {_unit distance2D _pos < ARRIVED_DISTANCE || {unitReady _unit}}}
             },
             {
                 params ["_unit", "", "_target", "_group", "_posList"];
@@ -223,7 +243,7 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
                     _unit doWatch _target;
                 };
             },
-            [_x, _pos, _target, _group, _posList],
+            [_unit, _pos, _target, _group, _posList, time + (_forEachIndex * RUSH_STAGGER) + RUSH_STAGGER + 1],
             BOUND_TIMEOUT
         ] call CBA_fnc_waitUntilAndExecute;
     } forEach _movingUnits;
