@@ -40,8 +40,16 @@
 #define COVER_SEARCH 8
 #define FIRE_TEAM_BEHIND 12
 #define FIRE_TEAM_CLOSE_ENOUGH 30
-#define SMOKE_RANGE 250
+#define SMOKE_RANGE 300
 #define SMOKE_INTERVAL 20
+#define LAUNCHER_RANGE 500
+#define FAN_ANGLES [-60, -35, -15, 0, 15, 35, 60]
+#define WEIGHT_PROGRESS 2
+#define WEIGHT_COVER 3
+#define WEIGHT_SOFT 1.5
+#define WEIGHT_HIDDEN 2
+#define WEIGHT_DETOUR 1
+#define OPEN_SCORE 2.5
 #define SUPPRESS_CHECKS 3
 #define TEAM_NONE 0
 #define TEAM_ASSAULT 1
@@ -109,32 +117,54 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
     private _near = _distance < NEAR_DISTANCE;
     private _anchor = [0, 0, 0];
 
-    // the team that stays behind screens the runners with smoke when there is nothing else to hide them
+    // the runners throw smoke ahead of themselves before they go
     private _fnc_smoke = {
         params ["_throwers"];
         if (_distance < SMOKE_RANGE && {time > (_group getVariable [QGVAR(boundSmokeTime), 0])}) then {
             _group setVariable [QGVAR(boundSmokeTime), time + SMOKE_INTERVAL];
-            {[_x, _target] call FUNC(doSmoke);} forEach (_throwers select {(throwables _x) isNotEqualTo []} select [0, 2]);
+            {[_x, _target] call FUNC(doSmoke);} forEach ((_throwers select {(throwables _x) isNotEqualTo []}) select [0, 2]);
         };
     };
 
+    // where to bound to: not the straight line, but the leg that keeps to cover, soft ground and dead
+    // ground while still gaining on the objective ~ a fan of candidates, the best one wins
+    private _fnc_pickBound = {
+        params ["_from", "_length"];
+        private _best = _from getPos [_length min _distance, _direction];
+        private _bestScore = -1e9;
+        private _targetASL = (AGLToASL _target) vectorAdd [0, 0, 1.5];
+        {
+            private _candidate = _from getPos [_length min _distance, _direction + _x];
+            private _cover = nearestTerrainObjects [_candidate, ["BUSH", "TREE", "SMALL TREE", "HIDE", "WALL", "ROCK", "FENCE"], COVER_SEARCH, false, true];
+            private _surface = toLower (surfaceType _candidate);
+            private _hard = isOnRoad _candidate || {"concrete" in _surface} || {"asphalt" in _surface} || {"tarmac" in _surface} || {"runway" in _surface};
+            private _hidden = terrainIntersectASL [(AGLToASL _candidate) vectorAdd [0, 0, 1], _targetASL];
+            private _score = (_distance - (_candidate distance2D _target)) / _length * WEIGHT_PROGRESS
+                + ([0, WEIGHT_COVER] select (_cover isNotEqualTo []))
+                + ([WEIGHT_SOFT, 0] select _hard)
+                + ([0, WEIGHT_HIDDEN] select _hidden)
+                - (abs _x / 60) * WEIGHT_DETOUR;
+            if (_score > _bestScore) then {
+                _bestScore = _score;
+                _best = if (_cover isNotEqualTo []) then {(_cover select 0) getPos [1.5, _target getDir (_cover select 0)]} else {_candidate};
+            };
+        } forEach FAN_ANGLES;
+        [_best, _bestScore]
+    };
+
     if (_moving isEqualTo TEAM_ASSAULT) then {
-        // next bound from the assault team's centre towards the objective, on cover if there is any nearby
-        _anchor = _assaultCentre getPos [([BOUND_LENGTH_FAR, BOUND_LENGTH_NEAR] select _near) min _distance, _direction];
-        private _cover = nearestTerrainObjects [_anchor, ["BUSH", "TREE", "SMALL TREE", "HIDE", "WALL", "ROCK", "FENCE"], COVER_SEARCH, false, true];
-        if (_cover isNotEqualTo []) then {
-            _anchor = (_cover select 0) getPos [1.5, _target getDir (_cover select 0)];
-        } else {
-            // open ground ~ nothing to stop at, so run further under smoke
-            if (!_near) then {_anchor = _assaultCentre getPos [BOUND_LENGTH_OPEN min _distance, _direction];};
-            [[_fireTeam, _assaultTeam] select (_fireTeam isEqualTo [])] call _fnc_smoke;
+        // next bound from the assault team's centre, longer when there is nothing to stop at anyway
+        private _length = [BOUND_LENGTH_FAR, BOUND_LENGTH_NEAR] select _near;
+        ([_assaultCentre, _length] call _fnc_pickBound) params ["_pick", "_score"];
+        if (_score < OPEN_SCORE && {!_near}) then {
+            _pick = ([_assaultCentre, BOUND_LENGTH_OPEN] call _fnc_pickBound) select 0;
         };
+        _anchor = _pick;
+        [_assaultTeam] call _fnc_smoke;
     } else {
         // fire team moves up to a spot behind the assault team, still facing the objective
         _anchor = _assaultCentre getPos [FIRE_TEAM_BEHIND, _direction + 180];
-        if ((nearestTerrainObjects [_anchor, ["BUSH", "TREE", "SMALL TREE", "HIDE", "WALL", "ROCK", "FENCE"], COVER_SEARCH, false, true]) isEqualTo []) then {
-            [_assaultTeam] call _fnc_smoke;
-        };
+        [_fireTeam] call _fnc_smoke;
     };
 
     // formation slots
@@ -221,10 +251,14 @@ private _checks = SUPPRESS_CHECKS;
         _index = [_x, _posList] call FUNC(checkVisibilityList);
         _checks = _checks - 1;
     };
-    if (_index isNotEqualTo -1 && {(currentCommand _x) isNotEqualTo "Suppress"}) then {
-        if !([_x, AGLToASL ((_posList select _index) vectorAdd [0, 0, random 1])] call FUNC(doSuppress)) then {_index = -1;};
-    } else {
-        _x doWatch _target;
+    // rockets and grenade launchers go into the enemy position from here
+    private _launched = _x distance2D _target < LAUNCHER_RANGE && {[_x, [_target, _posList select 0] select (_posList isNotEqualTo [])] call FUNC(doLauncherFire)};
+    if (!_launched) then {
+        if (_index isNotEqualTo -1 && {(currentCommand _x) isNotEqualTo "Suppress"}) then {
+            if !([_x, AGLToASL ((_posList select _index) vectorAdd [0, 0, random 1])] call FUNC(doSuppress)) then {_index = -1;};
+        } else {
+            _x doWatch _target;
+        };
     };
 } forEach _stationary;
 
