@@ -36,6 +36,7 @@
 #define APPROACH_ALTITUDE 60
 #define LIFT_DELAY 4
 #define LIFT_SPEED 5
+#define ENGINE_LAND_TIMEOUT 60
 
 params [["_group", grpNull, [grpNull]], ["_pos", [], [[]]], ["_helis", [], [[]]]];
 
@@ -152,14 +153,54 @@ switch (_phase) do {
 
     case "land": {false};
 
+    // last resort after two failed scripted landings: the engine's own landing, troops out as soon as it is low
+    case "engineLand": {
+        if (alive _heli) then {
+            private _low = (getPosATL _heli) select 2 < 3 && {speed _heli < 5};
+            if (_low || {time - (_air get "time") > ENGINE_LAND_TIMEOUT}) then {
+                {if (alive _x && {(vehicle _x) isEqualTo _heli}) then {unassignVehicle _x; moveOut _x; [_x] allowGetIn false;};} forEach (_air getOrDefault ["troops", []]);
+                _heli land "NONE";
+                (driver _heli) doMove (_lz getPos [400, _pos getDir _lz]);
+                _air set ["phase", "release"];
+                if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 engine landing done (%3)", side _group, groupId _group, ["timeout", "low enough"] select _low] call EFUNC(main,debugLog);};
+            } else {
+                if (unitReady (driver _heli)) then {(driver _heli) doMove _lz; _heli land "GET OUT";};
+            };
+        } else {
+            _air set ["phase", "release"];
+        };
+        false
+    };
+
     case "release": {
-        _air set ["phase", "done"];
         private _troops = _air getOrDefault ["troops", []];
+        private _aboard = _troops select {alive _x && {(vehicle _x) isEqualTo _heli}};
+
+        // the drop did not happen ~ try the scripted landing once more, then let the engine land it
+        if (_aboard isNotEqualTo [] && {alive _heli} && {canMove _heli}) then {
+            private _attempts = _air getOrDefault ["attempts", 0];
+            _air set ["attempts", _attempts + 1];
+            _air set ["time", time];
+            if (_attempts < 1) then {
+                _air set ["phase", "fly"];
+                (driver _heli) doMove _lz;
+                _heli flyInHeight APPROACH_ALTITUDE;
+                if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 drop failed with %3 still aboard, going around", side _group, groupId _group, count _aboard] call EFUNC(main,debugLog);};
+            } else {
+                _air set ["phase", "engineLand"];
+                (driver _heli) doMove _lz;
+                _heli land "GET OUT";
+                if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 drop failed twice, engine landing", side _group, groupId _group] call EFUNC(main,debugLog);};
+            };
+        };
+        if ((_air get "phase") isNotEqualTo "release") exitWith {false};
+
+        _air set ["phase", "done"];
         private _onFoot = (units _group) select {isNull objectParent _x && {_x call EFUNC(main,isAlive)} && {!isPlayer _x}};
 
-        // passengers from other groups attack on their own feet, same objective
+        // passengers from other groups who made it to the ground attack on their own feet, same objective
         private _otherGroups = [];
-        {if (alive _x && {(group _x) isNotEqualTo _group}) then {_otherGroups pushBackUnique (group _x);};} forEach _troops;
+        {if (alive _x && {isNull objectParent _x} && {(group _x) isNotEqualTo _group}) then {_otherGroups pushBackUnique (group _x);};} forEach _troops;
         {
             [QGVAR(taskAttack), [_x, _pos], leader _x] call CBA_fnc_targetEvent;
             if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 dropped off, attacks on foot", side _x, groupId _x] call EFUNC(main,debugLog);};
@@ -176,7 +217,8 @@ switch (_phase) do {
                     [_airGroup, _heli, _pos, _air get "start"] call FUNC(doAirLoiter);
                 };
             } else {
-                // nobody of ours on the ground: this is the aircrew's group, the drop was the job
+                // nobody of ours on the ground ~ either this is the aircrew's group and the drop was the job,
+                // or our own men are still aboard after everything failed: they stay with the aircraft
                 _air set ["crewOnly", true];
             };
         };

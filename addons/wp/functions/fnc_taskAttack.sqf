@@ -157,7 +157,11 @@ private _handle = [{
         if (!isNil "_air") then {
             _heli = _air get "heli";
             _airStart = _air get "start";
-            if (!isNull _heli) then {_heli setVariable [QGVAR(heliInsert), nil];};
+            // only the group that started the insert may cancel it
+            if (!isNull _heli && {(_heli getVariable [QGVAR(attackGroup), grpNull]) isEqualTo _group}) then {
+                _heli setVariable [QGVAR(heliInsert), nil];
+                _heli setVariable [QGVAR(attackGroup), nil];
+            };
             _group setVariable [QGVAR(attackAir), nil];
         };
         // the aircrew's own group after a drop: fire support or back to base
