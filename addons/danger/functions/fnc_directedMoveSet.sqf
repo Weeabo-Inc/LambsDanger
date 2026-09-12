@@ -80,6 +80,13 @@ if ((waypointType _waypoint) in ["SAD", "DESTROY"] && {(vehicle (leader _group))
 };
 if (_wpIndex isEqualTo -1) exitWith {true};
 
+// a waypoint placed beyond a running attack waits its turn ~ the attack chains to it when the objective is held
+private _attackIndex = _group getVariable [QEGVAR(wp,attackWaypoint), -1];
+if (EGVAR(main,Loaded_WP) && {_attackIndex >= 0} && {_wpIndex > _attackIndex}) exitWith {
+    [_curatorOwner, format [localize LSTRING(Feedback_Queued), groupId _group, _wpIndex]] call FUNC(directedMoveFeedback);
+    true
+};
+
 // Seek & Destroy placed by a Zeus ~ attack the position with fire and movement, then carry on
 if ((waypointType _waypoint) in ["SAD", "DESTROY"] && {EGVAR(main,Loaded_WP)}) exitWith {
     if (_group call EFUNC(main,isDirected)) then {[_group, "attack waypoint"] call FUNC(directedMoveRelease);};

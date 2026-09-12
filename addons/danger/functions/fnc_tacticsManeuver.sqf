@@ -99,6 +99,7 @@ if (_units isEqualTo []) exitWith {
 // stop whatever else was running
 private _oldPFH = _group getVariable [QGVAR(maneuverPFH), -1];
 if (_oldPFH isNotEqualTo -1) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
+_group setVariable [QGVAR(boundToken), nil];
 private _monitor = _group getVariable [QGVAR(tacticPFH), -1];
 if (_monitor isNotEqualTo -1) then {[_monitor] call CBA_fnc_removePerFrameHandler; _group setVariable [QGVAR(tacticPFH), nil];};
 
@@ -272,7 +273,8 @@ private _handle = [{
     private _alive = {_x call EFUNC(main,isAlive) && {_aboard || {isNull objectParent _x}}};
     private _support = (_state get "support") select _alive;
     private _assault = (_state get "assault") select _alive;
-    [_group, []] call FUNC(pictureUpdate);
+    // the leader is under orders like everyone else, so the plan feeds the picture itself
+    [_group, (leader _group) targets [true, 800]] call FUNC(pictureUpdate);
 
     // assault element wiped out ~ the support element either carries the attack on or the attack has failed
     if (_assault isEqualTo []) then {
@@ -425,7 +427,7 @@ private _handle = [{
                     {
                         private _vehicle = _x;
                         if (time > (_vehicle getVariable [QEGVAR(main,smokescreenTime), 0]) && {"SmokeLauncher" in (weapons _vehicle)}) then {
-                            (commander _vehicle) forceWeaponFire ["SmokeLauncher", "SmokeLauncher"];
+                            (effectiveCommander _vehicle) forceWeaponFire ["SmokeLauncher", "SmokeLauncher"];
                             _vehicle setVariable [QEGVAR(main,smokescreenTime), time + 30 + random 20];
                         };
                         _vehicle doWatch _nearest;
@@ -438,7 +440,9 @@ private _handle = [{
             };
 
             // carrier knocked out or crippled ~ everyone out at once, and away from it
-            private _crippled = isNull _lead || {!canMove _lead} || {!alive (driver _lead)} || {damage _lead > CRIPPLED_DAMAGE};
+            // a dead driver is not crippling while a passenger is on his way to the seat
+            private _replacing = !isNull _lead && {time < (_lead getVariable [QGVAR(crewReplaceUntil), 0])};
+            private _crippled = isNull _lead || {!canMove _lead} || {!_replacing && {!alive (driver _lead)}} || {damage _lead > CRIPPLED_DAMAGE};
             if (_crippled && {!(_state getOrDefault ["crippled", false])}) then {
                 _state set ["crippled", true];
                 _state set ["emergency", true];

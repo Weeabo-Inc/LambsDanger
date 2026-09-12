@@ -35,11 +35,14 @@ if ((_target select 2) > 6) then {
     _target set [2, 0.5];
 };
 
-// reset tactics
+// this tactic owns the group until its reset ~ the monitor, the commander and the attack task wait for it
+_group setVariable [QGVAR(isExecutingTactic), true];
+
+// reset tactics ~ not when a deliberate attack owns the group, it restores everything itself
 [
     {
         params [["_group", grpNull], ["_enableAttack", true], ["_isIRLaserOn", false], ["_speedMode", "NORMAL"], ["_formation", "WEDGE"]];
-        if (!isNull _group) then {
+        if (!isNull _group && {isNil {_group getVariable QGVAR(maneuver)}}) then {
             _group setVariable [QGVAR(isExecutingTactic), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
             _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});

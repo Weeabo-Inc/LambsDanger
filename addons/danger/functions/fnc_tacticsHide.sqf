@@ -28,6 +28,7 @@ if (_group isEqualType objNull) then {_group = group _group;};
 if ((units _group) isEqualTo []) exitWith {false};
 private _unit = leader _group;
 if (_group call EFUNC(main,isDirected)) exitWith {false};
+_group setVariable [QGVAR(isExecutingTactic), true];
 
 // find target
 _target = _target call CBA_fnc_getPos;

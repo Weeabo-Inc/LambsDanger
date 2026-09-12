@@ -76,11 +76,24 @@ if (_assaultTeam isEqualTo []) then {
     if (_assaultTeam isEqualTo []) then {_assaultTeam = _fireTeam; _fireTeam = [];};
 };
 
-// close enough ~ the building assault takes over
+// the leader keeps the group's picture alive while everyone is under orders
+[_group, _leader targets [true, 800]] call (missionNamespace getVariable [QEFUNC(danger,pictureUpdate), {}]);
+
+// close enough ~ the building assault takes over: the men get their reflexes and their own sweep back
 private _closest = 1e9;
 {_closest = _closest min (_x distance2D _target);} forEach _assaultTeam;
 if (_closest < (missionNamespace getVariable [QEGVAR(danger,cqbRange), 60])) exitWith {
-    [_group, _target, _fireTeam + _assaultTeam] call (missionNamespace getVariable [QEFUNC(danger,tacticsAssault), {}]);
+    private _handover = _fireTeam + _assaultTeam;
+    {
+        _x enableAI "SUPPRESSION";
+        _x enableAI "TARGET";
+        _x enableAI "AUTOTARGET";
+        _x setVariable [QEGVAR(danger,forceMove), nil];
+        _x setUnitPos "AUTO";
+    } forEach _handover;
+    // under a deliberate attack the plan restores the group itself, so the assault's own reset is pushed far out
+    private _owned = !isNil {_group getVariable QEGVAR(danger,maneuver)};
+    [_group, _target, _handover, [85, 600] select _owned] call (missionNamespace getVariable [QEFUNC(danger,tacticsAssault), {}]);
 };
 
 // team centres
@@ -96,11 +109,12 @@ private _fireCentre = if (_fireTeam isEqualTo []) then {_assaultCentre} else {_f
 private _movingUnits = [[], _assaultTeam, _fireTeam] select _moving;
 private _arrived = (time - _boundStart) > BOUND_TIMEOUT;
 if (!_arrived && {_boundPositions isNotEqualTo []}) then {
+    // positions are stored per man, so a casualty does not shift everyone else's slot
     _arrived = true;
     {
-        private _pos = _boundPositions param [_forEachIndex, []];
-        if (_pos isNotEqualTo [] && {_x distance2D _pos > ARRIVED_DISTANCE}) exitWith {_arrived = false;};
-    } forEach _movingUnits;
+        _x params ["_unit", "_pos"];
+        if (_unit in _movingUnits && {_unit distance2D _pos > ARRIVED_DISTANCE}) exitWith {_arrived = false;};
+    } forEach _boundPositions;
 };
 
 if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
@@ -202,7 +216,7 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
         };
         private _emptyPos = _pos findEmptyPosition [0, 3];
         if (_emptyPos isNotEqualTo []) then {_pos = _emptyPos;};
-        _boundPositions pushBack _pos;
+        _boundPositions pushBack [_unit, _pos];
 
         _unit setVariable [QEGVAR(danger,forceMove), true];
         _unit setVariable [QGVAR(currentTask), ["Assault team bounding", "Fire team moving up"] select (_moving isEqualTo TEAM_FIRE), GVAR(debug_functions)];
@@ -244,7 +258,17 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
                 };
             },
             [_unit, _pos, _target, _group, _posList, time + (_forEachIndex * RUSH_STAGGER) + RUSH_STAGGER + 1],
-            BOUND_TIMEOUT
+            BOUND_TIMEOUT,
+            {
+                // never arrived ~ he still gets his eyes and his rifle back
+                params ["_unit"];
+                if (_unit call FUNC(isAlive)) then {
+                    _unit enableAI "TARGET";
+                    _unit enableAI "AUTOTARGET";
+                    _unit enableAI "SUPPRESSION";
+                    _unit setUnitPos "MIDDLE";
+                };
+            }
         ] call CBA_fnc_waitUntilAndExecute;
     } forEach _movingUnits;
     _boundStart = time;
@@ -258,7 +282,9 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
 
 // stationary team ~ suppress what can be seen, otherwise watch the objective
 private _stationary = [[], _fireTeam, _assaultTeam] select _moving;
-[_posList, true] call CBA_fnc_shuffle;
+// a shuffled copy ~ the list is shared with the plan that owns this bound, whose first entry is the newest contact
+private _suppressList = +_posList;
+[_suppressList, true] call CBA_fnc_shuffle;
 private _index = -1;
 private _checks = SUPPRESS_CHECKS;
 {
@@ -268,15 +294,15 @@ private _checks = SUPPRESS_CHECKS;
     _x enableAI "AUTOTARGET";
     _x setUnitPos "DOWN";
     _x setVariable [QGVAR(currentTask), ["Fire team covering", "Assault team covering"] select (_moving isEqualTo TEAM_FIRE), GVAR(debug_functions)];
-    if (_index isEqualTo -1 && {_checks > 0} && {_posList isNotEqualTo []}) then {
-        _index = [_x, _posList] call FUNC(checkVisibilityList);
+    if (_index isEqualTo -1 && {_checks > 0} && {_suppressList isNotEqualTo []}) then {
+        _index = [_x, _suppressList] call FUNC(checkVisibilityList);
         _checks = _checks - 1;
     };
     // rockets and grenade launchers go into the enemy position from here
     private _launched = _x distance2D _target < LAUNCHER_RANGE && {[_x, [_target, _posList select 0] select (_posList isNotEqualTo [])] call FUNC(doLauncherFire)};
     if (!_launched) then {
         if (_index isNotEqualTo -1 && {(currentCommand _x) isNotEqualTo "Suppress"}) then {
-            if !([_x, AGLToASL ((_posList select _index) vectorAdd [0, 0, random 1])] call FUNC(doSuppress)) then {_index = -1;};
+            if !([_x, AGLToASL ((_suppressList select _index) vectorAdd [0, 0, random 1])] call FUNC(doSuppress)) then {_index = -1;};
         } else {
             _x doWatch _target;
         };

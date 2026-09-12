@@ -97,7 +97,11 @@ private _handle = [{
 
     // movement tactics ~ reached or stalled
     if (_result isEqualTo "" && {_tactic in MOVING_TACTICS} && {_objective isNotEqualTo []}) then {
+        // the closest man counts, not the leader ~ in a bound the leader sits with the base of fire
         private _distance = _leader distance2D _objective;
+        {
+            if (isNull objectParent _x && {_x call EFUNC(main,isAlive)}) then {_distance = _distance min (_x distance2D _objective);};
+        } forEach (units _group);
         if (_distance < REACHED_DISTANCE) then {
             _result = "completed";
         } else {

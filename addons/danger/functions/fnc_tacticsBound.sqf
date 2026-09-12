@@ -53,8 +53,9 @@ _group setVariable [QGVAR(isExecutingTactic), true];
         time > _delay || {isNull _group} || {!(_group getVariable [QGVAR(isExecutingTactic), false])}
     },
     {
-        params [["_group", grpNull], "", ["_speedMode", "NORMAL"], ["_formation", "WEDGE"], ["_combatMode", "YELLOW"], ["_enableAttack", true], ["_behaviour", "AWARE"], ["_boundUnits", []]];
-        if (!isNull _group) then {
+        params [["_group", grpNull], "", ["_speedMode", "NORMAL"], ["_formation", "WEDGE"], ["_combatMode", "YELLOW"], ["_enableAttack", true], ["_behaviour", "AWARE"]];
+        // a deliberate attack that took the group over restores everything itself when it ends
+        if (!isNull _group && {isNil {_group getVariable QGVAR(maneuver)}}) then {
             _group setVariable [QGVAR(isExecutingTactic), nil];
             _group setVariable [QGVAR(boundToken), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
@@ -70,19 +71,17 @@ _group setVariable [QGVAR(isExecutingTactic), true];
                 _x forceSpeed -1;
                 _x doFollow (leader _x);
             } forEach (units _group);
-            // give the engine its combat reflexes back ~ only where this tactic took them
+            // give the engine its combat reflexes back ~ unless a waypoint task holds a feature
             {
-                if (!isNull _x) then {
-                    private _boundUnit = _x;
-                    private _taskDisabled = _boundUnit getVariable [QEGVAR(wp,disabledAI), []];
-                    {
-                        if (!(_x in _taskDisabled)) then {_boundUnit enableAI _x;};
-                    } forEach ["SUPPRESSION", "TARGET", "AUTOTARGET", "AUTOCOMBAT"];
-                };
-            } forEach _boundUnits;
+                private _boundUnit = _x;
+                private _taskDisabled = _boundUnit getVariable [QEGVAR(wp,disabledAI), []];
+                {
+                    if (!(_x in _taskDisabled)) then {_boundUnit enableAI _x;};
+                } forEach ["SUPPRESSION", "TARGET", "AUTOTARGET", "AUTOCOMBAT"];
+            } forEach (units _group);
         };
     },
-    [_group, time + _delay, speedMode _group, formation _group, combatMode _group, attackEnabled _group, behaviour _unit, _units]
+    [_group, time + _delay, speedMode _group, formation _group, combatMode _group, attackEnabled _group, behaviour _unit]
 ] call CBA_fnc_waitUntilAndExecute;
 
 // find units ~ vehicles stay back as a fire base

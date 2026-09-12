@@ -30,7 +30,11 @@ if !(_unit call EFUNC(main,isAlive)) exitWith {
 
 // forced AI ~ orders or not, a man who just got hit while running looks after himself first
 if (_unit getVariable [QGVAR(forceMove), false]) exitWith {
-    private _lastDamage = _unit getVariable [QEGVAR(main,lastDamage), 0];
+    // the leader keeps the group's picture alive while everyone is under orders, or every plan fights blind
+    if (_unit isEqualTo (leader _unit)) then {
+        [group _unit, _unit targets [true, 800]] call FUNC(pictureUpdate);
+    };
+    private _lastDamage = _unit getVariable [QEGVAR(main,lastDamage), damage _unit];
     private _damage = damage _unit;
     if (_damage > _lastDamage + 0.15) then {
         _unit setVariable [QEGVAR(main,lastHit), time];

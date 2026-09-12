@@ -32,7 +32,9 @@ _airGroup setVariable [QEGVAR(danger,disableGroupAI), true, true];
 _heli flyInHeight LOITER_ALTITUDE;
 
 private _crew = (crew _heli) select {(group _x) isEqualTo _airGroup};
-private _armed = someAmmo _heli && {(_crew findIf {_x isEqualTo (gunner _heli) || {(_heli unitTurret _x) isNotEqualTo []}}) isNotEqualTo -1};
+// armed means a weapon turret with somebody in it, not flares and a pilot
+private _gunTurrets = (allTurrets [_heli, false]) select {(_heli weaponsTurret _x) isNotEqualTo []};
+private _armed = (_gunTurrets findIf {alive (_heli turretUnit _x)}) isNotEqualTo -1;
 
 if (_armed && {_objective isNotEqualTo []}) then {
     private _wp = _airGroup addWaypoint [_objective, 0];

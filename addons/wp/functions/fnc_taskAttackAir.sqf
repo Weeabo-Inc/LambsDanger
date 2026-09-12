@@ -224,6 +224,8 @@ switch (_phase) do {
         private _otherGroups = [];
         {if (alive _x && {isNull objectParent _x} && {(group _x) isNotEqualTo _group}) then {_otherGroups pushBackUnique (group _x);};} forEach _troops;
         {
+            // a passenger group that was under a Zeus move is released from it first, or its new task ends itself
+            if (_x call EFUNC(main,isDirected)) then {[_x, "air assault"] call EFUNC(danger,directedMoveRelease);};
             [QGVAR(taskAttack), [_x, _pos, 0, -1, _curatorOwner], leader _x] call CBA_fnc_targetEvent;
             format [localize ELSTRING(danger,Feedback_AirDropped), groupId _x, round ((leader _x) distance2D _pos)] call _fnc_feedback;
             if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 dropped off, attacks on foot", side _x, groupId _x] call EFUNC(main,debugLog);};
@@ -246,6 +248,13 @@ switch (_phase) do {
                 _air set ["crewOnly", true];
             };
         };
+        // up off the ring and ready to move
+        {
+            _x setVariable [QEGVAR(danger,forceMove), nil];
+            _x setUnitPos "AUTO";
+            _x doWatch objNull;
+            _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
+        } forEach (_troops select {alive _x && {isNull objectParent _x}});
         if (_onFoot isNotEqualTo []) then {[leader _group, "combat", "Advance", 125] call EFUNC(main,doCallout);};
         if (EGVAR(main,debug_functions)) then {["%1 taskAttack: %2 drop complete, %3 of ours on the ground, %4 other groups", side _group, groupId _group, count _onFoot, count _otherGroups] call EFUNC(main,debugLog);};
         true

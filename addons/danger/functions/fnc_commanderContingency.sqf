@@ -31,6 +31,7 @@
 #define STRAY_SIZE 2
 #define STRAY_RANGE 300
 #define CREW_CONTACT 120
+#define CREW_REPLACE_TIME 15
 #define LOW_AMMO 2
 #define BODY_RANGE 25
 #define SELF_AID_DAMAGE 0.3
@@ -60,17 +61,24 @@ private _threatPos = _picture get "threatPos";
 private _contactNear = _threatPos isNotEqualTo [] && {time - (_picture get "lastContact") < 30} && {_leader distance2D _threatPos < CREW_CONTACT};
 {
     private _vehicle = _x;
+    if (time < (_vehicle getVariable [QGVAR(crewReplaceUntil), 0])) then {continue};
     private _aboard = (units _group) select {(vehicle _x) isEqualTo _vehicle && {_x call EFUNC(main,isAlive)}};
     private _passengers = _aboard select {_x isNotEqualTo (driver _vehicle) && {_x isNotEqualTo (gunner _vehicle)} && {_x isNotEqualTo (commander _vehicle)}};
-    if (_passengers isNotEqualTo [] && {!(alive (driver _vehicle)) || {(_vehicle emptyPositions "gunner") > 0 && {someAmmo _vehicle}}}) then {
+    private _driverDown = !alive (driver _vehicle);
+    private _gunnerDown = someAmmo _vehicle && {(_vehicle emptyPositions "gunner") > 0 || {!isNull (gunner _vehicle) && {!alive (gunner _vehicle)}}};
+    if (_passengers isNotEqualTo [] && {_driverDown || _gunnerDown}) then {
         if (_contactNear) then {
             // no time to shuffle seats under fire ~ out
             _aboard orderGetIn false;
             {_x action ["Eject", _vehicle]; [_x] allowGetIn false;} forEach _aboard;
             _action = "bail out";
         } else {
-            private _seat = ["gunner", "driver"] select (!alive (driver _vehicle));
+            private _seat = ["gunner", "driver"] select _driverDown;
+            // the dead man is taken off the seat first, or nobody can take it
+            private _corpse = [gunner _vehicle, driver _vehicle] select _driverDown;
+            if (!isNull _corpse && {!alive _corpse}) then {moveOut _corpse;};
             private _replacement = _passengers select 0;
+            _vehicle setVariable [QGVAR(crewReplaceUntil), time + CREW_REPLACE_TIME];
             _replacement action ["Eject", _vehicle];
             [
                 {
@@ -151,7 +159,7 @@ if (_level < 2 && {!(_group getVariable [QGVAR(isExecutingTactic), false])}) the
             // ammunition from the dead
             private _primary = primaryWeapon _x;
             if (_primary isNotEqualTo "" && {count (_x magazinesTurret [-1] select {_x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines"))}) < LOW_AMMO || {(magazines _x) isEqualTo []}}) then {
-                private _bodies = (_x nearEntities ["CAManBase", BODY_RANGE]) select {!alive _x};
+                private _bodies = (nearestObjects [_x, ["CAManBase"], BODY_RANGE]) select {!alive _x};
                 if (_bodies isNotEqualTo []) then {
                     [_x, getPosATL (_bodies select 0), 4] call EFUNC(main,doCheckBody);
                     _action = "reorganise";

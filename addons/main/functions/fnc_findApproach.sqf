@@ -69,7 +69,7 @@ _candidates sort false;
 
 // support by fire ~ height and a line of sight, on our side of the objective, off the assault flank
 private _supportCentre = _objective getPos [(SUPPORT_MIN + SUPPORT_MAX) / 2, _direction + 180 - (_side * 25)];
-private _supportPos = [_objective, SUPPORT_MAX - SUPPORT_MIN, SUPPORT_MIN, 4, _supportCentre] call FUNC(findOverwatch);
+private _supportPos = [_objective, SUPPORT_MAX, SUPPORT_MIN, 4, _supportCentre] call FUNC(findOverwatch);
 if (_supportPos isEqualTo [] || {_supportPos isEqualTo [0, 0, 0]}) then {_supportPos = _supportCentre;};
 
 [_route, _assaultPos, _supportPos, _side]

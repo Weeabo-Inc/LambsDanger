@@ -173,6 +173,9 @@
         <Key ID="STR_Lambs_Danger_Feedback_PlayerGroup">
             <English>%1 is led by a player, LAMBS does not direct it</English>
         </Key>
+        <Key ID="STR_Lambs_Danger_Feedback_Queued">
+            <English>%1: waypoint %2 queued until the attack is over</English>
+        </Key>
         <Key ID="STR_Lambs_Danger_Feedback_Released">
             <English>%1 directed move to waypoint %2 ended: %3</English>
         </Key>

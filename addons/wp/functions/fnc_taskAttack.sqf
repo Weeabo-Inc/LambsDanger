@@ -57,6 +57,11 @@ _group setVariable [QGVAR(attackWaypoint), _wpIndex];
 [_group, "attack", _pos, _radius, nil, 3] call EFUNC(danger,intentSet);
 
 // whatever LAMBS was doing with this group ends here ~ the task owns it now
+private _maneuverPFH = _group getVariable [QEGVAR(danger,maneuverPFH), -1];
+if (_maneuverPFH isNotEqualTo -1) then {[_maneuverPFH] call CBA_fnc_removePerFrameHandler;};
+_group setVariable [QEGVAR(danger,maneuverPFH), nil];
+_group setVariable [QEGVAR(danger,maneuver), nil];
+_group setVariable [QEGVAR(danger,boundToken), nil];
 private _tacticPFH = _group getVariable [QEGVAR(danger,tacticPFH), -1];
 if (_tacticPFH isNotEqualTo -1) then {[_tacticPFH] call CBA_fnc_removePerFrameHandler;};
 _group setVariable [QEGVAR(danger,tacticPFH), nil];
@@ -164,10 +169,6 @@ private _handle = [{
             };
             _group setVariable [QGVAR(attackAir), nil];
         };
-        // the aircrew's own group after a drop: fire support or back to base
-        if (_reason isEqualTo "delivered" && {!isNull _heli}) then {
-            [_group, _heli, _pos, _airStart] call FUNC(doAirLoiter);
-        };
         if (EGVAR(main,debug_functions)) then {
             ["%1 taskAttack: %2 %3", side _group, groupId _group, _reason] call EFUNC(main,debugLog);
         };
@@ -179,6 +180,15 @@ private _handle = [{
         };
         [_group] call FUNC(taskCleanup);
         [_group] call EFUNC(main,doMountRelease);
+
+        // the aircrew's own group after a drop: fire support or back to base, and nothing else touches its route
+        if (_reason isEqualTo "delivered") exitWith {
+            if (!isNull _heli) then {[_group, _heli, _pos, _airStart] call FUNC(doAirLoiter);};
+            [_group, "free"] call EFUNC(danger,intentSet);
+            if (_curatorOwner >= 0) then {
+                [_curatorOwner, format [localize ELSTRING(danger,Feedback_AttackDone), groupId _group]] call EFUNC(danger,directedMoveFeedback);
+            };
+        };
 
         // the objective is now the group's ground
         private _held = _reason isEqualTo "objective held";
@@ -252,7 +262,7 @@ private _handle = [{
     if (_held) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "objective held", _pos, _radius, _startTime] call _fnc_end;};
 
     // a tactic this task started (the attack plan, fire and movement or the building sweep) ~ let it work
-    private _executing = _group getVariable [QEGVAR(danger,isExecutingTactic), false];
+    private _executing = _group getVariable [QEGVAR(danger,isExecutingTactic), false] || {!isNil {_group getVariable QEGVAR(danger,maneuver)}};
     if (_executing && {_phase isEqualTo "engage"}) exitWith {};
     if (_executing) then {
         // something else grabbed the group ~ take it back
@@ -265,6 +275,8 @@ private _handle = [{
         if ((_picture get "lastResult") isEqualTo "completed") then {
             // done here ~ hold if this was the objective, otherwise the fight was on the way: carry on
             _state set [0, ["approach", "hold"] select (_distance < _radius + 50)];
+            // the fight is over here; whatever standoff the carriers used is no longer the destination
+            _group setVariable [QGVAR(attackTravelPos), nil];
         } else {
             _state set [0, "approach"];
             _state set [2, (_state param [2, 0]) + 1];
@@ -312,7 +324,7 @@ private _handle = [{
     if (unitReady _leader || {((expectedDestination _leader) select 1) isEqualTo "DoNotPlan"}) then {
         _group move (_group getVariable [QGVAR(attackTravelPos), _pos]);
     };
-}, CYCLE_TIME, [_group, _pos, _radius, _token, _wpIndex, _curatorOwner, ["approach", -1, 0], time]] call CBA_fnc_addPerFrameHandler;
+}, CYCLE_TIME, [_group, _pos, _radius, _token, _wpIndex, _curatorOwner, [["approach", "airlift"] select _airAssault, -1, 0], time]] call CBA_fnc_addPerFrameHandler;
 
 _group setVariable [QGVAR(attackPFH), _handle];
 

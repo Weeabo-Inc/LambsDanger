@@ -47,7 +47,7 @@ if (
 };
 private _primary = primaryWeapon _unit;
 if (_primary isNotEqualTo "" && {(_unit magazinesTurret [-1] select {_x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines"))}) isEqualTo []} && {unitReady _unit}) exitWith {
-    private _bodies = (_unit nearEntities ["CAManBase", 25]) select {!alive _x};
+    private _bodies = (nearestObjects [_unit, ["CAManBase"], 25]) select {!alive _x};
     if (_bodies isNotEqualTo []) then {
         _unit setVariable [QEGVAR(main,currentTask), "Out of ammunition, searching a body", EGVAR(main,debug_functions)];
         [_unit, getPosATL (_bodies select 0), 4] call EFUNC(main,doCheckBody);
