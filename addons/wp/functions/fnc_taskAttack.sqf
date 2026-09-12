@@ -95,10 +95,18 @@ if (_wpIndex < 0) then {[_group] call CBA_fnc_clearWaypoints;} else {
         _group setCurrentWaypoint [_group, _wpIndex];
     };
 };
+// a group aboard helicopters is flown to a landing zone short of the objective (see taskAttackAir);
 // a group with vehicles mounts up and is driven to the engagement distance, never into the objective;
 // the attack plan dismounts it there
 private _travelPos = _pos;
 private _boarding = [];
+private _helis = ((units _group) select {(vehicle _x) isKindOf "Air"}) apply {vehicle _x};
+_helis = (_helis arrayIntersect _helis) select {alive _x && {alive (driver _x)} && {((fullCrew [_x, "cargo"]) findIf {(group (_x select 0)) isEqualTo _group}) isNotEqualTo -1}};
+private _airAssault = _helis isNotEqualTo [];
+_group setVariable [QGVAR(attackAir), nil];
+if (_airAssault) then {
+    [_group, _pos, _helis] call FUNC(taskAttackAir);
+} else {
 if (([_leader, 400] call EFUNC(main,findGroupVehicles)) isNotEqualTo []) then {
     _travelPos = _pos getPos [TRAVEL_STANDOFF min ((_leader distance2D _pos) * 0.8), _pos getDir _leader];
     private _empty = _travelPos findEmptyPosition [0, 30, typeOf (vehicle _leader)];
@@ -126,6 +134,7 @@ if (_boarding isEqualTo []) then {
         MOUNT_TIMEOUT
     ] call CBA_fnc_waitUntilAndExecute;
 };
+};
 [_leader, "combat", "Advance", 125] call EFUNC(main,doCallout);
 
 private _handle = [{
@@ -140,6 +149,13 @@ private _handle = [{
         _group setVariable [QGVAR(attackPFH), nil];
         _group setVariable [QGVAR(attackWaypoint), nil];
         _group setVariable [QGVAR(attackTravelPos), nil];
+        // a helicopter still under scripted control is handed back to its pilot
+        private _air = _group getVariable QGVAR(attackAir);
+        if (!isNil "_air") then {
+            private _heli = _air get "heli";
+            if (!isNull _heli) then {_heli setVariable [QGVAR(heliInsert), nil];};
+            _group setVariable [QGVAR(attackAir), nil];
+        };
         if (EGVAR(main,debug_functions)) then {
             ["%1 taskAttack: %2 %3", side _group, groupId _group, _reason] call EFUNC(main,debugLog);
         };
@@ -182,6 +198,12 @@ private _handle = [{
     if ([_group, _token] call FUNC(taskIsCancelled) || {_group call EFUNC(main,isDirected)}) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "cancelled", _pos, _radius] call _fnc_end;};
     private _units = (units _group) select {_x call EFUNC(main,isAlive) && {!isPlayer _x}};
     if (_units isEqualTo []) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "no units left", _pos, _radius] call _fnc_end;};
+
+    // air assault in progress ~ nothing else until the infantry is on the ground
+    private _air = _group getVariable QGVAR(attackAir);
+    if (!isNil "_air" && {(_air get "phase") isNotEqualTo "done"}) exitWith {
+        [_group, _pos, [_air get "heli"]] call FUNC(taskAttackAir);
+    };
 
     private _leader = leader _group;
     if (!(_leader call EFUNC(main,isAlive))) then {

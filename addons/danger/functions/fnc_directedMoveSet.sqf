@@ -68,6 +68,18 @@ private _waypoint = [_group, _wpIndex];
 if ((waypointType _waypoint) in ["CYCLE", "SCRIPTED"]) exitWith {false};
 private _wpPos = waypointPosition _waypoint;
 
+// Seek & Destroy on a gunship with nobody to drop off ~ the engine's own search and destroy flies that well
+if ((waypointType _waypoint) in ["SAD", "DESTROY"] && {(vehicle (leader _group)) isKindOf "Air"}) then {
+    private _aircraft = vehicle (leader _group);
+    private _passengers = (fullCrew [_aircraft, "cargo"]) select {(group (_x select 0)) isEqualTo _group};
+    if (_passengers isEqualTo []) exitWith {
+        if (_group call EFUNC(main,isDirected)) then {[_group, "gunship attack"] call FUNC(directedMoveRelease);};
+        _group setCurrentWaypoint _waypoint;
+        _wpIndex = -1;
+    };
+};
+if (_wpIndex isEqualTo -1) exitWith {true};
+
 // Seek & Destroy placed by a Zeus ~ attack the position with fire and movement, then carry on
 if ((waypointType _waypoint) in ["SAD", "DESTROY"] && {EGVAR(main,Loaded_WP)}) exitWith {
     if (_group call EFUNC(main,isDirected)) then {[_group, "attack waypoint"] call FUNC(directedMoveRelease);};
