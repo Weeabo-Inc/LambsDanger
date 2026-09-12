@@ -53,10 +53,7 @@ _group setVariable [QGVAR(isExecutingTactic), true];
             _group setVariable [QEGVAR(main,currentTactic), nil];
             _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
             _group setFormation _formation;
-            {
-                _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
-                _x doFollow (leader _x);
-            } forEach (units _group);
+            {[_x, true] call FUNC(unitRelease);} forEach (units _group);
         };
     },
     [group _unit, time + _delay, attackEnabled _unit, formation _group]

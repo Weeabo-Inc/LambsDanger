@@ -32,6 +32,7 @@ private _leader = leader _group;
 if ( _leader distance2D _overwatch < 10 ) exitWith {
     _group setVariable [QEGVAR(danger,isExecutingTactic), false];
     _group setVariable [QGVAR(groupMemory), _posList, false];
+    {[_x, true] call EFUNC(danger,unitRelease);} forEach _units;
 };
 
 // leader has no friendlies within 35 meters
@@ -45,28 +46,14 @@ private _checkCount = 3;
 // units spread out on a line across the direction of the target instead of stacking on one spot
 private _spreadDir = if (_posList isEqualTo []) then {getDir _leader} else {_overwatch getDir (_posList select 0)};
 
+private _threats = [_posList select 0, _overwatch] select (_posList isEqualTo []);
 {
     private _unit = _x;
-    private _suppressed = (getSuppression _unit) > 0.5;
     private _activeTeam = (_forEachIndex % 2) isEqualTo _teamAlpha;
 
-    // stance
-    private _unitPos = call {
-        if (_suppressed) exitWith {"DOWN"};
-        if (_unit isEqualTo _leader) exitWith {["MIDDLE", "DOWN"] select _leaderAlone};
-        private _crouched = (stance _unit) isEqualTo "CROUCH";
-        if (_crouched && !_activeTeam) exitWith {"UP"};
-        "MIDDLE"
-    };
-    _unit setUnitPos _unitPos;
-    _unit setVariable [QEGVAR(danger,forceMove), !_suppressed];
-
-    // move ~ alternate sides, 3 m apart
+    // move ~ alternate sides, 3 m apart, from cover to cover, into cover on the flank line at the end
     private _movePos = _overwatch getPos [3 * ceil (_forEachIndex / 2), _spreadDir + ([90, -90] select ((_forEachIndex % 2) isEqualTo 0))];
-    private _emptyPos = _movePos findEmptyPosition [0, 4];
-    if (_emptyPos isNotEqualTo []) then {_movePos = _emptyPos;};
-    _unit doMove _movePos;
-    _unit setVariable [QGVAR(currentTask), "Group Flank", GVAR(debug_functions)];
+    [_unit, "move", _movePos, [_threats], createHashMapFromArray [["onArrive", "hold"], ["suppressList", _posList], ["task", "Group Flank"]]] call EFUNC(danger,unitOrder);
 
     // check suppress position
     if (_activeTeam && _checkCount > 0 && _index isEqualTo -1) then {
@@ -74,13 +61,14 @@ private _spreadDir = if (_posList isEqualTo []) then {getDir _leader} else {_ove
         _checkCount = _checkCount - 1;
     };
 
-    // suppress
+    // suppress ~ from a position, not on the move
     if (
         _activeTeam
         && {!(_leaderAlone && {isNull (objectParent (effectiveCommander _leader))})}
         && {(currentCommand _unit) isNotEqualTo "Suppress"}
         && {_unit isNotEqualTo _leader}
         && {_index isNotEqualTo -1}
+        && {([_unit, "state", "Idle"] call EFUNC(danger,unitState)) isEqualTo "InCover"}
     ) then {
 
         // shoot

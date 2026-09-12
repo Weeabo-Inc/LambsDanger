@@ -59,13 +59,7 @@ _group setVariable [QGVAR(isExecutingTactic), true];
             _group setSpeedMode _speedMode;
             _group setFormation _formation;
             _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
-            {
-                _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
-                _x setVariable [QGVAR(forceMove), nil];
-                _x setUnitPos "AUTO";
-                _x forceSpeed -1;
-                _x doFollow (leader _x);
-            } forEach (units _group);
+            {[_x, true] call FUNC(unitRelease);} forEach (units _group);
         };
     },
     [_group, time + _delay, speedMode _group, formation _group, attackEnabled _group]
@@ -113,53 +107,34 @@ if (!GVAR(disableAutonomousSmokeGrenades)) then {
     [_unit, _unit getPos [15, _unit getDir _target]] call EFUNC(main,doSmoke);
 };
 
-// movers fall back at once, spread on arrival
+// movers fall back at once, sprinting from cover to cover, and take up a line facing the threat on arrival
+private _fallBackOptions = createHashMapFromArray [["onArrive", "hold"], ["sprint", true], ["sector", [_awayDir + 180, 90]], ["task", "Falling back"]];
 {
     private _pos = _destination getPos [3 * ceil (_forEachIndex / 2), _awayDir + ([90, -90] select ((_forEachIndex % 2) isEqualTo 0))];
-    _x setVariable [QGVAR(forceMove), true];
-    _x setUnitPos "MIDDLE";
-    _x forceSpeed -1;
-    _x doMove _pos;
-    _x setVariable [QEGVAR(main,currentTask), "Falling back", EGVAR(main,debug_functions)];
-    [
-        {params ["_unit"]; unitReady _unit || {!(_unit call EFUNC(main,isAlive))}},
-        {
-            params ["_unit", "_target"];
-            if (!(_unit call EFUNC(main,isAlive))) exitWith {};
-            _unit setUnitPos (_unit call EFUNC(main,getLowStance));
-            _unit doWatch _target;
-        },
-        [_x, _target],
-        45
-    ] call CBA_fnc_waitUntilAndExecute;
+    [_x, "rush", _pos, [_target], _fallBackOptions] call FUNC(unitOrder);
 } forEach _movers;
 
-// covering pair suppresses, then follows
+// covering pair fights from the nearest cover and suppresses, then follows
 private _posList = ([_group, 60] call FUNC(pictureContacts)) apply {_x select 1};
 _posList pushBack _target;
 {
-    _x setVariable [QGVAR(forceMove), true];
-    _x setUnitPos (_x call EFUNC(main,getLowStance));
-    _x setVariable [QEGVAR(main,currentTask), "Covering withdrawal", EGVAR(main,debug_functions)];
+    private _options = createHashMapFromArray [["onArrive", "hold"], ["radius", 8], ["suppressList", _posList], ["sector", [_awayDir + 180, 60]], ["task", "Covering withdrawal"]];
+    [_x, "hold", getPosATL _x, [_target], _options] call FUNC(unitOrder);
     private _index = [_x, _posList] call EFUNC(main,checkVisibilityList);
     if (_index isNotEqualTo -1) then {
         [_x, AGLToASL ((_posList select _index) vectorAdd [0, 0, random 1])] call EFUNC(main,doSuppress);
-    } else {
-        _x doWatch _target;
     };
 } forEach _cover;
 [
     {
-        params ["_cover", "_destination", "_awayDir"];
+        params ["_cover", "_destination", "_awayDir", "_target", "_options"];
         {
             if (_x call EFUNC(main,isAlive)) then {
-                _x setUnitPos "MIDDLE";
-                _x doMove (_destination getPos [3 + 3 * _forEachIndex, _awayDir + 180]);
-                _x setVariable [QEGVAR(main,currentTask), "Falling back", EGVAR(main,debug_functions)];
+                [_x, "rush", _destination getPos [3 + 3 * _forEachIndex, _awayDir + 180], [_target], _options] call FUNC(unitOrder);
             };
         } forEach _cover;
     },
-    [_cover, _destination, _awayDir],
+    [_cover, _destination, _awayDir, _target, _fallBackOptions],
     COVER_TIME
 ] call CBA_fnc_waitAndExecute;
 

@@ -64,12 +64,9 @@ if (_type isEqualTo DANGER_DEADBODYGROUP) exitWith {
     _timeout + 3
 };
 
-// is indoor
-private _indoor = _unit call EFUNC(main,isIndoor);
-
-// indoor units exit
-if (_indoor && { RND(0.05) } && { RND(EGVAR(main,indoorMove)) }) exitWith {
-    [_unit, _pos] call EFUNC(main,doReposition);
+// a man in a fighting position stays in the machine's hands
+if ([_unit, "isBusy"] call FUNC(unitState) || {([_unit, "state", "Idle"] call FUNC(unitState)) isEqualTo "InCover"}) exitWith {
+    if (_type isNotEqualTo DANGER_DEADBODYGROUP) then {[_unit, "threatSeen", _pos] call FUNC(unitEvent);};
     _timeout
 };
 

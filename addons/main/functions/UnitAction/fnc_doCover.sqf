@@ -1,11 +1,13 @@
 #include "script_component.hpp"
 /*
- * Author: nkenny
- * moved the unit into cover
+ * Author: nkenny, bluefield-creator
+ * Moves the unit into cover. Kept for compatibility: the per-soldier machine picks the
+ * spot and runs the move (lambs_danger_fnc_unitOrder "cover"); a man the machine already
+ * owns is told rounds are coming in and handles it himself.
  *
  * Arguments:
- * 0: unit doing the flight <OBJECT>
- * 1: position of cover <ARRAY>
+ * 0: unit seeking cover <OBJECT>
+ * 1: position of danger <ARRAY>, optional
  *
  * Return Value:
  * bool
@@ -15,6 +17,8 @@
  *
  * Public: No
 */
+#define COVER_RANGE 10
+#define HOLD_TIME 6
 
 params ["_unit", ["_pos", [], [[]]]];
 
@@ -24,33 +28,9 @@ _unit setUnitPosWeak (["DOWN", "MIDDLE"] select ((stance _unit) isEqualTo "STAND
 // check if stopped or inside a building
 if (!(_unit checkAIFeature "PATH") || {(insideBuilding _unit) isEqualTo 1}) exitWith {false};
 
-// find cover
-if (_pos isEqualTo []) then {
-    _pos = nearestTerrainObjects [_unit, ["BUSH", "TREE", "HIDE"], 6, true, true];
-    _pos = if (_pos isEqualTo []) then {
-        getPosASL _unit
-    } else {
-        (_pos select 0) getPos [-1.2, _unit getDir (_pos select 0)]
-    };
-};
+private _event = missionNamespace getVariable QEFUNC(danger,unitEvent);
+if (!isNil "_event" && {[_unit, "nearMiss", _pos] call _event}) exitWith {true};
 
-// force anim
-if (_unit distance2D _pos < 0.6) exitWith {false};
-private _direction = _unit getRelDir _pos;
-private _anim = call {
-    if (_direction > 315) exitWith {["WalkF", "WalkLF"]};
-    if (_direction > 225) exitWith {["WalkL", "WalkLF"]};
-    if (_direction > 135) exitWith {["WalkB"]};
-    if (_direction > 45) exitWith {["WalkR", "WalRF"]};
-    ["WalkF", "WalkRF"]
-};
-
-// prevent run in place
-_unit moveTo _pos;
-_unit setDestination [_pos, "FORMATION PLANNED", true];
-
-// do anim
-[_unit, _anim, false] call FUNC(doGesture);       // gesture is not forced to allow cover movement to appear smoother - nkenny
-
-// end
-true
+private _order = missionNamespace getVariable QEFUNC(danger,unitOrder);
+if (isNil "_order") exitWith {false};
+[_unit, "cover", [], [_pos, []] select (_pos isEqualTo []), createHashMapFromArray [["radius", COVER_RANGE], ["holdTime", HOLD_TIME], ["task", "Taking cover"]]] call _order

@@ -1,7 +1,9 @@
 #include "script_component.hpp"
 /*
- * Author: nkenny
- * Actualises group level hiding
+ * Author: nkenny, bluefield-creator
+ * Actualises group level hiding: every man is handed to the per-soldier machine with
+ * a cover order (see lambs_main_fnc_doHide), which picks a spot with a roof or a wall
+ * between him and the danger, gets him there and brings him back to the leader later.
  *
  * Arguments:
  * 0: units list <ARRAY>
@@ -23,34 +25,9 @@ _units = _units select { _x call FUNC(isAlive) && { isNull objectParent _x } && 
 if (_units isEqualTo []) exitWith {false};
 
 {
-    private _unit = _x;
-    [_unit, _pos] call FUNC(doHide);
-    _unit setVariable [QEGVAR(main,currentTask), format ["Hide (%1)", _action], EGVAR(main,debug_functions)];
-
-    // force movement!
-    if (getSuppression _unit > 0.4 || {_unit distance2D _pos > 25}) then {
-        private _lowStance = _unit call FUNC(getLowStance);
-        _unit setUnitPos selectRandom ["MIDDLE", _lowStance, _lowStance];
+    if ([_x, _pos] call FUNC(doHide)) then {
+        _x setVariable [QEGVAR(main,currentTask), format ["Hide (%1)", _action], EGVAR(main,debug_functions)];
     };
-    _unit setVariable [QEGVAR(danger,forceMove), true];
-    [
-        {
-            params ["_unit"];
-            unitReady _unit
-        },
-        {
-            params ["_unit", ["_pos", [0, 0, 0]]];
-            _unit setVariable [QEGVAR(danger,forceMove), nil];
-            [_unit, _pos] call FUNC(doHide);
-            _unit setVariable [QEGVAR(main,currentTask), format ["Hide (%1)", "re-hide"], EGVAR(main,debug_functions)];
-        },
-        [_unit, _pos],
-        20 + random 40,
-        {
-            params ["_unit"];
-            _unit setVariable [QEGVAR(danger,forceMove), nil];
-        }
-    ] call CBA_fnc_waitUntilAndExecute;
 } forEach _units;
 
 // end

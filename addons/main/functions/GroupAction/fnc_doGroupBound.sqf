@@ -9,7 +9,10 @@
  * bound point the fire team moves up behind it while the assault team suppresses,
  * and so on. A fire team that is already close enough skips its move so the assault
  * keeps rolling. Hands over to the building assault inside CQB range of the objective.
- * Re-arms itself with CBA_fnc_waitAndExecute; no per frame work.
+ * Every man's movement is an order to the per-soldier machine (lambs_danger_fnc_unitOrder):
+ * runners sprint to their slot and into the cover beside it, the covering team fights
+ * from the cover nearest to where it stands with the machine's peek and duck rhythm.
+ * Re-arms itself with CBA_fnc_waitAndExecute; no per frame work of its own.
  *
  * Arguments:
  * 0: Group <GROUP>
@@ -90,11 +93,8 @@ private _closest = 1e9;
 if (_closest < (missionNamespace getVariable [QEGVAR(danger,cqbRange), 60])) exitWith {
     private _handover = _fireTeam + _assaultTeam;
     {
-        _x enableAI "SUPPRESSION";
-        _x enableAI "TARGET";
-        _x enableAI "AUTOTARGET";
+        [_x, false] call EFUNC(danger,unitRelease);
         _x setVariable [QEGVAR(danger,forceMove), nil];
-        _x setUnitPos "AUTO";
     } forEach _handover;
     // under a deliberate attack the plan restores the group itself, so the assault's own reset is pushed far out
     private _owned = !isNil {_group getVariable QEGVAR(danger,maneuver)};
@@ -110,7 +110,7 @@ private _fnc_centre = {
 private _assaultCentre = _assaultTeam call _fnc_centre;
 private _fireCentre = if (_fireTeam isEqualTo []) then {_assaultCentre} else {_fireTeam call _fnc_centre};
 
-// bound finished? everyone arrived or it took too long
+// bound finished? everyone is in position (the machine says so) or it took too long
 private _movingUnits = [[], _assaultTeam, _fireTeam] select _moving;
 private _arrived = (time - _boundStart) > BOUND_TIMEOUT;
 if (!_arrived && {_boundPositions isNotEqualTo []}) then {
@@ -118,7 +118,7 @@ if (!_arrived && {_boundPositions isNotEqualTo []}) then {
     _arrived = true;
     {
         _x params ["_unit", "_pos"];
-        if (_unit in _movingUnits && {_unit distance2D _pos > ARRIVED_DISTANCE}) exitWith {_arrived = false;};
+        if (_unit in _movingUnits && {([_unit, "state", "Idle"] call EFUNC(danger,unitState)) in ["Moving", "Rushing"]} && {_unit distance2D _pos > ARRIVED_DISTANCE}) exitWith {_arrived = false;};
     } forEach _boundPositions;
 };
 
@@ -225,58 +225,15 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
         if (_emptyPos isNotEqualTo []) then {_pos = _emptyPos;};
         _boundPositions pushBack [_unit, _pos];
 
-        _unit setVariable [QEGVAR(danger,forceMove), true];
-        _unit setVariable [QGVAR(currentTask), ["Assault team bounding", "Fire team moving up"] select (_moving isEqualTo TEAM_FIRE), GVAR(debug_functions)];
-
-        // not all on the same frame: the first man goes, the next follows half a second later, like a buddy rush
-        [
-            {
-                params ["_unit", "_pos", "_group"];
-                if (!(_unit call FUNC(isAlive)) || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), false])}) exitWith {};
-                // the moving team sprints: no shooting, no aiming, no stopping for incoming fire until it is on its slot
-                _unit disableAI "SUPPRESSION";
-                _unit disableAI "TARGET";
-                _unit disableAI "AUTOTARGET";
-                _unit doWatch objNull;
-                _unit setUnitPos "UP";
-                _unit forceSpeed -1;
-                _unit doMove _pos;
-            },
-            [_unit, _pos, _group],
-            (_forEachIndex * RUSH_STAGGER) + random RUSH_STAGGER
-        ] call CBA_fnc_waitAndExecute;
-
-        // the moment it arrives it drops prone and starts shooting again
-        [
-            {
-                params ["_unit", "_pos", "", "", "", "_startAfter"];
-                !(_unit call FUNC(isAlive)) || {time > _startAfter && {_unit distance2D _pos < ARRIVED_DISTANCE || {unitReady _unit}}}
-            },
-            {
-                params ["_unit", "", "_target", "_group", "_posList"];
-                if (!(_unit call FUNC(isAlive)) || {!(_group getVariable [QEGVAR(danger,isExecutingTactic), false])}) exitWith {};
-                _unit enableAI "TARGET";
-                _unit enableAI "AUTOTARGET";
-                _unit enableAI "SUPPRESSION";
-                _unit setUnitPos "DOWN";
-                private _index = [_unit, _posList] call FUNC(checkVisibilityList);
-                if (_index isEqualTo -1 || {!([_unit, AGLToASL ((_posList select _index) vectorAdd [0, 0, random 1])] call FUNC(doSuppress))}) then {
-                    _unit doWatch _target;
-                };
-            },
-            [_unit, _pos, _target, _group, _posList, time + (_forEachIndex * RUSH_STAGGER) + RUSH_STAGGER + 1],
-            BOUND_TIMEOUT,
-            {
-                // never arrived ~ he still gets his eyes and his rifle back
-                params ["_unit"];
-                if (_unit call FUNC(isAlive)) then {
-                    _unit enableAI "TARGET";
-                    _unit enableAI "AUTOTARGET";
-                    _unit enableAI "SUPPRESSION";
-                    _unit setUnitPos "MIDDLE";
-                };
-            }
-        ] call CBA_fnc_waitUntilAndExecute;
+        // the rush is the machine's: a sprint to the slot, into whatever cover stands next to it, then down and
+        // shooting again. Not all on the same frame: the first man goes, the next follows half a second later.
+        private _options = createHashMapFromArray [
+            ["onArrive", "hold"],
+            ["suppressList", _posList],
+            ["delay", (_forEachIndex * RUSH_STAGGER) + random RUSH_STAGGER],
+            ["task", ["Assault team bounding", "Fire team moving up"] select (_moving isEqualTo TEAM_FIRE)]
+        ];
+        [_unit, "rush", _pos, [_target], _options] call EFUNC(danger,unitOrder);
     } forEach _movingUnits;
     _boundStart = time;
 
@@ -287,38 +244,25 @@ if (_arrived || {_moving isEqualTo TEAM_NONE}) then {
     };
 };
 
-// stationary team ~ suppress what can be seen, otherwise watch the objective
+// stationary team ~ each man fights from the nearest cover to where he stands: the machine runs his peek and duck
+// and suppresses what he can see from the list; the last man of three or more watches the rear instead
 private _stationary = [[], _fireTeam, _assaultTeam] select _moving;
 // a shuffled copy ~ the list is shared with the plan that owns this bound, whose first entry is the newest contact
 private _suppressList = +_posList;
 [_suppressList, true] call CBA_fnc_shuffle;
-private _index = -1;
-private _checks = SUPPRESS_CHECKS;
 {
-    _x setVariable [QEGVAR(danger,forceMove), true];
-    _x enableAI "SUPPRESSION";
-    _x enableAI "TARGET";
-    _x enableAI "AUTOTARGET";
-    _x setUnitPos "DOWN";
-    _x setVariable [QGVAR(currentTask), ["Fire team covering", "Assault team covering"] select (_moving isEqualTo TEAM_FIRE), GVAR(debug_functions)];
-    if (_index isEqualTo -1 && {_checks > 0} && {_suppressList isNotEqualTo []}) then {
-        _index = [_x, _suppressList] call FUNC(checkVisibilityList);
-        _checks = _checks - 1;
-    };
-    // the last man of a team of three or more watches the rear, not the objective
-    if (_forEachIndex isEqualTo ((count _stationary) - 1) && {count _stationary >= 3}) then {
-        _x doWatch ((getPosATL _x) getPos [60, _target getDir _x]);
-        _x setVariable [QGVAR(currentTask), "Rear security", GVAR(debug_functions)];
-        continue;
-    };
+    private _rear = _forEachIndex isEqualTo ((count _stationary) - 1) && {count _stationary >= 3};
+    private _options = createHashMapFromArray [
+        ["onArrive", "hold"],
+        ["radius", COVER_SEARCH],
+        ["suppressList", [_suppressList, []] select _rear],
+        ["sector", [[], [_target getDir _x, 90]] select _rear],
+        ["task", ["Fire team covering", "Assault team covering", "Rear security"] select ([parseNumber (_moving isEqualTo TEAM_FIRE), 2] select _rear)]
+    ];
+    [_x, "hold", getPosATL _x, [_target], _options] call EFUNC(danger,unitOrder);
     // rockets and grenade launchers go into the enemy position from here
-    private _launched = _x distance2D _target < LAUNCHER_RANGE && {[_x, [_target, _posList select 0] select (_posList isNotEqualTo [])] call FUNC(doLauncherFire)};
-    if (!_launched) then {
-        if (_index isNotEqualTo -1 && {(currentCommand _x) isNotEqualTo "Suppress"}) then {
-            if !([_x, AGLToASL ((_suppressList select _index) vectorAdd [0, 0, random 1])] call FUNC(doSuppress)) then {_index = -1;};
-        } else {
-            _x doWatch _target;
-        };
+    if (!_rear && {_x distance2D _target < LAUNCHER_RANGE} && {([_x, "state", "Idle"] call EFUNC(danger,unitState)) isEqualTo "InCover"}) then {
+        [_x, [_target, _posList select 0] select (_posList isNotEqualTo [])] call FUNC(doLauncherFire);
     };
 } forEach _stationary;
 

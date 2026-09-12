@@ -51,7 +51,8 @@ private _leader = leader _group;
     [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
     _unit setVariable [QGVAR(eventhandlers), nil];
 
-    // movement
+    // movement ~ the per-soldier machine lets go first
+    [_unit, false] call EFUNC(danger,unitRelease);
     _unit forceSpeed -1;
     _unit setUnitPos "AUTO";
     [_unit] allowGetIn true;

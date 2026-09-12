@@ -28,6 +28,8 @@
 #define SUPPORT_MAX 260
 #define SEARCH_RADIUS 50
 #define SEARCH_PRECISION 25
+#define SETTLEMENT_STEP 45
+#define SETTLEMENT_RANGE 40
 #define CONCEALMENT "(3 * forest) + (2 * trees) + (1.5 * houses) + (0.5 * hills) - (2 * meadow) - (5 * sea)"
 
 params [["_from", [0, 0, 0], [[]]], ["_objective", [0, 0, 0], [[]]]];
@@ -72,4 +74,29 @@ private _supportCentre = _objective getPos [(SUPPORT_MIN + SUPPORT_MAX) / 2, _di
 private _supportPos = [_objective, SUPPORT_MAX, SUPPORT_MIN, 4, _supportCentre] call FUNC(findOverwatch);
 if (_supportPos isEqualTo [] || {_supportPos isEqualTo [0, 0, 0]}) then {_supportPos = _supportCentre;};
 
-[_route, _assaultPos, _supportPos, _side]
+// through a settlement the route goes house to house: each leg that passes buildings is broken into steps
+// short enough that the men move from one building's cover to the next instead of down the street
+private _dense = [];
+private _previous = _from;
+{
+    private _legEnd = _x;
+    private _legLength = _previous distance2D _legEnd;
+    private _steps = floor (_legLength / SETTLEMENT_STEP);
+    if (_steps > 1 && {([_previous, SETTLEMENT_RANGE, false, false] call FUNC(findBuildings)) isNotEqualTo [] || {([_legEnd, SETTLEMENT_RANGE, false, false] call FUNC(findBuildings)) isNotEqualTo []}}) then {
+        private _legDirection = _previous getDir _legEnd;
+        for "_i" from 1 to (_steps - 1) do {
+            private _step = _previous getPos [_i * (_legLength / _steps), _legDirection];
+            private _houses = [_step, SETTLEMENT_RANGE, false, false] call FUNC(findBuildings);
+            if (_houses isNotEqualTo []) then {
+                // the step sits at the building nearest to the line, on our side of it
+                private _house = _houses select 0;
+                _step = _house getPos [4, _legEnd getDir _house];
+            };
+            _dense pushBack _step;
+        };
+    };
+    _dense pushBack _legEnd;
+    _previous = _legEnd;
+} forEach _route;
+
+[_dense, _assaultPos, _supportPos, _side]

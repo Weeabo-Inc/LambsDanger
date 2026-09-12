@@ -43,7 +43,7 @@ _target = _target call CBA_fnc_getPos;
             _group setCombatMode _combatMode;
             _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
             _group setFormation _formation;
-            (units _group) doFollow (leader _group)
+            {[_x, true] call FUNC(unitRelease);} forEach (units _group);
         };
     },
     [_group, combatMode _group, attackEnabled _group, formation _group],

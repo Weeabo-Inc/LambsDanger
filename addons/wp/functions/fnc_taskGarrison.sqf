@@ -156,13 +156,12 @@ private _fnc_addEventHandler = {
     // variables
     private _ehs = _unit getVariable [QGVAR(eventhandlers), []];
 
-    // add handlers
+    // add handlers ~ the exit: the machine lets him go (on his owner) and he fights on his own account
     switch (_type) do {
         case 1: {
             private _handle = _unit addEventHandler ["Hit", {
                 params ["_unit"];
-                [_unit, "PATH"] remoteExec ["enableAI", _unit];
-                _unit setVariable [QGVAR(disabledAI), nil];
+                [_unit, true] remoteExecCall [QEFUNC(danger,unitRelease), _unit];
                 _unit setCombatMode "RED";
                 [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
                 _unit setVariable [QGVAR(eventhandlers), nil];
@@ -172,8 +171,7 @@ private _fnc_addEventHandler = {
         case 2: {
             private _handle = _unit addEventHandler ["Fired", {
                 params ["_unit"];
-                [_unit, "PATH"] remoteExec ["enableAI", _unit];
-                _unit setVariable [QGVAR(disabledAI), nil];
+                [_unit, true] remoteExecCall [QEFUNC(danger,unitRelease), _unit];
                 _unit setCombatMode "RED";
                 [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
                 _unit setVariable [QGVAR(eventhandlers), nil];
@@ -184,9 +182,7 @@ private _fnc_addEventHandler = {
             private _handle = _unit addEventHandler ["FiredNear", {
                 params ["_unit", "_shooter", "_distance"];
                 if (side _unit != side _shooter && {_distance < (10 + random 10)}) then {
-                    [_unit, "PATH"] remoteExec ["enableAI", _unit];
-                    _unit setVariable [QGVAR(disabledAI), nil];
-                    _unit doMove (getPosATL _shooter);
+                    [_unit, "assault", getPosATL _shooter, [getPosATL _shooter], createHashMapFromArray [["holdTime", 10]]] remoteExecCall [QEFUNC(danger,unitOrder), _unit];
                     _unit setCombatMode "RED";
                     [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
                     _unit setVariable [QGVAR(eventhandlers), nil];
@@ -197,8 +193,7 @@ private _fnc_addEventHandler = {
         case 4: {
             private _handle = _unit addEventHandler ["Suppressed", {
                 params ["_unit"];
-                [_unit, "PATH"] remoteExec ["enableAI", _unit];
-                _unit setVariable [QGVAR(disabledAI), nil];
+                [_unit, true] remoteExecCall [QEFUNC(danger,unitRelease), _unit];
                 _unit setCombatMode "RED";
                 [_unit, _unit getVariable [QGVAR(eventhandlers), []]] call EFUNC(main,removeEventhandlers);
                 _unit setVariable [QGVAR(eventhandlers), nil];
@@ -210,46 +205,21 @@ private _fnc_addEventHandler = {
     // set EH
     _unit setVariable [QGVAR(eventhandlers), _ehs];
 };
-// spread out
+// spread out ~ each man holds his building position through the per-soldier machine: he walks there from cover
+// to cover (or is put there), watches outwards from it, and is never frozen in place, so a man who is shot at
+// can still shift to another window
 {
-    // prepare
-    doStop _x;
     private _house = _buildingPos deleteAt 0;
-
-    // move and delay stopping + stance
-    if (_teleport) then {
-        if (surfaceIsWater _house) then {
-            _x doFollow (leader _x);
-        } else {
-            _x setVehiclePosition [_house, [], 0, "CAN_COLLIDE"];
-            _x disableAI "PATH";
-            _x setVariable [QGVAR(disabledAI), ["PATH"]];
-            _x setUnitPos selectRandom ["UP", "UP", "MIDDLE"];
-
-            // look away from nearest building
-            if !([_x] call EFUNC(main,isIndoor)) then {
-                _x doWatch AGLToASL (_x getPos [250, (nearestBuilding _house) getDir _house]);
-            };
-        };
-    } else {
-        if (surfaceIsWater _house) exitWith {
-            _x doFollow (leader _x);
-        };
-        _x doMove _house;
-        [
-            {
-                params ["_unit", "", "_token"];
-                unitReady _unit || {[group _unit, _token] call FUNC(taskIsCancelled)}
-            }, {
-                params ["_unit", "_target", "_token"];
-                if ([group _unit, _token] call FUNC(taskIsCancelled)) exitWith {};
-                if (surfaceIsWater (getPosASL _unit) || (_unit distance _target > 1.5)) exitWith { _unit doFollow (leader _unit); };
-                _unit disableAI "PATH";
-                _unit setVariable [QGVAR(disabledAI), ["PATH"]];
-                _unit setUnitPos selectRandom ["UP", "UP", "MIDDLE"];
-            }, [_x, _house, _token]
-        ] call CBA_fnc_waitUntilAndExecute;
+    if (surfaceIsWater _house) then {
+        _x doFollow (leader _x);
+        continue;
     };
+    if (_teleport) then {
+        _x setVehiclePosition [_house, [], 0, "CAN_COLLIDE"];
+    };
+    private _outward = _house getPos [250, (nearestBuilding _house) getDir _house];
+    [_x, _house] call EFUNC(main,positionReserve);
+    [_x, "hold", _house, [], createHashMapFromArray [["onArrive", "hold"], ["radius", 3], ["indoorBias", true], ["sector", [_house getDir _outward, 120]], ["task", "Garrison"]]] call EFUNC(danger,unitOrder);
 
     if (_exitCondition == -1) then {
         for "_i" from 0 to 4 do {

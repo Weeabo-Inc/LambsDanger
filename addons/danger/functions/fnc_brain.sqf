@@ -67,6 +67,9 @@ if (_dangerCause isEqualTo DANGER_ASSESS) exitWith {
     [_causeArray, false, false, false]
 };
 
+// anything real puts the man under the per-soldier machine's eye
+[_unit] call FUNC(unitRegister);
+
 // immediate actions
 private _group = group _unit;
 if (_dangerCause in [DANGER_HIT, DANGER_BULLETCLOSE, DANGER_EXPLOSION, DANGER_FIRE]) exitWith {

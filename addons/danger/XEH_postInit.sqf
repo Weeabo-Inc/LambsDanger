@@ -25,3 +25,6 @@ call FUNC(zeusWaypointInit);
 
 // AI commander ~ thinks for local groups between danger events
 call FUNC(commanderInit);
+
+// per-soldier machine ~ cover to cover movement, fighting positions, the peek and duck rhythm
+call FUNC(unitInit);

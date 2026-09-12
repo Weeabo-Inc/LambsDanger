@@ -31,6 +31,7 @@ _vehicles = _vehicles select { canFire _x };
 private _index = -1;
 private _checkCount = 3;
 
+private _target = _posList select -1;
 {
     // find target
     if (_index isEqualTo -1 && _checkCount > 0) then {
@@ -38,27 +39,18 @@ private _checkCount = 3;
         _checkCount = _checkCount - 1;
     };
 
-    // found good target
+    // found good target ~ fight from the nearest cover, the machine keeps him peeking and ducking
     if (_index isNotEqualTo -1) then {
-
-        // suppressive fire
-        _x forceSpeed 1;
-        _x setUnitPosWeak "MIDDLE";
+        [_x, "hold", getPosATL _x, [_target], createHashMapFromArray [["onArrive", "hold"], ["radius", 8], ["suppressList", _posList], ["task", "Group Suppress"]]] call EFUNC(danger,unitOrder);
         private _suppressing = [_x, AGLToASL ((_posList select _index) vectorAdd [0, 0, random 1])] call FUNC(doSuppress);
-        _x setVariable [QGVAR(currentTask), "Group Suppress", GVAR(debug_functions)];
         if (!_suppressing) then {
             _index = -1;
         };
     };
 
-    // failed to suppress
+    // failed to suppress ~ a leg forward from cover to cover until something can be seen
     if (_index isEqualTo -1) then {
-
-        // move forward
-        _x forceSpeed 3;
-        _x doMove (_x getPos [20, _x getDir (_posList select -1)]);
-        _x setVariable [QGVAR(currentTask), "Group Suppress (Move)", GVAR(debug_functions)];
-
+        [_x, "move", _x getPos [20, _x getDir _target], [_target], createHashMapFromArray [["onArrive", "hold"], ["suppressList", _posList], ["task", "Group Suppress (Move)"]]] call EFUNC(danger,unitOrder);
     };
 } forEach (_units select {(currentCommand _x) isNotEqualTo "Suppress"});
 
@@ -115,8 +107,8 @@ if (_units isNotEqualTo [] && { _group getVariable [QEGVAR(danger,isExecutingTac
         6 + random 2
     ] call CBA_fnc_waitAndExecute;
 } else {
-    // cycle over ~ release the forced speeds set above
-    {_x forceSpeed -1;} forEach _units;
+    // cycle over ~ the machine lets the men go
+    {[_x, true] call EFUNC(danger,unitRelease);} forEach _units;
 };
 
 // end

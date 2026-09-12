@@ -65,6 +65,12 @@ private _distance = _unit distance2D _target;
 [group _unit, [_target]] call FUNC(pictureUpdate);
 [_unit] call EFUNC(main,applyStress);
 
+// a man in a fighting position learns where the enemy is and fights from where he is
+if ([_unit, "isBusy"] call FUNC(unitState) || {([_unit, "state", "Idle"] call FUNC(unitState)) isEqualTo "InCover"}) exitWith {
+    [_unit, "threatSeen", _unit getHideFrom _target] call FUNC(unitEvent);
+    _timeout
+};
+
 // near, go for CQB ~ not while a Zeus directs the group
 if (
     _distance < GVAR(cqbRange)

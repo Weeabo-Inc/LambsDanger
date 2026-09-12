@@ -1,7 +1,9 @@
 #include "script_component.hpp"
 /*
- * Author: nkenny
- * Group garrisons buildings near enemies!
+ * Author: nkenny, bluefield-creator
+ * Group garrisons buildings near enemies: every man is sent, from cover to cover, to a
+ * building position with a field of fire towards the threat, and fights from it with
+ * the per-soldier machine's peek and duck rhythm until the tactic ends.
  *
  * Arguments:
  * 0: group executing tactics <GROUP> or group leader <UNIT>
@@ -17,7 +19,6 @@
  *
  * Public: No
 */
-#define COVER_DISTANCE 25
 #define BUILDING_DISTANCE 42
 
 params ["_group", "_target", ["_units", []], ["_delay", 180]];
@@ -44,8 +45,7 @@ _target = _target call CBA_fnc_getPos;
             _group setVariable [QEGVAR(main,currentTactic), nil];
             _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
             _group setFormation _formation;
-            // undo the doStop given at the start of the garrison
-            (units _group) doFollow (leader _group);
+            {[_x, true] call FUNC(unitRelease);} forEach (units _group);
         };
     },
     [_group, attackEnabled _group, formation _group],
@@ -62,19 +62,16 @@ if (_units isEqualTo []) then {
 };
 if (_units isEqualTo []) exitWith {false};
 
-// buildings ~ sorted by distance
-private _buildings = [_target, BUILDING_DISTANCE, true, false, true] call EFUNC(main,findBuildings);
-_buildings = _buildings apply { [_unit distanceSqr _x, _x] };
-_buildings sort true;
-_buildings = _buildings apply { _x select 1 };
+// the buildings near the leader ~ positions with a view of the threat, one per man
+private _options = createHashMapFromArray [["purpose", "fight"], ["buildingsOnly", true], ["indoorBias", true], ["count", (count _units) * 2]];
+private _positions = [getPosATL _unit, BUILDING_DISTANCE, [_target], _options] call EFUNC(main,findPositions);
 
 // failsafe
-if (_buildings isEqualTo []) exitWith {
+if (_positions isEqualTo []) exitWith {
+    _group setVariable [QGVAR(isExecutingTactic), nil];
     {_x doFollow leader _x} forEach _units;
+    false
 };
-
-// update target ~ better both for debugging and stacking soldiers
-_target = _buildings select 0;
 
 // leader ~ rally animation here
 [_unit, "gestureFollow"] call EFUNC(main,doGesture);
@@ -89,31 +86,36 @@ _unit setVariable [QEGVAR(main,currentTask), "Tactics Garrison", EGVAR(main,debu
 // set group task
 _group setVariable [QEGVAR(main,currentTactic), "Garrison/Rally", EGVAR(main,debug_functions)];
 
-// make group ready
-doStop _units;
-_units doWatch objNull;
-
-// execute
+// execute ~ the nearest man takes the nearest position, each claim keeps the next man off it
+private _posList = ([_group, 60] call FUNC(pictureContacts)) apply {_x select 1};
+_posList pushBack _target;
+private _unassigned = +_units;
 {
-    private _pos = if (_buildings isEqualTo []) then {_target} else {_buildings deleteAt 0};
-    [
-        {
-            params ["_unit", "_pos"];
-            if (_unit call EFUNC(main,isDirected)) exitWith {};
-            //_unit moveTo _pos;
-            _unit setDestination [_pos, "LEADER PLANNED", true];
-            _unit doMove _pos;
-        }, [_x, _pos], 0.5 + random 2
-    ] call CBA_fnc_waitAndExecute;
-    _x setVariable [QEGVAR(main,currentTask), "Group Garrison", EGVAR(main,debug_functions)];
-} forEach _units;
-
-// declare leftover positions in memory!
-_group setVariable [QEGVAR(main,groupMemory), _buildings];
+    if (_unassigned isEqualTo []) exitWith {};
+    private _pos = _x select 0;
+    private _nearest = [_unassigned, [], {_x distance2D _pos}, "ASCEND"] call BIS_fnc_sortBy;
+    private _man = _nearest select 0;
+    _unassigned deleteAt (_unassigned find _man);
+    [_man, _pos] call EFUNC(main,positionReserve);
+    private _orderOptions = createHashMapFromArray [
+        ["onArrive", "hold"],
+        ["radius", 4],
+        ["indoorBias", true],
+        ["suppressList", _posList],
+        ["sector", [_pos getDir _target, 90]],
+        ["delay", 0.5 + random 2],
+        ["task", "Group Garrison"]
+    ];
+    [_man, "hold", _pos, [_target], _orderOptions] call FUNC(unitOrder);
+} forEach _positions;
+// more men than positions: the rest take cover where they can with a view of the threat
+{
+    [_x, "hold", getPosATL _x, [_target], createHashMapFromArray [["onArrive", "hold"], ["radius", 20], ["indoorBias", true], ["suppressList", _posList], ["task", "Group Garrison (outside)"]]] call FUNC(unitOrder);
+} forEach _unassigned;
 
 // debug
 if (EGVAR(main,debug_functions)) then {
-    ["%1 TACTICS GARRISON %2 (%3m) (%4 units)", side _unit, groupId _group, round (_unit distance2D _target), count _units] call EFUNC(main,debugLog);
+    ["%1 TACTICS GARRISON %2 (%3m) (%4 units, %5 positions)", side _unit, groupId _group, round (_unit distance2D _target), count _units, count _positions] call EFUNC(main,debugLog);
     private _m = [_target, "tactics garrison", _unit call EFUNC(main,debugMarkerColor), "hd_flag"] call EFUNC(main,dotMarker);
     _m setMarkerSizeLocal [0.6, 0.6];
     [{deleteMarker _this}, _m, _delay + 30] call CBA_fnc_waitAndExecute;

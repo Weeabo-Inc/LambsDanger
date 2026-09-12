@@ -30,7 +30,7 @@ private _timeout = time + 2;
 
 // stress recovers, aiming with it
 [_unit] call EFUNC(main,applyStress);
-if ((_unit getVariable [QEGVAR(main,survival), 0]) > time) exitWith {_timeout};
+if ((_unit getVariable [QEGVAR(main,survival), 0]) > time || {[_unit, "isBusy"] call FUNC(unitState)}) exitWith {_timeout};
 
 // looking after himself between the drills: rejoin when cut off, ammunition, a wound
 private _leader = leader _unit;
@@ -77,24 +77,12 @@ if (
     || (combatMode _unit) in ["BLUE", "GREEN"]
 ) exitWith {_timeout};
 
-// directed by a Zeus ~ no sympathetic assaults, drop the building memory so the FSM stops re-queueing assessments
-if (_unit call EFUNC(main,isDirected)) exitWith {
-    (group _unit) setVariable [QEGVAR(main,groupMemory), []];
-    _timeout
-};
+// directed by a Zeus ~ nothing on his own account
+if (_unit call EFUNC(main,isDirected)) exitWith {_timeout};
 
-// group memory
-private _groupMemory = (group _unit) getVariable [QEGVAR(main,groupMemory), []];
-
-// sympathetic CQB/suppressive fire
-if (_groupMemory isNotEqualTo []) exitWith {
-    [_unit, _groupMemory] call EFUNC(main,doAssaultMemory);
-    _timeout
-};
-
-// building
-if (RND(EGVAR(main,indoorMove)) && {_unit call EFUNC(main,isIndoor)}) exitWith {
-    [_unit, _target] call EFUNC(main,doReposition);
+// in a fighting position with a target in mind: the machine puts him at the right window
+if (!isNull _target && {([_unit, "state", "Idle"] call FUNC(unitState)) isEqualTo "InCover"}) exitWith {
+    [_unit, "threatSeen", _unit getHideFrom _target] call FUNC(unitEvent);
     _timeout
 };
 

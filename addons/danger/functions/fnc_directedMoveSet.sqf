@@ -126,6 +126,8 @@ _group setVariable [QEGVAR(main,currentTactic), "Directed move", EGVAR(main,debu
 private _strict = GVAR(zeusWaypointDiscipline) isEqualTo 2;
 private _units = (units _group) select {!isPlayer _x};
 {
+    // the Zeus has the men now ~ the machine lets go of whoever it held
+    [_x, false] call FUNC(unitRelease);
     _x setVariable [QGVAR(forceMove), nil];
     _x forceSpeed -1;
     _x setUnitPos "AUTO";

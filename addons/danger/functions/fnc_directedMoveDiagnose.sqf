@@ -111,14 +111,28 @@ _lines pushBack "<t color='#FFAA00'>Units</t>";
     if (fleeing _x) then {_flags pushBack "fleeing";};
     if (!(_x call EFUNC(main,isAlive))) then {_flags pushBack "down";};
     if (isPlayer _x) then {_flags pushBack "player";};
+    // what the per-soldier machine has him doing
+    private _record = _x getVariable QGVAR(unit);
+    private _machine = if (isNil "_record") then {"-"} else {
+        private _final = _record get "final";
+        private _position = _record get "position";
+        format ["%1 %2 | final %3m | %4%5",
+            _record get "state",
+            [_record get "phase", ""] select ((_record get "state") isNotEqualTo "InCover"),
+            [round (_x distance2D _final), "-"] select (_final isEqualTo []),
+            [(_record get "order") param [0, "-"], "-"] select ((_record get "order") isEqualTo []),
+            ["", format [" (%1, cover %2)", _position select 5, _position select 1]] select (_position isNotEqualTo [])
+        ]
+    };
     _lines pushBack format [
-        "%1: %2 | ready %3 | %4 | %5 | %6m",
+        "%1: %2 | ready %3 | %4 | %5 | %6m | %7",
         name _x,
         [currentCommand _x, "-"] select ((currentCommand _x) isEqualTo ""),
         unitReady _x,
         [getUnitState _x, "player"] select (isPlayer _x),
         [_flags joinString " ", "-"] select (_flags isEqualTo []),
-        round (_x distance2D _leader)
+        round (_x distance2D _leader),
+        _machine
     ];
 } forEach _units;
 

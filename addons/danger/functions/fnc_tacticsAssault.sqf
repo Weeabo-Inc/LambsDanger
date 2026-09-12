@@ -18,6 +18,8 @@
  *
  * Public: No
 */
+#define ON_POSITION 10
+
 params ["_group", "_target", ["_units", []], ["_delay", 85]];
 
 // group is missing
@@ -35,6 +37,16 @@ if ((_target select 2) > 6) then {
     _target set [2, 0.5];
 };
 
+// on the position already with nothing in sight ~ there is nothing left to assault, and re-running it every
+// few seconds only shoves the men about
+if (_unit distance2D _target < ON_POSITION && {([_group, 30] call FUNC(pictureContacts)) isEqualTo []}) exitWith {
+    private _picture = [_group] call FUNC(pictureGet);
+    _picture set ["lastTactic", "assault"];
+    _picture set ["lastResult", "completed"];
+    _picture set ["lastTacticTime", time];
+    false
+};
+
 // this tactic owns the group until its reset ~ the monitor, the commander and the attack task wait for it
 _group setVariable [QGVAR(isExecutingTactic), true];
 
@@ -49,11 +61,7 @@ _group setVariable [QGVAR(isExecutingTactic), true];
             _group enableIRLasers _isIRLaserOn;
             _group setSpeedMode _speedMode;
             _group setFormation _formation;
-            {
-                _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
-                _x doFollow leader _x;
-                _x forceSpeed -1;
-            } forEach (units _group);
+            {[_x, true] call FUNC(unitRelease);} forEach (units _group);
         };
     },
     [_group, attackEnabled _group, _unit isIRLaserOn (currentWeapon _unit), speedMode _group, formation _group],
@@ -118,11 +126,15 @@ if (!GVAR(disableAutonomousSmokeGrenades)) then {
     [{_this call EFUNC(main,doUGL)}, [_units, _target, "shotSmoke"], 3] call CBA_fnc_waitAndExecute;
 };
 
-// ready group
+// ready group ~ every man closes on the position from cover to cover and into the building that holds it; the
+// machine spreads them over its rooms through the position claims, so nobody stacks on one doorway
 _group setFormDir (_unit getDir _target);
 _group enableIRLasers true;
-_units doWatch objNull;
-_units doMove _target;
+private _posList = ([_group, 60] call FUNC(pictureContacts)) apply {_x select 1};
+{
+    private _options = createHashMapFromArray [["onArrive", "hold"], ["suppressList", _posList], ["delay", _forEachIndex * 0.4], ["task", "Assaulting"]];
+    [_x, "assault", _target, [_target], _options] call FUNC(unitOrder);
+} forEach _units;
 
 // check for reload
 {

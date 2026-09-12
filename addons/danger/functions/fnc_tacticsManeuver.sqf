@@ -228,15 +228,15 @@ private _handle = [{
         _group setSpeedMode "NORMAL";
         {
             if (!isNull _x) then {
-                _x setVariable [QGVAR(forceMove), nil];
-                _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
-                _x setUnitPos "AUTO";
-                _x forceSpeed -1;
-                private _taskDisabled = _x getVariable [QEGVAR(wp,disabledAI), []];
-                private _maneuverUnit = _x;
-                {if (!(_x in _taskDisabled)) then {_maneuverUnit enableAI _x;};} forEach ["SUPPRESSION", "TARGET", "AUTOTARGET", "AUTOCOMBAT"];
                 // a completed attack leaves the men where they consolidated, in cover, watching their sectors
-                if (_result isNotEqualTo "completed") then {_x doFollow (leader _group);} else {_x setUnitPos "DOWN";};
+                if (_result isNotEqualTo "completed") then {
+                    [_x, true] call FUNC(unitRelease);
+                } else {
+                    _x setVariable [QGVAR(forceMove), nil];
+                    _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
+                };
+                private _taskDisabled = _x getVariable [QEGVAR(wp,disabledAI), []];
+                if (!("AUTOCOMBAT" in _taskDisabled)) then {_x enableAI "AUTOCOMBAT";};
                 [_x] allowGetIn true;
             };
         } forEach _units;
@@ -344,24 +344,22 @@ private _handle = [{
         if (EGVAR(main,debug_functions)) then {["%1 MANEUVER %2 -> %3", side _group, groupId _group, _this] call EFUNC(main,debugLog);};
     };
 
-    // support element ~ suppress from its position once there, shift and lift when the assault is close
+    // support element ~ every man fights from the cover nearest to where he stands: the machine runs his peek and
+    // duck and suppresses what he can see from the list; rockets and grenade launchers go in from the position.
+    // Shift and lift when the assault is close: the list goes, the men keep watching the objective.
     private _fnc_supportFire = {
         private _lifted = _state get "lifted";
         {
-            _x setUnitPos "DOWN";
-            _x enableAI "TARGET";
-            _x enableAI "AUTOTARGET";
-            if (_lifted) then {
-                _x doWatch _objective;
-            } else {
-                if (!([_x, [_objective, _posList select 0] select (_posList isNotEqualTo [])] call EFUNC(main,doLauncherFire))) then {
-                    if ((currentCommand _x) isNotEqualTo "Suppress") then {
-                        private _index = [_x, _posList] call EFUNC(main,checkVisibilityList);
-                        if (_index isEqualTo -1 || {!([_x, AGLToASL ((_posList select _index) vectorAdd [0, 0, random 1])] call EFUNC(main,doSuppress))}) then {
-                            _x doWatch _objective;
-                        };
-                    };
-                };
+            private _options = createHashMapFromArray [
+                ["onArrive", "hold"],
+                ["radius", 8],
+                ["suppressList", [_posList, []] select _lifted],
+                ["sector", [_x getDir _objective, 60]],
+                ["task", ["Support by fire", "Fire lifted"] select _lifted]
+            ];
+            [_x, "hold", getPosATL _x, [_objective], _options] call FUNC(unitOrder);
+            if (!_lifted && {([_x, "state", "Idle"] call FUNC(unitState)) isEqualTo "InCover"}) then {
+                [_x, [_objective, _posList select 0] select (_posList isNotEqualTo [])] call EFUNC(main,doLauncherFire);
             };
         } forEach _support;
     };
@@ -500,6 +498,7 @@ private _handle = [{
             private _onFoot = _all select {isNull objectParent _x};
 
             // one cover spot per man, picked once and kept, nearest men to the hull take the hull
+            // (units cannot key a hashmap, their hash values can)
             if (isNil {_state get "coverSlots"}) then {
                 private _from = [_lead, _anchor] select (_crippled || {isNull _lead});
                 private _spots = [_from, _threat, count _all, !(_emergency || _crippled), COVER_SEARCH_RADIUS] call EFUNC(main,findDismountCover);
@@ -509,7 +508,7 @@ private _handle = [{
                     _x params ["_pos"];
                     if (_unassigned isNotEqualTo []) then {
                         private _nearest = [_unassigned, [], {_x distance2D _pos}, "ASCEND"] call BIS_fnc_sortBy;
-                        _slots set [_nearest select 0, _x];
+                        _slots set [hashValue (_nearest select 0), _x];
                         _unassigned deleteAt (_unassigned find (_nearest select 0));
                     };
                 } forEach _spots;
@@ -519,45 +518,28 @@ private _handle = [{
             };
             private _slots = _state get "coverSlots";
 
+            // each man rushes to his spot: the machine sprints him there, drops him into the cover beside it and
+            // starts him shooting back; men still aboard get out first
+            private _rushOptions = createHashMapFromArray [["onArrive", "hold"], ["suppressList", _posList], ["task", "Getting into cover"]];
             {
                 if (isNull objectParent _x) then {
-                    private _slot = _slots getOrDefault [_x, []];
+                    private _slot = _slots getOrDefault [hashValue _x, []];
                     if (_slot isEqualTo []) then {
                         // no spot of his own (joined late): the far side of the hull, a little back
                         _slot = [_anchor getPos [8, _threat getDir _anchor], "DOWN"];
-                        _slots set [_x, _slot];
+                        _slots set [hashValue _x, _slot];
                     };
-                    _slot params ["_pos", "_stance"];
-                    if (_x distance2D _pos > 2.5) then {
-                        // run for it: no stopping to shoot until in cover
-                        _x disableAI "SUPPRESSION";
-                        _x disableAI "TARGET";
-                        _x disableAI "AUTOTARGET";
-                        _x doWatch objNull;
-                        _x setUnitPos "UP";
-                        _x forceSpeed -1;
-                        _x doMove _pos;
-                        _x setVariable [QEGVAR(main,currentTask), "Getting into cover", EGVAR(main,debug_functions)];
-                    } else {
-                        _x enableAI "SUPPRESSION";
-                        _x enableAI "TARGET";
-                        _x enableAI "AUTOTARGET";
-                        _x setUnitPos _stance;
-                        _x doWatch _threat;
-                        _x setVariable [QEGVAR(main,currentTask), "In cover", EGVAR(main,debug_functions)];
-                    };
+                    [_x, "rush", _slot select 0, [_threat], _rushOptions] call FUNC(unitOrder);
                 } else {
                     _x action ["Eject", vehicle _x];
                 };
             } forEach _all;
-            private _notThere = (_onFoot findIf {private _slot = _slots getOrDefault [_x, []]; _slot isEqualTo [] || {_x distance2D (_slot select 0) > 3}}) isNotEqualTo -1;
+            private _notThere = (_onFoot findIf {
+                private _slot = _slots getOrDefault [hashValue _x, []];
+                _slot isEqualTo [] || {([_x, "state", "Idle"] call FUNC(unitState)) in ["Moving", "Rushing"] && {_x distance2D (_slot select 0) > 3}}
+            }) isNotEqualTo -1;
             private _fanned = (count _onFoot) isEqualTo (count _all) && {!_notThere};
             if (_fanned || {time - (_state get "phaseTime") > ([FAN_TIMEOUT, RALLY_TIMEOUT] select (_emergency || _crippled))}) then {
-                {
-                    _x enableAI "SUPPRESSION";
-                    _x enableAI "TARGET";
-                    _x enableAI "AUTOTARGET";
-                } forEach _onFoot;
                 // the carrier does not sit next to the infantry ~ it backs off to its fire position
                 if (_emergency) then {
                     {
@@ -590,12 +572,9 @@ private _handle = [{
 
             // assault element along the covered route, spread out when shells have been landing
             private _spacing = ASSAULT_SPACING * ([1, 2] select (time - (_group getVariable [QGVAR(shelledTime), -1e9]) < 60));
-            ([_assault, _state get "route", _state get "routeIndex", "wedge", _spacing, _objective] call EFUNC(main,doTeamMove)) params ["_arrived", "_index"];
+            ([_assault, _state get "route", _state get "routeIndex", "wedge", _spacing, _objective, [_objective]] call EFUNC(main,doTeamMove)) params ["_arrived", "_index"];
             _state set ["routeIndex", _index];
-            {
-                _x setUnitPos "UP";
-                _x setVariable [QEGVAR(main,currentTask), "Assault element approaching", EGVAR(main,debug_functions)];
-            } forEach _assault;
+            {_x setVariable [QEGVAR(main,currentTask), "Assault element approaching", EGVAR(main,debug_functions)];} forEach _assault;
 
             // fired on before the assault position ~ go in from here
             private _stress = 0;
@@ -614,17 +593,17 @@ private _handle = [{
             // shift and lift ~ no suppression into the assault element's backs
             if (!(_state get "lifted") && {_assaultDistance < SHIFT_FIRE_DISTANCE}) then {
                 _state set ["lifted", true];
-                {_x doWatch objNull; _x setUnitPos "MIDDLE";} forEach _support;
                 {_x doWatch objNull;} forEach _vehicles;
                 [_leader, "combat", "KeepFocused", 100] call EFUNC(main,doCallout);
             };
-            call _fnc_supportFire;
             if (_mechanized) then {call _fnc_vehicleFire;};
 
-            // support moves up once fire is lifted, to the assault position
+            // support fires until the lift, then moves up to the assault position
             if (_state get "lifted" && {_support isNotEqualTo []}) then {
-                [_support, [_state get "assaultPos"], 0, "line", SUPPORT_SPACING, _objective] call EFUNC(main,doTeamMove);
-                {_x setUnitPos "MIDDLE"; _x setVariable [QEGVAR(main,currentTask), "Support moving up", EGVAR(main,debug_functions)];} forEach _support;
+                [_support, [_state get "assaultPos"], 0, "line", SUPPORT_SPACING, _objective, [_objective]] call EFUNC(main,doTeamMove);
+                {_x setVariable [QEGVAR(main,currentTask), "Support moving up", EGVAR(main,debug_functions)];} forEach _support;
+            } else {
+                call _fnc_supportFire;
             };
 
             // the bound code hands over to the building assault inside CQB range ~ from there it is the clear
@@ -636,7 +615,7 @@ private _handle = [{
         case "clear": {
             // support closes to the objective edge and watches outwards; carriers keep watch from where they are
             if (_support isNotEqualTo []) then {
-                [_support, [_objective getPos [PERIMETER_RADIUS, _objective getDir _leader]], 0, "line", SUPPORT_SPACING, _objective] call EFUNC(main,doTeamMove);
+                [_support, [_objective getPos [PERIMETER_RADIUS, _objective getDir _leader]], 0, "line", SUPPORT_SPACING, _objective, [_objective]] call EFUNC(main,doTeamMove);
             };
             if (_mechanized) then {call _fnc_vehicleFire;};
             // done when nothing has been seen for a while and the assault element is on the objective
@@ -672,28 +651,23 @@ private _handle = [{
                     _riflemen = [_riflemen, [], {_x distance2D _counterOrigin}, "ASCEND"] call BIS_fnc_sortBy;
                     private _security = _riflemen select [0, 2];
                     private _opCentre = _objective getPos [SECURITY_DISTANCE, _counterDir];
-                    private _opSpots = [_opCentre, _counterOrigin, count _security, false, 20] call EFUNC(main,findDismountCover);
+                    private _opSpots = [_opCentre, 20, [_counterOrigin], createHashMapFromArray [["purpose", "fight"], ["count", count _security]]] call EFUNC(main,findPositions);
                     {
-                        private _spot = (_opSpots param [_forEachIndex, [_opCentre, "DOWN"]]) select 0;
-                        _x setVariable [QGVAR(forceMove), true];
-                        _x setUnitPos "MIDDLE";
-                        _x doMove _spot;
-                        _x setVariable [QEGVAR(main,currentTask), "Security post", EGVAR(main,debug_functions)];
-                        [{params ["_unit", "_watch"]; if (_unit call EFUNC(main,isAlive)) then {_unit setUnitPos "DOWN"; _unit doWatch _watch;};}, [_x, _counterOrigin], 10 + random 4] call CBA_fnc_waitAndExecute;
+                        private _spot = (_opSpots param [_forEachIndex, [_opCentre]]) select 0;
+                        private _options = createHashMapFromArray [["onArrive", "hold"], ["sector", [_counterDir, 60]], ["task", "Security post"]];
+                        [_x, "move", _spot, [_counterOrigin], _options] call FUNC(unitOrder);
                     } forEach _security;
 
                     // everyone else into cover around the consolidation position, sectors all round with the weight
                     // of them looking the way the enemy will come
                     private _rest = _all - _security;
-                    private _spots = [_best, _counterOrigin, count _rest, false, 30] call EFUNC(main,findDismountCover);
+                    private _spots = [_best, 30, [_counterOrigin], createHashMapFromArray [["purpose", "fight"], ["count", count _rest]]] call EFUNC(main,findPositions);
                     {
-                        private _spot = (_spots param [_forEachIndex, [_best getPos [4 + _forEachIndex, _counterDir + 180], "DOWN"]]) select 0;
+                        private _spot = (_spots param [_forEachIndex, [_best getPos [4 + _forEachIndex, _counterDir + 180]]]) select 0;
                         // two thirds face the counterattack, the rest cover the flanks and the rear
                         private _bearing = if (_forEachIndex % 3 isEqualTo 2) then {_counterDir + ([90, -90, 180] select (floor (_forEachIndex / 3) % 3))} else {_counterDir};
-                        _x doMove _spot;
-                        _x setUnitPos "MIDDLE";
-                        _x setVariable [QEGVAR(main,currentTask), "Consolidating", EGVAR(main,debug_functions)];
-                        [{params ["_unit", "_spot", "_bearing"]; if (_unit call EFUNC(main,isAlive)) then {_unit setUnitPos "DOWN"; _unit doWatch (_spot getPos [60, _bearing]);};}, [_x, _spot, _bearing], 8 + random 4] call CBA_fnc_waitAndExecute;
+                        private _options = createHashMapFromArray [["onArrive", "hold"], ["sector", [_bearing, 90]], ["task", "Consolidating"]];
+                        [_x, "move", _spot, [_spot getPos [60, _bearing]], _options] call FUNC(unitOrder);
                     } forEach _rest;
                     [_leader, "combat", "KeepFocused", 100] call EFUNC(main,doCallout);
                     if (_losses > 0) then {[{_this call EFUNC(main,doCallout)}, [_leader, "combat", "mandown", 100], 3] call CBA_fnc_waitAndExecute;};

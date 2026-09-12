@@ -64,13 +64,7 @@ _group setVariable [QGVAR(isExecutingTactic), true];
             _group setCombatMode _combatMode;
             _group setBehaviourStrong _behaviour;
             _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
-            {
-                _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
-                _x setVariable [QGVAR(forceMove), nil];
-                _x setUnitPos "AUTO";
-                _x forceSpeed -1;
-                _x doFollow (leader _x);
-            } forEach (units _group);
+            {[_x, true] call FUNC(unitRelease);} forEach (units _group);
             // give the engine its combat reflexes back ~ unless a waypoint task holds a feature
             {
                 private _boundUnit = _x;

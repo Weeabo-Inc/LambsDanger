@@ -3,9 +3,10 @@
  * Author: bluefield-creator
  * Where dismounting infantry should go instead of standing in the open next to the
  * carrier: prone spots behind the hull on the side away from the enemy (while the
- * vehicle is intact and not the thing being shot at), then any ditch or dip within
- * reach that puts them below the enemy's line of sight, then terrain cover, then a
- * fallback spread to the side. One spot per man, never closer than 2.5 m to another.
+ * vehicle is intact and not the thing being shot at), then whatever the tactical
+ * position system finds within reach (ditches below the enemy's line of sight, walls,
+ * rocks, vegetation, wrecks), then a fallback spread to the side. One spot per man,
+ * never closer than 2.5 m to another.
  *
  * Arguments:
  * 0: Vehicle, or a position where it was <OBJECT> or <ARRAY>
@@ -24,9 +25,6 @@
 */
 #define SPOT_SPACING 2.5
 #define HULL_CLEARANCE 2
-#define DITCH_DEPTH 0.5
-#define DITCH_STEP 6
-#define DITCH_MIN 6
 #define FALLBACK_DISTANCE 14
 #define FALLBACK_BACK 4
 
@@ -35,17 +33,11 @@ params [["_vehicle", objNull, [objNull, []]], ["_threatPos", [], [[]]], ["_count
 private _vehiclePos = _vehicle call CBA_fnc_getPos;
 if (_threatPos isEqualTo []) then {_threatPos = _vehiclePos getPos [100, 0];};
 private _away = _threatPos getDir _vehiclePos;
-private _threatASL = (AGLToASL _threatPos) vectorAdd [0, 0, 1.5];
-private _baseHeight = getTerrainHeightASL _vehiclePos;
 private _spots = [];
 
 private _fnc_far = {
     params ["_pos"];
     (_spots findIf {(_x select 0) distance2D _pos < SPOT_SPACING}) isEqualTo -1
-};
-private _fnc_hidden = {
-    params ["_pos"];
-    terrainIntersectASL [(AGLToASL _pos) vectorAdd [0, 0, 0.6], _threatASL]
 };
 
 // 1. behind the hull ~ as many men as its shadow is wide, 2 m off the far side
@@ -65,42 +57,19 @@ if (_useHull && {_vehicle isEqualType objNull} && {!isNull _vehicle} && {alive _
     };
 };
 
-// 2. ditches ~ ground lower than the vehicle's, or ground the enemy cannot see, to either side and a little back
+// 2. the ground around ~ dips, walls, rocks, vegetation, wrecks, scored against the threat
 if (count _spots < _count) then {
-    private _candidates = [];
+    private _options = createHashMapFromArray [["purpose", "hide"], ["count", (_count * 2) max 6], ["minDistance", 4]];
     {
-        private _side = _x;
-        for "_distance" from DITCH_MIN to _radius step DITCH_STEP do {
-            {
-                private _pos = (_vehiclePos getPos [_distance, _away + _side]) getPos [_x, _away];
-                private _drop = _baseHeight - (getTerrainHeightASL _pos);
-                if (!surfaceIsWater _pos && {_drop > DITCH_DEPTH || {[_pos] call _fnc_hidden}}) then {
-                    _candidates pushBack [_distance + ([0, 4] select (_drop <= DITCH_DEPTH)), _pos];
-                };
-            } forEach [0, 6];
+        _x params ["_pos", "_cover", "", "_stance"];
+        // never forward into the fire
+        if (count _spots < _count && {_cover > 0} && {[_pos] call _fnc_far} && {(_pos distance2D _threatPos) >= (_vehiclePos distance2D _threatPos) - 10}) then {
+            _spots pushBack [_pos, _stance];
         };
-    } forEach [90, -90];
-    _candidates sort true;
-    {
-        if (count _spots < _count && {[_x select 1] call _fnc_far}) then {_spots pushBack [_x select 1, "DOWN"];};
-    } forEach _candidates;
+    } forEach ([_vehiclePos, _radius, [_threatPos], _options] call FUNC(findPositions));
 };
 
-// 3. terrain cover ~ behind bushes, rocks, walls, trees, not forward into the fire
-if (count _spots < _count) then {
-    private _objects = nearestTerrainObjects [_vehiclePos, ["BUSH", "TREE", "SMALL TREE", "ROCK", "WALL", "FENCE", "HIDE", "HOUSE"], _radius, true, true];
-    {
-        if (count _spots < _count) then {
-            private _object = _x;
-            if ((_object distance2D _threatPos) >= (_vehiclePos distance2D _threatPos) - 10) then {
-                private _pos = _object getPos [1.5, _threatPos getDir _object];
-                if ([_pos] call _fnc_far) then {_spots pushBack [_pos, ["DOWN", "MIDDLE"] select ((_object isKindOf "House") || {(sizeOf typeOf _object) > 3})];};
-            };
-        };
-    } forEach _objects;
-};
-
-// 4. fallback ~ spread to the side away from the road, a few metres back, prone
+// 3. fallback ~ spread to the side, a few metres back, prone
 private _side = [90, -90] select (random 1 > 0.5);
 private _index = 0;
 while {count _spots < _count && {_index < _count * 3}} do {

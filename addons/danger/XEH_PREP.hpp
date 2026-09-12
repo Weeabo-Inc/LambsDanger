@@ -51,6 +51,15 @@ PREP(tacticsReinforce);
 PREP(tacticsSuppress);
 PREP(tacticsWithdraw);
 
+PREP(unitCycle);
+PREP(unitEvent);
+PREP(unitInit);
+PREP(unitOrder);
+PREP(unitRegister);
+PREP(unitRelease);
+PREP(unitState);
+PREP(unitThink);
+
 SUBPREP(ZeusModules,moduleConfigureGroupAI);
 SUBPREP(ZeusModules,moduleDiagnose);
 SUBPREP(ZeusModules,moduleDirectedMove);

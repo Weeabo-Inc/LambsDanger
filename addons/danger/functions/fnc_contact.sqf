@@ -102,16 +102,12 @@ if ((_unit checkAIFeature "PATH") && {!(_group call EFUNC(main,isDirected))} && 
     if ((unitPos _x) isEqualTo "Auto") then {_x setUnitPosWeak "MIDDLE";};
 } forEach _units;
 
-// leader seeks cover ~ not while a Zeus directs the group
+// leader seeks cover ~ not while a Zeus directs the group; the machine picks the spot and hands him back
 if (
     ((expectedDestination _unit) select 1) isEqualTo "DoNotPlan"
     && {!(_group call EFUNC(main,isDirected))}
 ) then {
-    private _cover = nearestTerrainObjects [ _unit, ["BUSH", "TREE", "SMALL TREE", "HOUSE", "ROCK", "WALL", "FENCE"], 35, false, true ];
-    if (_cover isNotEqualTo []) then {
-        _cover = selectRandom _cover;
-        _unit doMove ( ( _cover getPos [1, _enemy getDir _cover]) );
-    };
+    [_unit, "cover", [], [_unit getHideFrom _enemy], createHashMapFromArray [["radius", 20], ["holdTime", 8], ["task", "Contact! into cover"]]] call FUNC(unitOrder);
 };
 
 // set current task

@@ -39,7 +39,8 @@ if (_unit getVariable [QGVAR(forceMove), false]) exitWith {
     if (_damage > _lastDamage + 0.15) then {
         _unit setVariable [QEGVAR(main,lastHit), time];
         [_unit, 0.4] call EFUNC(main,addStress);
-        if (isNull objectParent _unit && {(_unit getVariable [QEGVAR(main,survival), 0]) < time} && {!(_unit call EFUNC(main,isDirected))}) then {
+        private _handled = [_unit, "hit", []] call FUNC(unitEvent);
+        if (!_handled && {isNull objectParent _unit} && {(_unit getVariable [QEGVAR(main,survival), 0]) < time} && {!(_unit call EFUNC(main,isDirected))}) then {
             [_unit, 3, []] call EFUNC(main,doSurvive);
         };
     };

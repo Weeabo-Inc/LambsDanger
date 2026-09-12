@@ -232,6 +232,16 @@ private _posCam = positionCameraToWorld [0, 0, 0];
         if (_unit getVariable [QEGVAR(danger,forceMove), false]) then {
             _textData append ["<t color='#FF4000'>Forced AI</t>", "<br/>"];
         };
+        private _record = _unit getVariable QEGVAR(danger,unit);
+        if (!isNil "_record" && {(_record get "state") isNotEqualTo "Idle"}) then {
+            private _final = _record get "final";
+            private _position = _record get "position";
+            _textData append [format ["<t color='#7FFF7F'>Machine: %1 %2%3</t>", _record get "state", [_record get "phase", ""] select ((_record get "state") isNotEqualTo "InCover"), ["", format [" (%1, cover %2)", _position select 5, _position select 1]] select (_position isNotEqualTo [])], "<br/>"];
+            if (_final isNotEqualTo []) then {
+                drawLine3D [_renderPos, _final vectorAdd [0, 0, 0.2], [0.5, 1, 0.5, 0.8]];
+                drawIcon3D ["\a3\ui_f\data\igui\cfg\simpletasks\types\defend_ca.paa", [0.5, 1, 0.5, 1], _final vectorAdd [0, 0, 0.5], 0.6, 0.6, 0, ""];
+            };
+        };
         if (_unit call FUNC(isDirected)) then {
             private _directed = (group _unit) getVariable [QEGVAR(danger,directedMove), [0, [], 0]];
             _textData append [format ["<t color='#40C0FF'>Directed move: wp %1 (%2s left)</t>", _directed select 0, round ((_directed select 2) - CBA_missionTime)], "<br/>"];

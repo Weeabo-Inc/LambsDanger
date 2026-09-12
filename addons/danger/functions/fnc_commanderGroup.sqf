@@ -31,6 +31,9 @@
 #define FALLBACK_LOSSES 0.34
 #define MANEUVER_DISTANCE 150
 #define MANEUVER_SIZE 5
+#define BOUND_MAX_DISTANCE 400
+#define BOUND_MIN_SIZE 3
+#define TACTIC_COOLDOWN 20
 
 params [["_group", grpNull, [grpNull]]];
 
@@ -64,10 +67,18 @@ private _decision = "";
 
 private _fnc_run = {
     params ["_name", "_tactic", "_pos", "_maxDuration"];
+    // the same tactic that just ended on the same ground is not run again straight away ~ that is the loop
+    // that shoves a squad about on a position it already holds
+    if (
+        (_picture get "lastTactic") isEqualTo _name
+        && {time - (_picture getOrDefault ["lastTacticTime", -1e9]) < TACTIC_COOLDOWN}
+        && {(_picture get "lastResult") in ["completed", "failed"]}
+    ) exitWith {_decision = format ["%1 (cooldown)", _name];};
     [_group, _name, _pos, _maxDuration] call FUNC(tacticsMonitor);
     [_group, _pos] call _tactic;
     _decision = _name;
 };
+private _onFoot = (units _group) select {isNull objectParent _x && {_x call EFUNC(main,isAlive)} && {!isPlayer _x}};
 
 switch (true) do {
 
@@ -144,7 +155,10 @@ switch (true) do {
             if (!_sprung && {_posture < 2} && {_distance > AMBUSH_RANGE} && {!_underFire}) then {
                 if ((combatMode _group) isNotEqualTo "GREEN") then {
                     _group setCombatMode "GREEN";
-                    {_x setUnitPos (_x call EFUNC(main,getLowStance)); _x doWatch _threatPos;} forEach (units _group);
+                    {
+                        // men the machine holds in position are already low and looking the right way
+                        if (([_x, "state", "Idle"] call FUNC(unitState)) isEqualTo "Idle") then {_x setUnitPos (_x call EFUNC(main,getLowStance)); _x doWatch _threatPos;};
+                    } forEach (units _group);
                     [_leader, "combat", "StayAlert", 60] call EFUNC(main,doCallout);
                     if (EGVAR(main,debug_functions)) then {["%1 COMMANDER %2: holding fire, enemy at %3m", side _group, groupId _group, round _distance] call EFUNC(main,debugLog);};
                 };
@@ -213,9 +227,13 @@ switch (true) do {
             _decision = "pursue";
         };
 
-        // close with the enemy ~ a squad plans a deliberate attack, a fire team bounds, everyone rushes inside CQB range
+        // close with the enemy ~ a squad plans a deliberate attack, a fire team bounds, everyone rushes inside CQB range;
+        // one or two men, or an enemy far beyond rifle range, fight from where they are instead
         switch (true) do {
-            case (_distance > MANEUVER_DISTANCE && {count (units _group) >= MANEUVER_SIZE}): {
+            case (_distance > BOUND_MAX_DISTANCE || {count _onFoot < BOUND_MIN_SIZE}): {
+                ["suppress", {_this call FUNC(tacticsSuppress)}, _threatPos, 45] call _fnc_run;
+            };
+            case (_distance > MANEUVER_DISTANCE && {count _onFoot >= MANEUVER_SIZE}): {
                 [_group, _threatPos] call FUNC(tacticsManeuver);
                 _decision = "maneuver";
             };
@@ -249,6 +267,7 @@ if ((_picture getOrDefault ["escalationPrev", 0]) >= 2 && {_level < 2} && {time 
     _group setSpeedMode "NORMAL";
     _group enableAttack true;
     {
+        [_x, true] call FUNC(unitRelease);
         _x setUnitPos "AUTO";
         _x forceSpeed -1;
         _x setVariable [QGVAR(forceMove), nil];
