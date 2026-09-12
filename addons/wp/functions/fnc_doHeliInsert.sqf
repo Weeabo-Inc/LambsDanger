@@ -28,12 +28,14 @@
 #define MAX_HORIZONTAL 14
 #define MAX_DOWN 7
 #define MAX_DOWN_LOW 2.5
+#define MAX_DOWN_FINAL 1
 #define MAX_UP 4
 #define LOW_HEIGHT 12
+#define FINAL_HEIGHT 4
+#define TRANSIT_HEIGHT 18
 #define SMOOTHING 0.15
-#define HOLD_HEIGHT 0.8
-#define APPROACH_HEIGHT 6
-#define LANDED_HEIGHT 1.4
+#define HOLD_HEIGHT 0.3
+#define LANDED_HEIGHT 1.2
 #define LANDED_SPEED 1.5
 #define UNLOAD_TIME 8
 #define TIMEOUT 75
@@ -91,17 +93,25 @@ if (EGVAR(main,debug_functions)) then {
     };
     if (_abort isNotEqualTo "") exitWith {[_heli, _exit, true, _troops, _onDone, _handle, _abort] call _fnc_release;};
 
-    // controller ~ where we are, where we want to be
+    // controller ~ where we are, where we want to be: over the spot at skid height
     private _pos = getPosATL _heli;
-    private _holdHeight = [APPROACH_HEIGHT, HOLD_HEIGHT] select (_phase isEqualTo "unload");
-    private _error = [(_lz select 0) - (_pos select 0), (_lz select 1) - (_pos select 1), _holdHeight - (_pos select 2)];
+    private _height = _pos select 2;
+    private _touching = isTouchingGround _heli;
+    private _error = [(_lz select 0) - (_pos select 0), (_lz select 1) - (_pos select 1), HOLD_HEIGHT - _height];
     private _horizontal = [_error select 0, _error select 1, 0];
     private _distance = vectorMagnitude _horizontal;
     private _desired = if (_distance > 0.1) then {(vectorNormalized _horizontal) vectorMultiply ((_distance * GAIN) min MAX_HORIZONTAL)} else {[0, 0, 0]};
-    private _maxDown = [MAX_DOWN, MAX_DOWN_LOW] select ((_pos select 2) < LOW_HEIGHT);
-    // come down only once nearly over the spot, otherwise hold the approach height
-    private _verticalError = if (_distance > 25 && {(_pos select 2) < APPROACH_HEIGHT * 3}) then {(APPROACH_HEIGHT * 3) - (_pos select 2)} else {_error select 2};
+    // descent: fast high up, gentle under 12 m, a crawl for the last metres, nothing once the skids touch
+    private _maxDown = switch (true) do {
+        case (_touching): {0};
+        case (_height < FINAL_HEIGHT): {MAX_DOWN_FINAL};
+        case (_height < LOW_HEIGHT): {MAX_DOWN_LOW};
+        default {MAX_DOWN};
+    };
+    // come down only once nearly over the spot, otherwise hold the transit height
+    private _verticalError = if (_distance > 25 && {_height < TRANSIT_HEIGHT}) then {TRANSIT_HEIGHT - _height} else {_error select 2};
     _desired set [2, (((_verticalError * GAIN_VERTICAL) max -_maxDown) min MAX_UP)];
+    if (_touching) then {_desired set [2, 0];};
     private _velocity = _state param [3, velocity _heli];
     private _new = (_velocity vectorMultiply (1 - SMOOTHING)) vectorAdd (_desired vectorMultiply SMOOTHING);
     _state set [3, _new];
@@ -126,7 +136,12 @@ if (EGVAR(main,debug_functions)) then {
 
     switch (_phase) do {
         case "descend": {
-            if (_distance < 4 && {(_pos select 2) < LANDED_HEIGHT + 1} && {vectorMagnitude _new < LANDED_SPEED + 1}) then {
+            // gear down for the last part
+            if (_height < LOW_HEIGHT * 2 && {!(_state param [5, false])}) then {
+                _state set [5, true];
+                _heli action ["LandGear", _heli];
+            };
+            if (_distance < 4 && {_touching || {_height < LANDED_HEIGHT}} && {vectorMagnitude _new < LANDED_SPEED + 1}) then {
                 _state set [0, "unload"];
                 _state set [2, time];
                 if (EGVAR(main,debug_functions)) then {["heli insert: %1 down on the LZ after %2s, unloading", typeOf _heli, round (time - _startTime)] call EFUNC(main,debugLog);};
@@ -154,6 +169,6 @@ if (EGVAR(main,debug_functions)) then {
             };
         };
     };
-}, 0, [_heli, _lz, _troops, _exit, _onDone, ["descend", time, -1, velocity _heli, 0]]] call CBA_fnc_addPerFrameHandler;
+}, 0, [_heli, _lz, _troops, _exit, _onDone, ["descend", time, -1, velocity _heli, 0, false]]] call CBA_fnc_addPerFrameHandler;
 
 true
