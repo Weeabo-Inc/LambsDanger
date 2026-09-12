@@ -20,6 +20,8 @@
 #define TACTICS_ASSAULT 3
 #define TACTICS_SUPPRESS 4
 #define TACTICS_ATTACK 5
+#define TACTICS_BOUND 6
+#define TACTICS_WITHDRAW 7
 #define RANGE_NEAR 120
 #define RANGE_MID 220
 #define RANGE_LONG 300
@@ -48,6 +50,12 @@ private _range = (1000 * (1 - (_pos getEnvSoundController "houses") - (_pos getE
 private _unitCount = count units _unit;
 private _enemies = _unit targets [true, _range];
 private _plan = [];
+
+// combat picture ~ remember what was seen, and keep planning on recent contacts after losing sight of them
+private _picture = [_group, _enemies] call FUNC(pictureUpdate);
+if (_enemies isEqualTo []) then {
+    _enemies = ([_group, 60] call FUNC(pictureContacts)) apply {_x select 0};
+};
 
 // leader assess EH
 [QGVAR(OnAssess), [_unit, _group, _enemies]] call EFUNC(main,eventCallback);
@@ -244,9 +252,39 @@ if (
     _unit doWatch _pos;
 };
 
+// assertive groups fight forward with fire and movement instead of rushing when the enemy is beyond CQB range
+if (GVAR(aggression) > 0 && {_pos isNotEqualTo []} && {_pos isNotEqualTo [0, 0, 0]} && {_unit distance2D _pos > GVAR(cqbRange)}) then {
+    _plan = _plan apply {[_x, TACTICS_BOUND] select (_x isEqualTo TACTICS_ASSAULT)};
+};
+
+// do not repeat what just failed
+#define TACTICS_NAMES ["hide", "flank", "garrison", "assault", "suppress", "attack", "bound", "withdraw"]
+private _lastTactic = TACTICS_NAMES find (_picture get "lastTactic");
+if (
+    (_picture get "lastResult") isEqualTo "failed"
+    && {time - (_picture get "lastTacticTime") < 120}
+    && {(_plan - [_lastTactic]) isNotEqualTo []}
+) then {
+    _plan = _plan - [_lastTactic];
+};
+
+// broken groups do not attack ~ they break contact instead (assertive discipline)
+if (GVAR(aggression) > 0 && {([_group] call FUNC(getMorale)) < 0.35} && {time - (_picture get "withdrawTime") > 300}) then {
+    _plan = [TACTICS_WITHDRAW];
+};
+
 // enact plan
 _plan = selectRandom _plan;
+[_group, TACTICS_NAMES select _plan, _pos, [240, 120, 180, 85, 45, 60, 150, 90] select _plan] call FUNC(tacticsMonitor);
 switch (_plan) do {
+    case TACTICS_BOUND: {
+        // fire and movement towards the enemy
+        [{call FUNC(tacticsBound)}, [_group, _pos], 4 + random 4] call CBA_fnc_waitAndExecute;
+    };
+    case TACTICS_WITHDRAW: {
+        // break contact
+        [{call FUNC(tacticsWithdraw)}, [_group, _pos], 1 + random 2] call CBA_fnc_waitAndExecute;
+    };
     case TACTICS_FLANK: {
         // flank
         [{call FUNC(tacticsFlank)}, [_group, _pos], 22 + random 8] call CBA_fnc_waitAndExecute;

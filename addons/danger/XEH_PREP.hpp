@@ -13,6 +13,12 @@ PREP(isLeader);
 
 PREP(contact);
 
+PREP(getMorale);
+PREP(pictureContacts);
+PREP(pictureGet);
+PREP(pictureUpdate);
+PREP(tacticsMonitor);
+
 PREP(directedMoveDeleted);
 PREP(directedMoveDiagnose);
 PREP(directedMoveFeedback);
@@ -25,6 +31,7 @@ PREP(tactics);
 PREP(tacticsAssault);
 PREP(tacticsAssess);
 PREP(tacticsAttack);
+PREP(tacticsBound);
 PREP(tacticsCQB);
 PREP(tacticsFlank);
 PREP(tacticsGarrison);
@@ -33,6 +40,7 @@ PREP(tacticsHold);
 PREP(tacticsProfiles);
 PREP(tacticsReinforce);
 PREP(tacticsSuppress);
+PREP(tacticsWithdraw);
 
 SUBPREP(ZeusModules,moduleConfigureGroupAI);
 SUBPREP(ZeusModules,moduleDiagnose);

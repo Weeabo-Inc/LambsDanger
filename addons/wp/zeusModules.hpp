@@ -228,6 +228,25 @@ class GVAR(ZeusTaskRush) : Module_F {
 };
 
 // new defense module
+class GVAR(ZeusTaskAttack) : Module_F {
+    _generalMacro = QGVAR(ZeusTaskAttack);
+    scope = 1;
+    scopeCurator = 2;
+    isGlobal = 0;
+    is3DEN = 1;
+    displayName = CSTRING(Module_TaskAttack_DisplayName);
+    category = "Lambs_Danger_WP_Cat";
+    icon = "\a3\ui_f\data\GUI\Cfg\CommunicationMenu\attack_ca.paa";
+    portrait = "\a3\ui_f\data\GUI\Cfg\CommunicationMenu\attack_ca.paa";
+    function = QFUNC(moduleAttack);
+    class EventHandlers {
+        class CBA_Extended_EventHandlers: CBA_Extended_EventHandlers_base {};
+        class ADDON {
+            init = QUOTE(call EFUNC(main,initModules));
+        };
+    };
+};
+
 class GVAR(ZeusTaskDefend) : Module_F {
     _generalMacro = QGVAR(ZeusTaskDefend);
     scope = 1;

@@ -33,6 +33,10 @@ private _timeout = time + 1.4;
 // ACE3
 _unit setVariable ["ace_medical_ai_lastHit", CBA_missionTime];
 
+// stress ~ being shot at wears a soldier down, hits most of all
+private _stressIndex = ([DANGER_FIRE, DANGER_BULLETCLOSE, DANGER_EXPLOSION, DANGER_HIT] find _type) max 0;
+[_unit, [0.1, 0.2, 0.3, 0.4] select _stressIndex] call EFUNC(main,addStress);
+
 // cover move when explosion ~ not while a Zeus directs the group; assertive units only sometimes duck on visible fire
 private _assertive = GVAR(aggression) > 0;
 if (

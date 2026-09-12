@@ -17,12 +17,14 @@
  * Public: No
 */
 #define SUPPRESSED 0.7
+#define STRESSED 0.8
 
 params ["_unit"];
 
 if (
     (missionNamespace getVariable [QEGVAR(danger,aggression), 0]) isEqualTo 0
     || {getSuppression _unit > SUPPRESSED}
+    || {(_unit call FUNC(getStress)) > STRESSED}
 ) exitWith {"DOWN"};
 
 "MIDDLE"

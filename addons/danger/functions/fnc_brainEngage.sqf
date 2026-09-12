@@ -57,6 +57,10 @@ if (
 // distance + group memory
 private _distance = _unit distance2D _target;
 
+// feed the group picture, apply stress to aiming
+[group _unit, [_target]] call FUNC(pictureUpdate);
+[_unit] call EFUNC(main,applyStress);
+
 // near, go for CQB ~ not while a Zeus directs the group
 if (
     _distance < GVAR(cqbRange)

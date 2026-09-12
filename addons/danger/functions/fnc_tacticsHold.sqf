@@ -72,15 +72,21 @@ if (count _units > 2) then {
             // set group task
             _group setVariable [QEGVAR(main,currentTactic), "Holding!", EGVAR(main,debug_functions)];
 
-            if (GVAR(aggression) > 0 && {!isNull _enemy}) then {
-                // assertive groups hit back instead of hiding
-                [_group, _enemy] call FUNC(tacticsAttack);
+            private _broken = GVAR(aggression) > 0 && {([_group] call FUNC(getMorale)) < 0.35} && {time - (([_group] call FUNC(pictureGet)) get "withdrawTime") > 300};
+            if (_broken) then {
+                // broken groups break contact
+                [_group, _pos] call FUNC(tacticsWithdraw);
             } else {
-                // gesture wildly!
-                [_unit, "gestureCeaseFire"] call EFUNC(main,doGesture);
+                if (GVAR(aggression) > 0 && {!isNull _enemy}) then {
+                    // assertive groups hit back instead of hiding
+                    [_group, _enemy] call FUNC(tacticsAttack);
+                } else {
+                    // gesture wildly!
+                    [_unit, "gestureCeaseFire"] call EFUNC(main,doGesture);
 
-                // execute hiding
-                [_units, _pos, "holding"] call EFUNC(main,doGroupHide);
+                    // execute hiding
+                    [_units, _pos, "holding"] call EFUNC(main,doGroupHide);
+                };
             };
 
             // debug

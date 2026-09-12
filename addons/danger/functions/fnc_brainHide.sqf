@@ -54,6 +54,9 @@ if (_unit call EFUNC(main,isDirected)) exitWith {
 // check bodies ~ own group!
 if (_type isEqualTo DANGER_DEADBODYGROUP) exitWith {
 
+    // losing a friend hurts
+    [_unit, 0.2] call EFUNC(main,addStress);
+
     // check body
     [_unit, _pos] call EFUNC(main,doCheckBody);
 

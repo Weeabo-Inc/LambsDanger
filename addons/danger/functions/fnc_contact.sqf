@@ -37,6 +37,7 @@ if (isNull _enemy || { (side _group) isEqualTo (side group _enemy) } ) exitWith 
 
 // update contact state
 _group setVariable [QGVAR(contact), time + 600];
+[_group, [_enemy]] call FUNC(pictureUpdate);
 
 // set group task
 //_group setVariable [QGVAR(isExecutingTactic), true];

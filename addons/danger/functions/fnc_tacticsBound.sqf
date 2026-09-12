@@ -1,0 +1,138 @@
+#include "script_component.hpp"
+/*
+ * Author: bluefield-creator
+ * Leader orders fire and movement towards the enemy: half the group suppresses the
+ * known positions while the other half bounds forward, then the halves swap. Support
+ * gunners and the leader form the first base of fire. Inside CQB range the building
+ * assault takes over.
+ *
+ * Arguments:
+ * 0: group executing tactics <GROUP> or group leader <UNIT>
+ * 1: group threat unit <OBJECT> or position <ARRAY>
+ * 2: units in group, default all <ARRAY>
+ * 3: delay until unit is ready again <NUMBER>
+ *
+ * Return Value:
+ * success
+ *
+ * Example:
+ * [bob, angryJoe] call lambs_danger_fnc_tacticsBound;
+ *
+ * Public: No
+*/
+#define SUPPRESS_POSITIONS 12
+
+params ["_group", "_target", ["_units", []], ["_delay", 150]];
+
+// group is missing
+if (isNull _group) exitWith {false};
+
+// get leader
+if (_group isEqualType objNull) then {_group = group _group;};
+if ((units _group) isEqualTo []) exitWith {false};
+private _unit = leader _group;
+if (_group call EFUNC(main,isDirected)) exitWith {false};
+
+// find target
+_target = _target call CBA_fnc_getPos;
+if ((_target select 2) > 6) then {
+    _target set [2, 0.5];
+};
+
+// close already ~ the building assault handles it
+if (_unit distance2D _target < GVAR(cqbRange)) exitWith {
+    [_group, _target] call FUNC(tacticsAssault);
+    false
+};
+
+// reset tactics
+_group setVariable [QGVAR(isExecutingTactic), true];
+[
+    {
+        params [["_group", grpNull], ["_delay", 0]];
+        time > _delay || {isNull _group} || {!(_group getVariable [QGVAR(isExecutingTactic), false])}
+    },
+    {
+        params [["_group", grpNull], "", ["_speedMode", "NORMAL"], ["_formation", "WEDGE"], ["_combatMode", "YELLOW"], ["_enableAttack", true]];
+        if (!isNull _group) then {
+            _group setVariable [QGVAR(isExecutingTactic), nil];
+            _group setVariable [QEGVAR(main,currentTactic), nil];
+            _group setSpeedMode _speedMode;
+            _group setFormation _formation;
+            _group setCombatMode _combatMode;
+            _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
+            {
+                _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
+                _x setVariable [QGVAR(forceMove), nil];
+                _x setUnitPos "AUTO";
+                _x forceSpeed -1;
+                _x doFollow (leader _x);
+            } forEach (units _group);
+        };
+    },
+    [_group, time + _delay, speedMode _group, formation _group, combatMode _group, attackEnabled _group]
+] call CBA_fnc_waitUntilAndExecute;
+
+// find units
+if (_units isEqualTo []) then {
+    _units = [_unit, 250] call EFUNC(main,findReadyUnits);
+};
+if (_units isEqualTo []) exitWith {false};
+
+// teams ~ leader and support gunners hold the first base of fire, the rest split evenly
+private _gunners = _units select {_x call EFUNC(main,isSupportGunner)};
+private _base = [_unit] + (_gunners - [_unit]);
+private _assault = [];
+{
+    if ((_forEachIndex % 2) isEqualTo 0) then {_assault pushBack _x;} else {_base pushBack _x;};
+} forEach (_units - _base);
+if (_assault isEqualTo [] && {count _base > 1}) then {
+    private _mover = (_base - [_unit]) select 0;
+    _assault pushBack _mover;
+    _base = _base - [_mover];
+};
+
+// positions worth suppressing ~ known enemies, then buildings around the objective, then the objective itself
+private _posList = ([_group, 60] call FUNC(pictureContacts)) apply {_x select 1};
+_posList append ([_target, 20, true, false] call EFUNC(main,findBuildings));
+_posList pushBack _target;
+if (count _posList > SUPPRESS_POSITIONS) then {_posList resize SUPPRESS_POSITIONS;};
+
+// set tasks
+_unit setVariable [QEGVAR(main,currentTarget), _target, EGVAR(main,debug_functions)];
+_unit setVariable [QEGVAR(main,currentTask), "Tactics Bound", EGVAR(main,debug_functions)];
+_group setVariable [QEGVAR(main,currentTactic), "Fire and movement", EGVAR(main,debug_functions)];
+
+// group orders
+_group enableAttack false;
+_group setCombatMode "RED";
+_group setSpeedMode "FULL";
+_group setFormation "LINE";
+_group setFormDir (_unit getDir _target);
+{
+    _x setVariable [QGVAR(forceMove), true];
+    _x forceSpeed -1;
+} forEach _units;
+
+// gesture and callout
+[_unit, "gesturePoint"] call EFUNC(main,doGesture);
+[_unit, "combat", "SuppressiveFire", 125] call EFUNC(main,doCallout);
+
+// concealment
+if (!GVAR(disableAutonomousSmokeGrenades)) then {[_unit, _target] call EFUNC(main,doSmoke);};
+
+// start the cycle
+[{_this call EFUNC(main,doGroupBound)}, [_group, _base, _assault, _posList, _target, 0, []], 1] call CBA_fnc_waitAndExecute;
+
+// debug
+if (EGVAR(main,debug_functions)) then {
+    ["%1 TACTICS BOUND (%2 with %3 base / %4 assault @ %5m, %6 positions)", side _unit, name _unit, count _base, count _assault, round (_unit distance2D _target), count _posList] call EFUNC(main,debugLog);
+    private _m = [_unit, "tactics bound", _unit call EFUNC(main,debugMarkerColor), "hd_arrow"] call EFUNC(main,dotMarker);
+    private _mt = [_target, "", _unit call EFUNC(main,debugMarkerColor), "hd_destroy"] call EFUNC(main,dotMarker);
+    {_x setMarkerSizeLocal [0.6, 0.6];} forEach [_m, _mt];
+    _m setMarkerDirLocal (_unit getDir _target);
+    [{{deleteMarker _x;true} count _this;}, [_m, _mt], _delay + 30] call CBA_fnc_waitAndExecute;
+};
+
+// end
+true

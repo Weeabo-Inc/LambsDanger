@@ -46,6 +46,10 @@ if (isServer) then {
     _this spawn FUNC(taskAssault);
 }] call CBA_fnc_addEventhandler;
 
+[QGVAR(taskAttack), {
+    _this call FUNC(taskAttack);
+}] call CBA_fnc_addEventhandler;
+
 [QGVAR(taskCamp), {
     _this call FUNC(taskCamp);
 }] call CBA_fnc_addEventhandler;

@@ -25,6 +25,9 @@ params ["_unit", ["_target", objNull]];
 
 // timeout
 private _timeout = time + 2;
+
+// stress recovers, aiming with it
+[_unit] call EFUNC(main,applyStress);
 // assertive units keep repositioning under light fire; -1 (suppression disabled) counts as not suppressed
 private _suppressed = (getSuppression _unit) > ([0, 0.5] select (GVAR(aggression) > 0));
 

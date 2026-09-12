@@ -367,6 +367,15 @@
             <German>Aktiviere diese Option um die Einheit zum Rückzug zu zwingen. Feindliche Einheiten werden beim Rückzug ignoriert.</German>
             <Chinesesimp>启用此功能可使单位撤退并忽略敌人</Chinesesimp>
         </Key>
+        <Key ID="STR_Lambs_WP_Module_TaskAttack_DisplayName">
+            <English>Attack Position</English>
+        </Key>
+        <Key ID="STR_Lambs_WP_Module_TaskAttack_Radius_DisplayName">
+            <English>Objective radius</English>
+        </Key>
+        <Key ID="STR_Lambs_WP_Module_TaskAttack_Radius_Tooltip">
+            <English>The group holds when its leader is inside this radius and no enemy is known nearby. Buildings inside it are swept.</English>
+        </Key>
         <Key ID="STR_Lambs_WP_Module_TaskCQB_CycleTime_DisplayName">
             <English>Script interval</English>
             <Czech>Interval skriptu</Czech>

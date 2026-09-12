@@ -1,5 +1,9 @@
 
 PREP(addShareInformationHandler);
+PREP(addStress);
+PREP(applyStress);
+PREP(getStress);
+PREP(isSupportGunner);
 PREP(checkMagazineAiUsageFlags);
 PREP(doAnimation);
 PREP(doCallout);
@@ -33,6 +37,7 @@ PREP(removeEventhandlers);
 PREP(getCompatibleThrowMuzzle);
 PREP(getLowStance);
 
+SUBPREP(GroupAction,doGroupBound);
 SUBPREP(GroupAction,doGroupFlank);
 SUBPREP(GroupAction,doGroupHide);
 SUBPREP(GroupAction,doGroupSuppress);

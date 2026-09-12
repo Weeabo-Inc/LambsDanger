@@ -27,7 +27,8 @@ class CfgPatches {
             QGVAR(TaskRush),
             QGVAR(TaskReset),
             QGVAR(ZeusTaskDefend),
-            QGVAR(TaskDefend)
+            QGVAR(TaskDefend),
+            QGVAR(ZeusTaskAttack)
         };
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
