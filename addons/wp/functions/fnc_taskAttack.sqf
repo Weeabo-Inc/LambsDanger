@@ -223,7 +223,8 @@ private _handle = [{
     if (_phase isEqualTo "engage") then {
         private _picture = [_group] call EFUNC(danger,pictureGet);
         if ((_picture get "lastResult") isEqualTo "completed") then {
-            _state set [0, "hold"];
+            // done here ~ hold if this was the objective, otherwise the fight was on the way: carry on
+            _state set [0, ["approach", "hold"] select (_distance < _radius + 50)];
         } else {
             _state set [0, "approach"];
             _state set [2, (_state param [2, 0]) + 1];

@@ -53,6 +53,13 @@
 #define FAN_AHEAD 4
 #define FAN_TIMEOUT 20
 #define MOUNTED_TIMEOUT 75
+#define CONTACT_DISMOUNT_RANGE 300
+#define CONTACT_RETARGET 150
+#define EMERGENCY_BACK 40
+#define EMERGENCY_SUPPORT 120
+#define EMERGENCY_TIMEOUT 15
+#define EMERGENCY_FAN_BACK 10
+#define EMERGENCY_FAN_WIDTH 20
 #define SUPPRESS_POSITIONS 10
 
 params ["_group", "_objective", ["_maxDuration", 420]];
@@ -369,12 +376,62 @@ private _handle = [{
 
         // mechanized: ride to the dismount point
         case "mounted": {
-            private _dismountPos = _state get "dismountPos";
             private _lead = _vehicles param [0, objNull];
+
+            // contact on the way ~ actions on contact while mounted: smoke, get off the road away from the
+            // threat and behind something, troops off and away from the carrier (it draws the rockets),
+            // carrier backs off to a fire position. Never drive on towards the enemy to unload.
+            if (!isNull _lead && {!(_state getOrDefault ["emergency", false])}) then {
+                private _contacts = [_group, 20] call FUNC(pictureContacts);
+                private _nearest = [];
+                private _nearestDistance = CONTACT_DISMOUNT_RANGE;
+                {
+                    private _contactDistance = _lead distance2D (_x select 1);
+                    if (_contactDistance < _nearestDistance) then {_nearest = _x select 1; _nearestDistance = _contactDistance;};
+                } forEach _contacts;
+                if (_nearest isNotEqualTo []) then {
+                    _state set ["emergency", true];
+                    _state set ["threatPos", _nearest];
+                    _state set ["phaseTime", time];
+                    private _away = _nearest getDir _lead;
+                    private _spot = _lead getPos [EMERGENCY_BACK, _away];
+                    private _cover = nearestTerrainObjects [_spot, ["HOUSE", "WALL", "ROCK", "TREE", "BUSH", "HIDE"], 25, false, true];
+                    if (_cover isNotEqualTo []) then {_spot = (_cover select 0) getPos [5, _away];};
+                    private _empty = _spot findEmptyPosition [0, 20, typeOf _lead];
+                    if (_empty isNotEqualTo []) then {_spot = _empty;};
+                    _state set ["dismountPos", _spot];
+                    // the carrier then fights from further back, with a line of sight
+                    private _fallback = _lead getPos [EMERGENCY_SUPPORT, _away];
+                    private _supportPos = [_nearest, EMERGENCY_SUPPORT, EMERGENCY_BACK, 3, _fallback] call EFUNC(main,findOverwatch);
+                    if (_supportPos isEqualTo [] || {_supportPos isEqualTo [0, 0, 0]}) then {_supportPos = _fallback;};
+                    _state set ["supportPos", _supportPos];
+                    // the fight is here now
+                    if (_objective distance2D _nearest > CONTACT_RETARGET) then {
+                        _state set ["objective", _nearest];
+                        _objective = _nearest;
+                    };
+                    (_state get "posList") pushBackUnique _nearest;
+                    {
+                        private _vehicle = _x;
+                        if (time > (_vehicle getVariable [QEGVAR(main,smokescreenTime), 0]) && {"SmokeLauncher" in (weapons _vehicle)}) then {
+                            (commander _vehicle) forceWeaponFire ["SmokeLauncher", "SmokeLauncher"];
+                            _vehicle setVariable [QEGVAR(main,smokescreenTime), time + 30 + random 20];
+                        };
+                        _vehicle doWatch _nearest;
+                        (driver _vehicle) doMove _spot;
+                        (effectiveCommander _vehicle) setVariable [QEGVAR(main,currentTask), "Contact! getting off the road", EGVAR(main,debug_functions)];
+                    } forEach _vehicles;
+                    [_leader, "combat", "contact", 125] call EFUNC(main,doCallout);
+                    if (EGVAR(main,debug_functions)) then {["%1 MANEUVER %2: contact while mounted at %3m, emergency dismount", side _group, groupId _group, round _nearestDistance] call EFUNC(main,debugLog);};
+                };
+            };
+
+            private _dismountPos = _state get "dismountPos";
+            private _emergency = _state getOrDefault ["emergency", false];
             private _there = isNull _lead
                 || {_lead distance2D _dismountPos < DISMOUNT_REACHED}
                 || {_lead distance2D _dismountPos < DISMOUNT_STOPPED && {speed _lead < 2}}
-                || {time - (_state get "phaseTime") > MOUNTED_TIMEOUT};
+                || {time - (_state get "phaseTime") > ([MOUNTED_TIMEOUT, EMERGENCY_TIMEOUT] select _emergency)};
             if (!_there) then {
                 {
                     private _driver = driver _x;
@@ -402,9 +459,11 @@ private _handle = [{
         };
 
         // mechanized: troops out and behind the carrier, then fanned out left and right of it
+        // (after a contact: well clear of the carrier and into whatever cover is near, it draws the fire)
         case "dismount": {
             call _fnc_vehicleFire;
             private _lead = _vehicles param [0, objNull];
+            private _emergency = _state getOrDefault ["emergency", false];
             private _anchor = if (isNull _lead) then {_state get "dismountPos"} else {getPosATL _lead};
             private _axis = _anchor getDir _objective;
             private _all = _assault + _support;
@@ -415,7 +474,15 @@ private _handle = [{
                     private _sideSign = [1, -1] select ((_slot % 2) isEqualTo 1);
                     private _rank = floor (_slot / 2);
                     // fan: alternate left and right of the carrier, a little ahead of it, prone
-                    private _pos = (_anchor getPos [FAN_AHEAD, _axis]) getPos [FAN_WIDTH + (3 * _rank), _axis + (_sideSign * 90)];
+                    private _pos = if (_emergency) then {
+                        (_anchor getPos [EMERGENCY_FAN_BACK, _axis + 180]) getPos [EMERGENCY_FAN_WIDTH + (3 * _rank), _axis + (_sideSign * 90)]
+                    } else {
+                        (_anchor getPos [FAN_AHEAD, _axis]) getPos [FAN_WIDTH + (3 * _rank), _axis + (_sideSign * 90)]
+                    };
+                    if (_emergency) then {
+                        private _cover = nearestTerrainObjects [_pos, ["HOUSE", "WALL", "ROCK", "TREE", "BUSH", "HIDE", "FENCE"], 12, false, true];
+                        if (_cover isNotEqualTo []) then {_pos = (_cover select 0) getPos [1.5, _objective getDir (_cover select 0)];};
+                    };
                     private _empty = _pos findEmptyPosition [0, 4];
                     if (_empty isNotEqualTo []) then {_pos = _empty;};
                     if (_x distance2D _pos > 3) then {
@@ -430,8 +497,17 @@ private _handle = [{
                     _x action ["Eject", vehicle _x];
                 };
             } forEach _all;
-            private _fanned = count _onFoot isEqualTo count _all && {(_onFoot findIf {_x distance2D _anchor > FAN_WIDTH + 12}) isEqualTo -1 && {(_onFoot findIf {_x distance2D _anchor < 4}) isEqualTo -1}};
+            private _fanWidth = [FAN_WIDTH, EMERGENCY_FAN_WIDTH] select _emergency;
+            private _fanned = count _onFoot isEqualTo count _all && {(_onFoot findIf {_x distance2D _anchor > _fanWidth + 15}) isEqualTo -1 && {(_onFoot findIf {_x distance2D _anchor < 4}) isEqualTo -1}};
             if (_fanned || {time - (_state get "phaseTime") > FAN_TIMEOUT}) then {
+                // the carrier does not sit next to the infantry ~ it backs off to its fire position
+                if (_emergency) then {
+                    {
+                        (driver _x) doMove (_state get "supportPos");
+                        _x doWatch _objective;
+                        (effectiveCommander _x) setVariable [QEGVAR(main,currentTask), "Backing off to fire position", EGVAR(main,debug_functions)];
+                    } forEach _vehicles;
+                };
                 "assault" call _fnc_setPhase;
                 _state set ["assault", _onFoot];
                 _state set ["support", []];
