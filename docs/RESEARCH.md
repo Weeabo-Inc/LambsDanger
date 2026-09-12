@@ -19,37 +19,62 @@ Where a source contradicts the brief, the brief wins and the ADR says why.
 
 ### A.1 Arma 3 target knowledge (`knowsAbout`, `reveal`, `targets`, `nearTargets`)
 
-- `knowsAbout` returns a number in the range 0 to 4 describing how well a unit's group
-  knows a target; a target out of sight for more than about 120 seconds decays back to 0. **[S]**
-  (Bohemia Interactive community wiki, `knowsAbout`; the wiki blocked direct fetch during this
-  pass, the figures come from search excerpts of that page.)
-- Knowledge is held at group level: any unit's sighting is the whole group's sighting. **[S]**
-- `reveal` with an accuracy argument lets script raise that value directly, which is the
-  engine's built-in cheat path. **[S]**
-- `getHideFrom` returns the position at which the unit believes the target is, which
-  diverges from the true position as knowledge decays. **[S]**
-- AI sub-skills `spotDistance` and `spotTime` govern acquisition range and delay;
-  `aimingAccuracy`, `aimingShake`, `aimingSpeed` govern shooting; `courage` and `commanding`
-  govern fleeing and order latency. **[S]** (BI wiki, *AI Sub-skills*.)
+Read from the full-text harvest of the BI community wiki in `P:\ArmaWiki` (built
+2026-08-21, the same text the `arma-wiki` MCP server serves). **[P]** unless marked.
+
+- `knowsAbout` returns 0 to 4 for how well a unit's *group* knows a target. "Enemy knowledge
+  is instantly shared among the group units." It resets to zero when the target is beyond
+  `viewDistance` and after 120 seconds out of sight. Being hit by a bullet jumps knowledge of
+  the shooter to 1.5 at any range, and hitting a target does the same (community note).
+- `reveal [target, accuracy]` sets knowledge to the highest value any unit of the revealing
+  *side* already has, or to 1 if none; it can only raise, never lower. This is the engine's
+  built-in cheat path when used above 1.
+- `getHideFrom` returns "the Position where object believes the enemy to be"; without line of
+  sight it is extrapolated from the last known position and speed, and `[0,0,0]` means the
+  unit does not know the enemy at all.
+- `nearTargets` returns per target the "perceived position including judgment and memory
+  errors", the perceived type and side, a subjective cost and a `positionAccuracy`. Below a
+  knowledge of 1.5 the side is unknown and the position is offset; only from 3.6 upward is
+  the position identified precisely (community measurements). A target is dropped about 360
+  seconds after last contact.
+- `targetKnowledge` returns `[knownByGroup, knownByUnit, lastSeen, lastThreat, side,
+  errorMargin, position, ignoreTarget]`, so the engine already exposes a per-target
+  **position error** and last-seen time.
+- `targets [enemyOnly, maxDistance, sides, maxAge, alternateCenter]` filters the group's known
+  targets by 2D distance from the *expected* position and by age.
+- Sub-skills: `aimingAccuracy`, `aimingShake`, `aimingSpeed`, `commanding`, `courage`,
+  `general`, `reloadSpeed`, `spotDistance`, `spotTime` (`endurance` disabled in Arma 3), each
+  interpolated through `CfgAISkill`; the wiki's effect column is empty and marked "not
+  confirmed by BI", so what each sub-skill does beyond its name is **[U]**.
+- Perception config: `camouflage` (how hard a unit is to see; man 1, sniper 0.6, tank 8),
+  `audible` (how loud; man 0.05, tank 6), `sensitivityEar` (hearing, man 0.13), and
+  `sensitivity` (seeing; the fork's `lambs_range` sets `CAManBase.sensitivity = 6`, the wiki
+  page does not document the key).
 
 Consequences:
 
 - **C-01** The engine's own sensor model is the only legitimate source of a *target*. Our
   knowledge layer wraps it and lags it; it never bypasses it. `reveal` above accuracy 1 and
   `setSkill` for tactical compensation are banned by the fairness contract.
-- **C-02** `getHideFrom` and `knowsAbout` are honest inputs: they already model decay and
-  error. The group contact store consumes them as *evidence*, not as truth.
+- **C-02** `getHideFrom`, `knowsAbout`, `nearTargets` and `targetKnowledge` are honest
+  inputs: the engine already models perceived position, position error, last-seen time and
+  decay. The group contact store consumes them as *evidence* (position plus `errorMargin`),
+  not as truth, and never computes an error smaller than the engine's.
 - **C-03** Engine decay to zero after roughly two minutes is wrong for us: a squad does not
   forget that a machine gun was in that treeline. Our store decays to *last known*, never to
   nothing, and search behaviour is driven from last known.
 
 ### A.2 `danger.fsm` and the danger causes
 
-- Every AI unit runs the engine `danger.fsm`; the FSM receives `_dangerCause` (enemy
-  detected, fire, hit, enemy near, explosion, dead body, scream, can fire, and so on),
-  `_dangerPos`, `_dangerUntil` and `_dangerCausedBy`. LAMBS replaces this FSM with its own
-  and dispatches to script from it. **[S]** (BI wiki, *FSM Danger*; confirmed in upstream
-  `addons/danger/dangerFSM.fsm` and `fnc_brain.sqf` in this tree.)
+- Every AI unit runs the FSM named by `fsmDanger` in its config (engine default
+  `\a3\characters_f\scripts\danger.fsm`) **[P]** (BI wiki, *AI Config Reference*). The FSM
+  receives `_dangerCause`, `_dangerPos`, `_dangerUntil` and `_dangerCausedBy`. The cause
+  values in use are read from upstream's own FSM and `lambs_main_fnc_debugDangerType`:
+  DCEnemyDetected 0, DCFire 1, DCHit 2, DCEnemyNear 3, DCExplosion 4, DCDeadBodyGroup 5,
+  DCDeadBody 6, DCScream 7, DCCanFire 8, DCBulletClose 9, plus LAMBS' own pseudo-cause 10
+  "Assessing". **[P]** (the wiki page *FSM Danger Causes* is empty in the harvest, so the
+  engine's list is verified only through upstream's usage.) LAMBS replaces this FSM with its own
+  (`addons/danger/scripts/lambs_danger.fsm`) and dispatches to script from it.
 
 Consequences:
 
@@ -579,8 +604,10 @@ Consequences:
 - ACE3, *Arma 3 Scheduler and our Practices.*
   https://ace3.acemod.org/wiki/development/arma-3-scheduler-and-our-practices.html
 - CBA_A3 wiki, *Per Frame Handlers.* https://github.com/CBATeam/CBA_A3/wiki/Per-Frame-Handlers
-- Bohemia Interactive community wiki: *knowsAbout*, *AI Sub-skills*, *FSM Danger*
-  (fetch refused during this pass; cited from search excerpts).
+- Bohemia Interactive community wiki: *knowsAbout*, *reveal*, *getHideFrom*, *nearTargets*,
+  *targetKnowledge*, *targets*, *Arma 3: AI Skill*, *Arma 3: AI Config Reference*, read from
+  the offline harvest in `P:\ArmaWiki` (`arma3.sqlite`, built 2026-08-21) because the live
+  site refuses direct fetches.
 - ATP 3-21.8 *Infantry Platoon and Squad*, Appendix E battle drill list (2024) via
   infantrydrills.com; FM 3-21.8 (2007) movement chapter via globalsecurity.org mirrors.
 - ATP 3-09.30 *Observed Fires* (2017), chapter 4, via published summaries; FM 6-30 chapter 4

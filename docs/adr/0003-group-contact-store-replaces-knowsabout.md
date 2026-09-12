@@ -42,8 +42,14 @@ A **contact record** per group, owned by layer 0:
 - The Director's board is built from group reports only. It may consult real player
   positions for pacing (ADR-0004) but never writes them into any group's store.
 
-`knowsAbout` and `getHideFrom` remain inputs (they are the engine's honest sensor state)
-and are read in exactly one place, the layer 0 sensor sweep. No layer above 0 calls them.
+`knowsAbout`, `getHideFrom`, `nearTargets` and `targetKnowledge` remain inputs (they are the
+engine's honest sensor state) and are read in exactly one place, the layer 0 sensor sweep.
+No layer above 0 calls them. The sweep takes `position` and `errorMargin` from
+`targetKnowledge` (or the perceived position and `positionAccuracy` from `nearTargets`) as
+the record's starting position and error, so the store's error is never smaller than the
+engine's own; ageing and the report chain only widen it. The engine's 120 s reset to zero
+and its 360 s target drop are exactly what the floor in this store overrides: the engine
+forgets, the group remembers where it last knew.
 
 ## Consequences
 
