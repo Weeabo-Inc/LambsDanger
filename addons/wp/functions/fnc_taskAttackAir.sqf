@@ -194,6 +194,8 @@ switch (_phase) do {
             _holdSecurity = !_heliClear && {time - (_air get "securitySince") < SECURITY_TIME};
         };
         if (_holdSecurity) exitWith {false};
+        // nobody is ever collected again by this aircraft unless somebody orders it
+        {unassignVehicle _x; [_x] allowGetIn false;} forEach (_troops select {alive _x && {isNull objectParent _x}});
 
         // the drop did not happen ~ try the scripted landing once more, then let the engine land it
         if (_aboard isNotEqualTo [] && {alive _heli} && {canMove _heli}) then {

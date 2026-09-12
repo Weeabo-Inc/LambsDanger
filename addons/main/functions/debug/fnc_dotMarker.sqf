@@ -25,7 +25,8 @@ if (_text isEqualType []) then {
 _pos = _pos call CBA_fnc_getPos;
 
 // create
-private _m = format["LAMBS_MAIN_mdot_%1%2%3", (floor(_pos select 0)), (floor(_pos select 1)), count allMapMarkers];
+// the marker count alone repeats once markers get deleted ~ the tick time keeps names unique
+private _m = format ["LAMBS_MAIN_mdot_%1%2%3_%4", floor (_pos select 0), floor (_pos select 1), count allMapMarkers, floor (diag_tickTime * 1000)];
 createMarkerLocal [_m, _pos];
 _m setMarkerShapeLocal "Icon";
 _m setMarkerColorLocal _color;
