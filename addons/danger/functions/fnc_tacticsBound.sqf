@@ -53,13 +53,14 @@ _group setVariable [QGVAR(isExecutingTactic), true];
         time > _delay || {isNull _group} || {!(_group getVariable [QGVAR(isExecutingTactic), false])}
     },
     {
-        params [["_group", grpNull], "", ["_speedMode", "NORMAL"], ["_formation", "WEDGE"], ["_combatMode", "YELLOW"], ["_enableAttack", true]];
+        params [["_group", grpNull], "", ["_speedMode", "NORMAL"], ["_formation", "WEDGE"], ["_combatMode", "YELLOW"], ["_enableAttack", true], ["_behaviour", "AWARE"], ["_boundUnits", []]];
         if (!isNull _group) then {
             _group setVariable [QGVAR(isExecutingTactic), nil];
             _group setVariable [QEGVAR(main,currentTactic), nil];
             _group setSpeedMode _speedMode;
             _group setFormation _formation;
             _group setCombatMode _combatMode;
+            _group setBehaviourStrong _behaviour;
             _group enableAttack (_enableAttack || {GVAR(aggression) > 0 && {!(_group call EFUNC(main,isDirected))}});
             {
                 _x setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
@@ -68,16 +69,26 @@ _group setVariable [QGVAR(isExecutingTactic), true];
                 _x forceSpeed -1;
                 _x doFollow (leader _x);
             } forEach (units _group);
+            // give the engine its combat reflexes back ~ only where this tactic took them
+            {
+                if (!isNull _x) then {
+                    _x enableAI "SUPPRESSION";
+                    if (!("AUTOCOMBAT" in (_x getVariable [QEGVAR(wp,disabledAI), []]))) then {_x enableAI "AUTOCOMBAT";};
+                };
+            } forEach _boundUnits;
         };
     },
-    [_group, time + _delay, speedMode _group, formation _group, combatMode _group, attackEnabled _group]
+    [_group, time + _delay, speedMode _group, formation _group, combatMode _group, attackEnabled _group, behaviour _unit, _units]
 ] call CBA_fnc_waitUntilAndExecute;
 
 // find units ~ vehicles stay back as a fire base
 if (_units isEqualTo []) then {
     _units = [_unit, 250] call EFUNC(main,findReadyUnits);
 };
-if (_units isEqualTo []) exitWith {false};
+if (_units isEqualTo []) exitWith {
+    _group setVariable [QGVAR(isExecutingTactic), nil];
+    false
+};
 private _vehicles = ([_unit] call EFUNC(main,findReadyVehicles)) select {someAmmo _x};
 {_x doWatch _target;} forEach _vehicles;
 
@@ -105,15 +116,17 @@ _unit setVariable [QEGVAR(main,currentTarget), _target, EGVAR(main,debug_functio
 _unit setVariable [QEGVAR(main,currentTask), "Tactics Bound", EGVAR(main,debug_functions)];
 _group setVariable [QEGVAR(main,currentTactic), "Fire and movement", EGVAR(main,debug_functions)];
 
-// group orders
+// group orders ~ AWARE with no automatic COMBAT switch, or the engine crawls and the bound never completes
 _group enableAttack false;
 _group setCombatMode "RED";
 _group setSpeedMode "FULL";
 _group setFormation "LINE";
 _group setFormDir (_unit getDir _target);
+_group setBehaviourStrong "AWARE";
 {
     _x setVariable [QGVAR(forceMove), true];
     _x forceSpeed -1;
+    _x disableAI "AUTOCOMBAT";
 } forEach _units;
 
 // gesture and callout

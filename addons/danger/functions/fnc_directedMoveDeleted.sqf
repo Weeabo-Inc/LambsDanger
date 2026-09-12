@@ -20,6 +20,12 @@ params [["_group", grpNull, [grpNull]], ["_wpIndex", -1, [0]]];
 
 if (isNull _group || {!local _group} || {_wpIndex < 0}) exitWith {};
 
+// the attack waypoint was removed ~ call the attack off
+if (EGVAR(main,Loaded_WP) && {(_group getVariable [QEGVAR(wp,attackWaypoint), -1]) isEqualTo _wpIndex}) exitWith {
+    [_group] call EFUNC(wp,taskCleanup);
+    _group setVariable [QEGVAR(wp,attackWaypoint), nil];
+};
+
 private _state = _group getVariable [QGVAR(directedMove), []];
 if (_state isEqualTo []) exitWith {};
 _state params ["_stateIndex"];

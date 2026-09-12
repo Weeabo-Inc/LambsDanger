@@ -125,6 +125,12 @@
         <Key ID="STR_Lambs_Danger_Context_ResumeBehaviour">
             <English>Resume LAMBS behaviour</English>
         </Key>
+        <Key ID="STR_Lambs_Danger_Feedback_Attack">
+            <English>%1 attacking waypoint %2 (%3 m)</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Feedback_AttackDone">
+            <English>%1 holds the objective</English>
+        </Key>
         <Key ID="STR_Lambs_Danger_Feedback_Directed">
             <English>%1 directed to waypoint %2 (%3 m)</English>
         </Key>

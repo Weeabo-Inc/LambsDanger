@@ -67,6 +67,14 @@ private _waypoint = [_group, _wpIndex];
 if ((waypointType _waypoint) in ["CYCLE", "SCRIPTED"]) exitWith {false};
 private _wpPos = waypointPosition _waypoint;
 
+// Seek & Destroy placed by a Zeus ~ attack the position with fire and movement, then carry on
+if ((waypointType _waypoint) in ["SAD", "DESTROY"] && {EGVAR(main,Loaded_WP)}) exitWith {
+    if (_group call EFUNC(main,isDirected)) then {[_group, "attack waypoint"] call FUNC(directedMoveRelease);};
+    [QEGVAR(wp,taskAttack), [_group, _wpPos, 0, _wpIndex, _curatorOwner]] call CBA_fnc_localEvent;
+    [_curatorOwner, format [localize LSTRING(Feedback_Attack), groupId _group, _wpIndex, round ((leader _group) distance2D _wpPos)]] call FUNC(directedMoveFeedback);
+    true
+};
+
 // already directed ~ a later waypoint extends the route, the same one refreshes it (edited in Zeus)
 private _state = _group getVariable [QGVAR(directedMove), []];
 private _wasDirected = _state isNotEqualTo [] && {CBA_missionTime < (_state select 2)};

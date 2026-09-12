@@ -69,7 +69,15 @@ private _arrived = (currentWaypoint _group) > _wpIndex
 
 if (_arrived) exitWith {
     private _nextIndex = _wpIndex + 1;
-    if (_nextIndex < count _waypoints && {!((waypointType (_waypoints select _nextIndex)) in SKIPPED_WAYPOINTS)} && {!(_wpType in HOLDING_WAYPOINTS)}) then {
+    private _nextType = if (_nextIndex < count _waypoints) then {waypointType (_waypoints select _nextIndex)} else {""};
+
+    // next on the route is an attack ~ hand the group to the attack task
+    if (_nextType in ["SAD", "DESTROY"] && {EGVAR(main,Loaded_WP)} && {!(_wpType in HOLDING_WAYPOINTS)}) exitWith {
+        [_group, "attack waypoint"] call FUNC(directedMoveRelease);
+        [_group, _nextIndex, _curatorOwner] call FUNC(directedMoveSet);
+    };
+
+    if (_nextIndex < count _waypoints && {!(_nextType in SKIPPED_WAYPOINTS)} && {!(_wpType in HOLDING_WAYPOINTS)}) then {
         // follow the route on to the next waypoint
         private _nextPos = waypointPosition (_waypoints select _nextIndex);
         _state set [0, _nextIndex];

@@ -2,15 +2,19 @@
 /*
  * Author: bluefield-creator
  * Attack Position
- *        Group moves on an objective with weapons hot. Far from it the group simply
- *        travels; once close or in contact it fights forward with fire and movement
- *        (see lambs_danger_fnc_tacticsBound), sweeps the buildings on arrival and
- *        stands down when the objective is held and no enemy is known nearby.
+ *        Group moves on an objective with weapons hot. Far from it the group travels
+ *        fast; once close, or once the enemy is close, it fights forward with fire
+ *        and movement (see lambs_danger_fnc_tacticsBound), sweeps the buildings on
+ *        arrival and stands down when the objective is held and no enemy is known nearby.
+ *        A Zeus gets it by placing a Seek & Destroy waypoint; the group then carries
+ *        on to its next waypoint when done.
  *
  * Arguments:
  * 0: Group performing action, either unit <OBJECT> or group <GROUP>
  * 1: Objective position <ARRAY>
- * 2: Radius of the objective, default 50 <NUMBER>
+ * 2: Radius of the objective, 0 or less for the default 50 <NUMBER>
+ * 3: Waypoint index that started the task, -1 for none <NUMBER>
+ * 4: Curator client that gets feedback, -1 for none <NUMBER>
  *
  * Return Value:
  * none
@@ -22,6 +26,7 @@
 */
 #define CYCLE_TIME 6
 #define ENGAGE_DISTANCE 250
+#define CONTACT_ENGAGE_DISTANCE 200
 #define CONTACT_AGE 30
 #define HOLD_TIME 30
 
@@ -30,7 +35,9 @@ if (canSuspend) exitWith { [FUNC(taskAttack), _this] call CBA_fnc_directCall; };
 params [
     ["_group", grpNull, [grpNull, objNull]],
     ["_pos", [], [[]]],
-    ["_radius", TASK_ATTACK_SIZE, [0]]
+    ["_radius", TASK_ATTACK_SIZE, [0]],
+    ["_wpIndex", -1, [0]],
+    ["_curatorOwner", -1, [0]]
 ];
 
 // sort group
@@ -38,49 +45,76 @@ if (!local _group) exitWith {false};
 if (_group isEqualType objNull) then {_group = group _group;};
 if (_pos isEqualTo []) exitWith {false};
 _pos = _pos call CBA_fnc_getPos;
+if (_radius <= 0) then {_radius = TASK_ATTACK_SIZE;};
 
 // task lifecycle
 private _token = [_group, "taskAttack"] call FUNC(taskBegin);
+_group setVariable [QGVAR(attackWaypoint), _wpIndex];
 
-// orders ~ autonomous LAMBS tactics are off, the task decides when to fight forward
+// whatever LAMBS was doing with this group ends here ~ the task owns it now
+private _tacticPFH = _group getVariable [QEGVAR(danger,tacticPFH), -1];
+if (_tacticPFH isNotEqualTo -1) then {[_tacticPFH] call CBA_fnc_removePerFrameHandler;};
+_group setVariable [QEGVAR(danger,tacticPFH), nil];
+_group setVariable [QEGVAR(danger,isExecutingTactic), nil];
+_group setVariable [QEGVAR(danger,inCQB), nil];
 _group setVariable [QEGVAR(danger,disableGroupAI), true, true];
-_group setBehaviour "AWARE";
+_group setVariable [QEGVAR(main,groupMemory), []];
+
+// orders ~ AWARE and no automatic switch to COMBAT, or the engine crawls and never arrives
+_group setBehaviourStrong "AWARE";
 _group setCombatMode "RED";
 _group setSpeedMode "FULL";
 _group setFormation "WEDGE";
 _group enableAttack false;
-_group setVariable [QEGVAR(main,groupMemory), []];
+private _leader = leader _group;
 {
     _x setVariable [QEGVAR(danger,forceMove), nil];
     _x setUnitPos "AUTO";
     _x forceSpeed -1;
-} forEach (units _group);
+    [_x] allowGetIn true;
+    if (!(_x checkAIFeature "PATH")) then {_x enableAI "PATH";};
+    if (!(_x checkAIFeature "MOVE")) then {_x enableAI "MOVE";};
+    _x disableAI "AUTOCOMBAT";
+    _x setVariable [QGVAR(disabledAI), ["AUTOCOMBAT"]];
+    _x doFollow _leader;
+    _x setVariable [QEGVAR(main,currentTask), "Attack (approach)", EGVAR(main,debug_functions)];
+} forEach ((units _group) select {!isPlayer _x});
 
-// go
-[_group] call CBA_fnc_clearWaypoints;
+// go ~ a Zeus route is kept, the attack waypoint on it points at the same spot
+if (_wpIndex < 0) then {[_group] call CBA_fnc_clearWaypoints;};
 _group move _pos;
-[leader _group, "combat", "Advance", 125] call EFUNC(main,doCallout);
+[_leader, "combat", "Advance", 125] call EFUNC(main,doCallout);
 
 private _handle = [{
     params ["_args", "_handle"];
-    _args params ["_group", "_pos", "_radius", "_token", "_state"];
+    _args params ["_group", "_pos", "_radius", "_token", "_wpIndex", "_curatorOwner", "_state"];
     _state params ["_phase", "_heldSince"];
 
     private _fnc_end = {
-        params ["_group", "_handle", "_token", "_reason"];
+        params ["_group", "_handle", "_token", "_wpIndex", "_curatorOwner", "_reason"];
         [_handle] call CBA_fnc_removePerFrameHandler;
         if (isNull _group) exitWith {};
         _group setVariable [QGVAR(attackPFH), nil];
+        _group setVariable [QGVAR(attackWaypoint), nil];
         if (EGVAR(main,debug_functions)) then {
             ["%1 taskAttack: %2 %3", side _group, groupId _group, _reason] call EFUNC(main,debugLog);
         };
-        if (!([_group, _token] call FUNC(taskIsCancelled))) then {[_group] call FUNC(taskCleanup);};
+        if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {};
+        [_group] call FUNC(taskCleanup);
+
+        // carry on with the route the Zeus laid out
+        if (_wpIndex >= 0 && {_wpIndex + 1 < count (waypoints _group)}) then {
+            _group setCurrentWaypoint [_group, _wpIndex + 1];
+        };
+        if (_curatorOwner >= 0) then {
+            [_curatorOwner, format [localize ELSTRING(danger,Feedback_AttackDone), groupId _group]] call EFUNC(danger,directedMoveFeedback);
+        };
     };
 
-    // cancelled, taken over by a Zeus, or nobody left
-    if ([_group, _token] call FUNC(taskIsCancelled) || {_group call EFUNC(main,isDirected)}) exitWith {[_group, _handle, _token, "cancelled"] call _fnc_end;};
+    // cancelled, taken over by a Zeus move, or nobody left
+    if ([_group, _token] call FUNC(taskIsCancelled) || {_group call EFUNC(main,isDirected)}) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "cancelled"] call _fnc_end;};
     private _units = (units _group) select {_x call EFUNC(main,isAlive) && {!isPlayer _x}};
-    if (_units isEqualTo []) exitWith {[_group, _handle, _token, "no units left"] call _fnc_end;};
+    if (_units isEqualTo []) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "no units left"] call _fnc_end;};
 
     private _leader = leader _group;
     if (!(_leader call EFUNC(main,isAlive))) then {
@@ -91,13 +125,16 @@ private _handle = [{
 
     // what do we know
     private _contacts = [_group, CONTACT_AGE] call EFUNC(danger,pictureContacts);
-    _contacts = _contacts select {(_x select 1) distance2D _pos < _radius + ENGAGE_DISTANCE};
     private _nearestContact = [];
-    if (_contacts isNotEqualTo []) then {
-        _contacts = _contacts apply {[_leader distance2D (_x select 1), _x select 1]};
-        _contacts sort true;
-        _nearestContact = (_contacts select 0) select 1;
-    };
+    private _nearestContactDistance = 1e9;
+    {
+        private _contactPos = _x select 1;
+        private _contactDistance = _leader distance2D _contactPos;
+        if (_contactDistance < _nearestContactDistance && {_contactPos distance2D _pos < _radius + ENGAGE_DISTANCE}) then {
+            _nearestContact = _contactPos;
+            _nearestContactDistance = _contactDistance;
+        };
+    } forEach _contacts;
 
     // objective held ~ on it, and nothing known around it for a while
     private _held = false;
@@ -106,31 +143,45 @@ private _handle = [{
     } else {
         _state set [1, -1];
     };
-    if (_held) exitWith {[_group, _handle, _token, "objective held"] call _fnc_end;};
+    if (_held) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "objective held"] call _fnc_end;};
 
-    // a tactic is running (fire and movement or the building sweep) ~ let it work
-    if (_group getVariable [QEGVAR(danger,isExecutingTactic), false]) exitWith {};
+    // a tactic this task started (fire and movement or the building sweep) ~ let it work
+    private _executing = _group getVariable [QEGVAR(danger,isExecutingTactic), false];
+    if (_executing && {_phase isEqualTo "engage"}) exitWith {};
+    if (_executing) then {
+        // something else grabbed the group ~ take it back
+        _group setVariable [QEGVAR(danger,isExecutingTactic), nil];
+    };
 
-    // fight forward when in contact or close
-    if (_nearestContact isNotEqualTo [] || {_distance < ENGAGE_DISTANCE}) exitWith {
+    // fight forward when close to the objective, or when the enemy is close to us
+    if (_distance < ENGAGE_DISTANCE || {_nearestContactDistance < CONTACT_ENGAGE_DISTANCE}) exitWith {
         private _objective = [_pos, _nearestContact] select (_nearestContact isNotEqualTo [] && {_distance > _radius});
         _state set [0, "engage"];
+        {_x setVariable [QEGVAR(main,currentTask), "Attack (engage)", EGVAR(main,debug_functions)];} forEach _units;
         [_group, _objective] call EFUNC(danger,tacticsBound);
         [_group, "bound", _objective, 150] call EFUNC(danger,tacticsMonitor);
     };
 
-    // travel ~ keep the leader moving
-    _state set [0, "approach"];
+    // travel ~ keep the leader moving, everyone else follows
+    if (_phase isNotEqualTo "approach") then {
+        _state set [0, "approach"];
+        {
+            _x forceSpeed -1;
+            _x setUnitPos "AUTO";
+            _x doFollow _leader;
+            _x setVariable [QEGVAR(main,currentTask), "Attack (approach)", EGVAR(main,debug_functions)];
+        } forEach _units;
+    };
     if (unitReady _leader || {((expectedDestination _leader) select 1) isEqualTo "DoNotPlan"}) then {
         _group move _pos;
     };
-}, CYCLE_TIME, [_group, _pos, _radius, _token, ["approach", -1]]] call CBA_fnc_addPerFrameHandler;
+}, CYCLE_TIME, [_group, _pos, _radius, _token, _wpIndex, _curatorOwner, ["approach", -1]]] call CBA_fnc_addPerFrameHandler;
 
 _group setVariable [QGVAR(attackPFH), _handle];
 
 // debug
 if (EGVAR(main,debug_functions)) then {
-    ["%1 taskAttack: %2 attacks %3m away", side _group, groupId _group, round ((leader _group) distance2D _pos)] call EFUNC(main,debugLog);
+    ["%1 taskAttack: %2 attacks %3m away", side _group, groupId _group, round (_leader distance2D _pos)] call EFUNC(main,debugLog);
 };
 
 // end

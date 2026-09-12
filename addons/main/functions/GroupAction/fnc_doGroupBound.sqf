@@ -27,7 +27,9 @@
  * Public: No
 */
 #define CYCLE_TIME 4
-#define BOUND_LENGTH 25
+#define BOUND_LENGTH_NEAR 25
+#define BOUND_LENGTH_FAR 50
+#define NEAR_DISTANCE 150
 #define BOUND_TIMEOUT 20
 #define ARRIVED_DISTANCE 6
 #define COVER_SEARCH 8
@@ -86,7 +88,8 @@ if (_arrived || {_boundPositions isEqualTo []}) then {
         _centre = _centre vectorMultiply (1 / count _assault);
         private _distance = _centre distance2D _target;
         private _direction = _centre getDir _target;
-        private _boundPoint = _centre getPos [BOUND_LENGTH min _distance, _direction];
+        private _near = _distance < NEAR_DISTANCE;
+        private _boundPoint = _centre getPos [([BOUND_LENGTH_FAR, BOUND_LENGTH_NEAR] select _near) min _distance, _direction];
 
         // prefer a spot with something to hide behind
         private _cover = nearestTerrainObjects [_boundPoint, ["BUSH", "TREE", "SMALL TREE", "HIDE", "WALL", "ROCK", "FENCE"], COVER_SEARCH, false, true];
@@ -101,7 +104,9 @@ if (_arrived || {_boundPositions isEqualTo []}) then {
             if (_emptyPos isNotEqualTo []) then {_pos = _emptyPos;};
             _boundPositions pushBack _pos;
             _x setVariable [QEGVAR(danger,forceMove), true];
-            _x setUnitPosWeak "MIDDLE";
+            // the moving team ignores incoming fire until it is on its bound point
+            _x disableAI "SUPPRESSION";
+            _x setUnitPos (["UP", "MIDDLE"] select _near);
             _x forceSpeed -1;
             _x doMove _pos;
             _x setVariable [QGVAR(currentTask), "Bounding", GVAR(debug_functions)];
@@ -120,6 +125,7 @@ private _index = -1;
 private _checks = SUPPRESS_CHECKS;
 {
     _x setVariable [QEGVAR(danger,forceMove), true];
+    _x enableAI "SUPPRESSION";
     _x setUnitPos (_x call FUNC(getLowStance));
     _x setVariable [QGVAR(currentTask), "Base of fire", GVAR(debug_functions)];
     if (_index isEqualTo -1 && {_checks > 0} && {_posList isNotEqualTo []}) then {
