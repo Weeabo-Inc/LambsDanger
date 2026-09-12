@@ -35,9 +35,10 @@ if (isNil QGVAR(dangerUntil)) then {
     {
         private _leader = leader _x;
         if (local _leader) then {
-            // reinforce ~ never while a Zeus directs the group
+            // reinforce ~ never while a Zeus directs the group, and never when the Director owns reinforcement
             if (
                 !isNull _target
+                && {!(missionNamespace getVariable [QHGVAR(director,enabled), false])}
                 && {_x getVariable [QGVAR(enableGroupReinforce), false]}
                 && {(_x getVariable [QGVAR(enableGroupReinforceTime), -1]) < time }
                 && {!(_x call EFUNC(main,isDirected))}

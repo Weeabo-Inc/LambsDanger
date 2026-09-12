@@ -1,0 +1,19 @@
+// Layer 3, the Director (docs/systems/director.md, ADR-0004)
+PREP(board);
+PREP(budget);
+PREP(counterattack);
+PREP(counterBattery);
+PREP(firedArtillery);
+PREP(fireMissions);
+PREP(fireRequest);
+PREP(influence);
+PREP(log);
+PREP(pacing);
+PREP(reinforce);
+PREP(release);
+PREP(report);
+PREP(reserves);
+PREP(routes);
+PREP(sideState);
+PREP(spendAllowed);
+PREP(think);

@@ -101,6 +101,11 @@ _lines pushBack format ["Last tactic %1 %2 | executing %3 | plan %4 | air %5",
 // what the group believes about the enemy (hostis_core)
 _lines pushBack "<t color='#FFAA00'>Knowledge</t>";
 _lines append ([_group, 6] call HFUNC(core,pictureReport));
+// what the side's Director thinks (server only; on a client the report says so)
+if (isServer && {!isNil "hostis_director_fnc_report"}) then {
+    _lines pushBack "<t color='#FFAA00'>Director</t>";
+    _lines append ([side _group] call hostis_director_fnc_report);
+};
 _lines pushBack "<t color='#FFAA00'>Units</t>";
 
 // unit lines

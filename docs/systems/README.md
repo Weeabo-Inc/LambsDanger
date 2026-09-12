@@ -13,8 +13,8 @@ Acceptance test, Performance budget, Fairness review.
 | 3.4 | Dynamic tactical position selection | [`positions.md`](positions.md) | 3 | `findPositions` gained directness, a cell cache and `positionValid` |
 | 3.5 | Squad tactics | [`tactics.md`](tactics.md) | 4 | lifecycle, planner, suppress and flank, hasty ambush, search in `hostis_squad`; test `tests/contact.Stratis` awaiting a run |
 | 3.6 | Combined arms | `combined-arms.md` | 7 | seeded by mechanised attack, air assault, vehicle brain |
-| 3.7 | Indirect fire and Director tools | `director.md` | 5 | seeded by the side board |
-| 3.8 | Adaptation and memory | `adaptation.md` | 7 | not started |
+| 3.7 | Indirect fire and Director tools | [`director.md`](director.md) | 5 | built in `hostis_director`: reserves, reinforcement, counterattack, observed fire missions, counter-battery, pacing; test `tests/director.Stratis` awaiting a run |
+| 3.8 | Adaptation and memory | [`director.md`](director.md) (Adaptation) | 5, 7 | route seeding built; fatal-position and collapsing-flank rules in milestone 7 |
 | 3.9 | Legibility | [`legibility.md`](legibility.md) | 3 | bark vocabulary and morale tells in `hostis_agent` |
 | 3.10 | Performance | `performance.md` | every milestone | budgets in ADR-0005 |
 | 4 | Zeus layer | `zeus.md` | 6 | seeded by posture module, directed move, diagnose |

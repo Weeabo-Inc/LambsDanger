@@ -91,8 +91,8 @@ private _clusters = [];
     if ((_engaged findIf {(_x select 0) isEqualTo _x}) isEqualTo -1) then {_x setVariable [QGVAR(role), nil];};
 } forEach _groups;
 
-// reinforcements ~ the nearest idle group that is free to leave goes to help
-if (GVAR(commanderReinforceRange) > 0) then {
+// reinforcements ~ the nearest idle group that is free to leave goes to help; the Director owns this when present
+if (GVAR(commanderReinforceRange) > 0 && {!(missionNamespace getVariable [QHGVAR(director,enabled), false])}) then {
     private _requests = _groups select {
         private _request = _x getVariable [QGVAR(reinforceRequest), []];
         _request isNotEqualTo [] && {time - (_request select 0) < REQUEST_AGE}

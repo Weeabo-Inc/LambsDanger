@@ -62,7 +62,8 @@ addons/wp/functions/fnc_taskRush.sqf|doSuppressiveFire|suppresses a tank contact
 #
 # R3: skill is never raised. (No entries: nothing in the tree writes skill.)
 #
-# R4: nothing below the Director reads the player list.
+# R4: nothing below the Director reads the player list. The Director (layer 3) may, for pacing only (ADR-0004).
+addons/director/functions/fnc_pacing.sqf|allPlayers|layer 3: the menace gauge per player element; positions are used for pacing and routes, never passed down (ADR-0004)
 addons/danger/functions/fnc_tacticsReinforce.sqf|allDeadMen|TODO milestone 5: body search moves to the death events of the contact store
 addons/main/functions/UnitAction/fnc_doCheckBody.sqf|allDeadMen|scan for a body near a position the unit already knows; TODO milestone 3: fed from the death events
 #

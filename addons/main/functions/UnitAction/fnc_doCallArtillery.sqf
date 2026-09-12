@@ -65,8 +65,15 @@ if ((binocular _unit) isNotEqualTo "") then {
 // callout
 [_unit, "aware", "SupportRequestRGArty", 75] call FUNC(doCallout);
 
-// perform it
-[side _unit, _pos, _unit] call EFUNC(WP,taskArtillery);
+// perform it ~ through the Director's call for fire when it runs: budget, pacing, observer and adjustment
+if (missionNamespace getVariable [QHGVAR(director,enabled), false]) then {
+    private _error = 50;
+    private _contacts = [group _unit, 60, 0, [], _pos, 80] call HFUNC(core,contactsGet);
+    if (_contacts isNotEqualTo []) then {_error = (_contacts select 0) select 4;};
+    [QHGVAR(director,fireMission), [side _unit, _pos, _error, format ["%1 requests fire", groupId (group _unit)], group _unit]] call CBA_fnc_serverEvent;
+} else {
+    [side _unit, _pos, _unit] call EFUNC(WP,taskArtillery);
+};
 
 // end
 true

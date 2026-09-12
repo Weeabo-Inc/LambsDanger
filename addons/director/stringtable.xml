@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="hostis">
+    <Package name="Director">
+        <Key ID="STR_hostis_Director_Settings_BudgetCat">
+            <English>Budgets</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_CounterBatteryDelay">
+            <English>Counter-battery delay (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_CounterBatteryDelay_ToolTip">
+            <English>Time from the second player fire mission out of the same spot to the rounds landing on it.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_CounterBatteryWindow">
+            <English>Counter-battery window (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_CounterBatteryWindow_ToolTip">
+            <English>Two player fire missions from within 60 m of each other inside this window make that spot a target. 0 disables counter-battery.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_CounterattackDelay">
+            <English>Counterattack delay (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_CounterattackDelay_ToolTip">
+            <English>How long after a defended position falls the reserve is sent to retake it.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_DangerClose">
+            <English>Danger close (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_DangerClose_ToolTip">
+            <English>No fire mission lands within this distance of the side's own men.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Debug">
+            <English>Log the Director</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_DebugCat">
+            <English>Debug</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Debug_ToolTip">
+            <English>Every Director decision goes to the RPT with its reason. For testing only.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_DirectorCat">
+            <English>Director</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Enabled">
+            <English>Director</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Enabled_ToolTip">
+            <English>The side-level brain: reserves, reinforcement, counterattack, fire missions, counter-battery, pacing. Off leaves the upstream side board.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_FireCat">
+            <English>Indirect fire</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_FireMissions">
+            <English>Fire missions per side</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_FireMissions_ToolTip">
+            <English>Starting fire mission budget of every side. A Zeus or a script can change it live.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_ObserverError">
+            <English>Observer error limit (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_ObserverError_ToolTip">
+            <English>A fire mission is only requested, adjusted and fired for effect while the observing group's contact has an error smaller than this.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Reinforcements">
+            <English>Reinforcements per side</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Reinforcements_ToolTip">
+            <English>Starting reinforcement budget of every side: releases of a reserve group, counterattacks included.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_RelaxTime">
+            <English>Relax time (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_RelaxTime_ToolTip">
+            <English>The lull after a peak, during which the Director spends nothing on that player element. Divided by the throttle.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_ReservePoolAuto">
+            <English>Idle groups are reserves</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_ReservePoolAuto_ToolTip">
+            <English>Groups with a free intent, not in contact and not on a task count as the side's reserve pool. Off means only groups with a reserve intent.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_ReserveRange">
+            <English>Reserve range (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_ReserveRange_ToolTip">
+            <English>A reserve farther than this from the place it is needed is not sent.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_ThinkInterval">
+            <English>Think interval (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_ThinkInterval_ToolTip">
+            <English>How often the Director of each side thinks.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Throttle">
+            <English>Pressure throttle</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Throttle_ToolTip">
+            <English>Scales how fast the Director spends: 1 is normal, 0.5 doubles every lull, 0 stops all spending.</English>
+        </Key>
+    </Package>
+</Project>

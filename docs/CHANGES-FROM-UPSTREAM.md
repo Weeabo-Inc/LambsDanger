@@ -82,6 +82,30 @@ migrated into the layer addons per ADR-0008.
 `commanderReinforceRange`, `commanderMergeStrays`, `zeusWaypointDiscipline`,
 `zeusWaypointTimeout`, `aggression`, `dodgeCooldown`.
 
+## Milestone 5: layer 3, the Director (`hostis_director`)
+
+- **One Director per side on the server** ([docs/systems/director.md](systems/director.md)),
+  thinking every 10 s: a board built from the groups' reports, an influence map, a menace
+  gauge and pacing machine per player element (build up, sustain, fade, relax), a reserve
+  pool, budgets for reinforcements and fire missions, a plain-language log.
+- **Reinforcement** answers a breaking group's request with one reserve from a different
+  bearing, spending budget, only while the nearest player element is building up.
+  Upstream's `enableGroupReinforce` handler and the side board's dispatch stand down when
+  the Director runs.
+- **Counterattack**: a fallen hold or defend objective is retaken after 90 s from the side
+  the influence map says the enemy did not come from.
+- **Observed fire missions**: `doCallArtillery` becomes a call for fire with the observer's
+  error; one adjusting round, then a correction from what the observer still holds, then
+  fire for effect; killing the observer or losing the target cancels it. Budgeted, pacing
+  gated, danger close checked.
+- **Counter-battery**: a player gun fired twice from within 60 m in 10 minutes is hit 3
+  minutes later.
+- **Adaptation**: a route cell entered on two separate visits gets a reserve lying on it.
+- API: `hostis_director_fnc_budget`, `release`, `counterattack`, `fireRequest`, `report`,
+  `reserves`, and the events `hostis_director_setBudget`, `release`, `counterattack`,
+  `fireMission`. The Diagnose module shows the Director's report on the server.
+- Settings under HOSTIS Director. Test: `tests/director.Stratis` (brief tests 2 and 4).
+
 ## Milestone 4: layer 2, the Squad (`hostis_squad`)
 
 - **One tactic lifecycle** ([docs/systems/tactics.md](systems/tactics.md), ADR-0011):
