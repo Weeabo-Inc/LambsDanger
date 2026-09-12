@@ -154,6 +154,48 @@ _curCat = LSTRING(Settings_AggressionCat);
     1
 ] call CBA_fnc_addSetting;
 
+_curCat = LSTRING(Settings_CommanderCat);
+
+// The group and side level commander
+[
+    QGVAR(commander),
+    "CHECKBOX",
+    [LSTRING(Settings_Commander), LSTRING(Settings_Commander_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    true,
+    1
+] call CBA_fnc_addSetting;
+
+// Default posture of groups nobody has given an intent
+[
+    QGVAR(commanderPosture),
+    "LIST",
+    [LSTRING(Settings_CommanderPosture), LSTRING(Settings_CommanderPosture_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [[0, 1, 2], [LSTRING(Posture_Cautious), LSTRING(Posture_Balanced), LSTRING(Posture_Aggressive)], 1],
+    1
+] call CBA_fnc_addSetting;
+
+// How many groups may close on one threat at the same time
+[
+    QGVAR(commanderMaxAssault),
+    "SLIDER",
+    [LSTRING(Settings_CommanderMaxAssault), LSTRING(Settings_CommanderMaxAssault_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [1, 6, 2, 0],
+    1
+] call CBA_fnc_addSetting;
+
+// How far an idle group will travel to help a group asking for it
+[
+    QGVAR(commanderReinforceRange),
+    "SLIDER",
+    [LSTRING(Settings_CommanderReinforceRange), LSTRING(Settings_CommanderReinforceRange_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [0, 2000, 600, 0],
+    1
+] call CBA_fnc_addSetting;
+
 /*
 TEMPORARILY DISABLED FOR VERSION 2.5 RELEASE
 WAITING BETTER OR OTHER SOLUTION

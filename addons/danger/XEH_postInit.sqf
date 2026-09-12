@@ -22,3 +22,6 @@
 
 // Zeus waypoints become directed moves
 call FUNC(zeusWaypointInit);
+
+// AI commander ~ thinks for local groups between danger events
+call FUNC(commanderInit);

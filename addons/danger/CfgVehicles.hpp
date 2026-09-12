@@ -88,6 +88,24 @@ class CfgVehicles {
         };
     };
 
+    class GVAR(Posture) : Module_F {
+        author = "LAMBS Dev Team";
+        _generalMacro = QGVAR(Posture);
+        scope = 1;
+        scopeCurator = 2;
+        displayName = CSTRING(Module_Posture_DisplayName);
+        isGlobal = 0;
+        category = "Lambs_Danger_Cat";
+        icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa";
+        function = QFUNC(modulePosture);
+        class EventHandlers {
+            class CBA_Extended_EventHandlers: CBA_Extended_EventHandlers_base {};
+            class ADDON {
+                init = QUOTE(call EFUNC(main,initModules));
+            };
+        };
+    };
+
     class GVAR(Diagnose) : Module_F {
         author = "LAMBS Dev Team";
         _generalMacro = QGVAR(Diagnose);

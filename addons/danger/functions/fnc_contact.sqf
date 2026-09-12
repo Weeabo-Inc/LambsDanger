@@ -35,9 +35,10 @@ if (isNull _enemy || { (side _group) isEqualTo (side group _enemy) } ) exitWith 
     false
 };
 
-// update contact state
+// update contact state ~ and hand the group to the commander from here on
 _group setVariable [QGVAR(contact), time + 600];
 [_group, [_enemy]] call FUNC(pictureUpdate);
+[_group] call FUNC(commanderRegister);
 
 // set group task
 //_group setVariable [QGVAR(isExecutingTactic), true];

@@ -2,7 +2,7 @@
 class CfgPatches {
     class ADDON {
         name = COMPONENT_NAME;
-        units[] = {QGVAR(SetRadio), QGVAR(DisableAI), QGVAR(ConfigureGroupAI), QGVAR(DirectedMove), QGVAR(Diagnose)};
+        units[] = {QGVAR(SetRadio), QGVAR(DisableAI), QGVAR(ConfigureGroupAI), QGVAR(DirectedMove), QGVAR(Diagnose), QGVAR(Posture)};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {"lambs_main"};

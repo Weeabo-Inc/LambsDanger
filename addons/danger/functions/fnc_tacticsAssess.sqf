@@ -268,6 +268,18 @@ if (
     _plan = _plan - [_lastTactic];
 };
 
+// the side board and the Zeus intent shape the plan ~ support groups fire, cautious groups never close, holders never leave
+if (GVAR(commander)) then {
+    private _intent = [_group] call FUNC(intentGet);
+    private _role = _group getVariable [QGVAR(role), ""];
+    if (_role isEqualTo "support" || {(_intent select 3) isEqualTo 0} || {(_intent select 0) isEqualTo "hold"}) then {
+        _plan = _plan apply {[_x, TACTICS_SUPPRESS] select (_x in [TACTICS_ASSAULT, TACTICS_BOUND, TACTICS_FLANK, TACTICS_ATTACK])};
+    };
+    if ((_intent select 0) isEqualTo "defend" && {(_intent select 1) isNotEqualTo []} && {_pos distance2D (_intent select 1) > (_intent select 2)}) then {
+        _plan = _plan apply {[_x, TACTICS_SUPPRESS] select (_x in [TACTICS_ASSAULT, TACTICS_BOUND, TACTICS_FLANK, TACTICS_ATTACK])};
+    };
+};
+
 // broken groups do not attack ~ they break contact instead (assertive discipline)
 if (GVAR(aggression) > 0 && {([_group] call FUNC(getMorale)) < 0.35} && {time - (_picture get "withdrawTime") > 300}) then {
     _plan = [TACTICS_WITHDRAW];

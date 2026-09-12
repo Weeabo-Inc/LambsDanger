@@ -122,8 +122,23 @@
             <German>LAMBS Danger FSM</German>
             <Chinesesimp>LAMBS Danger FSM</Chinesesimp>
         </Key>
+        <Key ID="STR_Lambs_Danger_Context_Posture">
+            <English>Posture and intent</English>
+        </Key>
         <Key ID="STR_Lambs_Danger_Context_ResumeBehaviour">
             <English>Resume LAMBS behaviour</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Escalation_Alert">
+            <English>Alert</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Escalation_Decisive">
+            <English>Decisive</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Escalation_Engaged">
+            <English>Engaged</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Escalation_Routine">
+            <English>Routine</English>
         </Key>
         <Key ID="STR_Lambs_Danger_Feedback_Attack">
             <English>%1 attacking waypoint %2 (%3 m)</English>
@@ -154,6 +169,15 @@
         </Key>
         <Key ID="STR_Lambs_Danger_Groups_ToolTip">
             <English>Groups sorted by distance to the module</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Intent_Defend">
+            <English>Defend here</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Intent_Free">
+            <English>Free</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Intent_Hold">
+            <English>Hold here</English>
         </Key>
         <Key ID="STR_Lambs_Danger_Module_ConfigureGroupAI_DisplayName">
             <English>Configure Group AI</English>
@@ -233,6 +257,33 @@
             <German>Aktiviert die dynamische Verstärkungsfunktion von LAMBS. Diese Gruppe bewegt sich jetzt zu bekannten feindlichen Positionen, die durch die Funktion zum Teilen von Informationen identifiziert werden.\nWARNUNG Die Verstärkungsfunktion kann vorhandene Wegpunkte bei Gruppen, die auf Funksprüche reagieren, überschreiben</German>
             <Chinesesimp>启用LAMBS动态支援功能.该小组现在将向共享信息功能识别的已知敌方阵地移动.\n支援功能可能会覆盖响应呼叫的小组现有的路径点</Chinesesimp>
         </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_Cap_DisplayName">
+            <English>Escalation cap</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_Cap_Tooltip">
+            <English>Highest level the group may reach. Routine: toy soldiers that never leave their post. Alert: face threats and take cover. Engaged: fight with fire and movement. Decisive: pursue, flank, withdraw when broken, call for help.</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_DisplayName">
+            <English>Posture and intent</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_Mode_DisplayName">
+            <English>Intent</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_Mode_Tooltip">
+            <English>Free: react, then return to where they started. Hold here: stay at this spot, fire from it, never leave. Defend here: stay, but counterattack anything inside the radius.</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_Posture_DisplayName">
+            <English>Posture</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_Posture_Tooltip">
+            <English>How hard the group fights when things get serious.</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_Radius_DisplayName">
+            <English>Radius</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Module_Posture_Radius_Tooltip">
+            <English>How far from the spot a holding or defending group may roam.</English>
+        </Key>
         <Key ID="STR_Lambs_Danger_Module_SetRadio_DisplayName">
             <English>Configure Long-range Radio</English>
             <Czech>Konfigurovat dlouhovlnné rádio</Czech>
@@ -259,6 +310,15 @@
             <Russian>Юнит с включенным радио будет иметь усиленную дальностью коммуникации при передачи информации\nЭтого эффекта также можно добиться, оснастив юнита ванильным  рюкзаком с радио  или радио с поддержкой TFAR-мода.</Russian>
             <German>Einheiten bei denen diese Option aktiviert ist haben eine erhöhte Kommunikationsreichweite.\n Dieser Effekt kann auch erzeugt werden durch das Ausrüsten der Einheit mit einem standard Radio-Rucksack oder einem TFAR-Mod kompatiblen Radio.</German>
             <Chinesesimp>共享信息时切换了无线电的装置提高了通信范围\n这种效果也可以通过为装置配备普通无线电背包或TFAR mod启用的无线电来实现</Chinesesimp>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Posture_Aggressive">
+            <English>Aggressive</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Posture_Balanced">
+            <English>Balanced</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Posture_Cautious">
+            <English>Cautious</English>
         </Key>
         <Key ID="STR_Lambs_Danger_Settings_Aggression">
             <English>Combat discipline</English>
@@ -292,6 +352,33 @@
             <Russian>Дальность, на которой юниты считают себя атакующими</Russian>
             <German>Legt die Angriffsreichweite fest.</German>
             <Chinesesimp>单位认为自己处于攻击范围内的范围</Chinesesimp>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_Commander">
+            <English>AI commander</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderCat">
+            <English>Commander</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderMaxAssault">
+            <English>Groups closing per threat</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderMaxAssault_ToolTip">
+            <English>When several groups fight the same enemy, at most this many close with it. The rest hold as support by fire, so players are manoeuvred against instead of swarmed.</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderPosture">
+            <English>Default posture</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderPosture_ToolTip">
+            <English>Posture of groups nobody has given one. Cautious groups fire from where they stand and withdraw early. Balanced groups close with fire and movement and pursue. Aggressive groups also move to overwatch on a reported contact.</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderReinforceRange">
+            <English>Reinforcement range</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_CommanderReinforceRange_ToolTip">
+            <English>A group that is breaking asks for help. The nearest idle group within this range, with no orders of its own, moves to it. 0 disables.</English>
+        </Key>
+        <Key ID="STR_Lambs_Danger_Settings_Commander_ToolTip">
+            <English>Groups keep thinking between danger events: escalate from routine to decisive, coordinate roles against a shared threat, pursue, consolidate, return to their post, and ask for help. Off returns to reactive behaviour only.</English>
         </Key>
         <Key ID="STR_Lambs_Danger_Settings_DisableAutonomousFlares">
             <English>Disable units using flares for illumination</English>

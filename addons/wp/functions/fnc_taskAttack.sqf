@@ -50,6 +50,7 @@ if (_radius <= 0) then {_radius = TASK_ATTACK_SIZE;};
 // task lifecycle
 private _token = [_group, "taskAttack"] call FUNC(taskBegin);
 _group setVariable [QGVAR(attackWaypoint), _wpIndex];
+[_group, "attack", _pos, _radius, nil, 3] call EFUNC(danger,intentSet);
 
 // whatever LAMBS was doing with this group ends here ~ the task owns it now
 private _tacticPFH = _group getVariable [QEGVAR(danger,tacticPFH), -1];
@@ -91,7 +92,7 @@ private _handle = [{
     _state params ["_phase", "_heldSince"];
 
     private _fnc_end = {
-        params ["_group", "_handle", "_token", "_wpIndex", "_curatorOwner", "_reason"];
+        params ["_group", "_handle", "_token", "_wpIndex", "_curatorOwner", "_reason", "_pos", "_radius"];
         [_handle] call CBA_fnc_removePerFrameHandler;
         if (isNull _group) exitWith {};
         _group setVariable [QGVAR(attackPFH), nil];
@@ -101,6 +102,9 @@ private _handle = [{
         };
         if ([_group, _token] call FUNC(taskIsCancelled)) exitWith {};
         [_group] call FUNC(taskCleanup);
+
+        // the objective is now the group's ground
+        [_group, ["free", "defend"] select (_reason isEqualTo "objective held"), _pos, _radius] call EFUNC(danger,intentSet);
 
         // carry on with the route the Zeus laid out
         if (_wpIndex >= 0 && {_wpIndex + 1 < count (waypoints _group)}) then {
@@ -112,9 +116,9 @@ private _handle = [{
     };
 
     // cancelled, taken over by a Zeus move, or nobody left
-    if ([_group, _token] call FUNC(taskIsCancelled) || {_group call EFUNC(main,isDirected)}) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "cancelled"] call _fnc_end;};
+    if ([_group, _token] call FUNC(taskIsCancelled) || {_group call EFUNC(main,isDirected)}) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "cancelled", _pos, _radius] call _fnc_end;};
     private _units = (units _group) select {_x call EFUNC(main,isAlive) && {!isPlayer _x}};
-    if (_units isEqualTo []) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "no units left"] call _fnc_end;};
+    if (_units isEqualTo []) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "no units left", _pos, _radius] call _fnc_end;};
 
     private _leader = leader _group;
     if (!(_leader call EFUNC(main,isAlive))) then {
@@ -143,7 +147,7 @@ private _handle = [{
     } else {
         _state set [1, -1];
     };
-    if (_held) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "objective held"] call _fnc_end;};
+    if (_held) exitWith {[_group, _handle, _token, _wpIndex, _curatorOwner, "objective held", _pos, _radius] call _fnc_end;};
 
     // a tactic this task started (fire and movement or the building sweep) ~ let it work
     private _executing = _group getVariable [QEGVAR(danger,isExecutingTactic), false];

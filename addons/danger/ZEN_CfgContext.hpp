@@ -57,6 +57,11 @@ class ZEN_context_menu_actions {
             condition = QUOTE([ARR_2(_groups,_objects)] call FUNC(showResumeBehaviour));
             icon = "\a3\3den\Data\CfgWaypoints\cycle_ca.paa";
         };
+        class Posture {
+            displayName = CSTRING(Context_Posture);
+            statement = QUOTE([ARR_3(_groups,_objects,_position)] call FUNC(setPosture));
+            icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa";
+        };
         class Diagnose {
             displayName = CSTRING(Context_Diagnose);
             statement = QUOTE([ARR_2(_groups,_objects)] call FUNC(setDiagnose));

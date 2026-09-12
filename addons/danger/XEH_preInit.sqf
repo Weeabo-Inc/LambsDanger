@@ -80,6 +80,11 @@ if (isNil QGVAR(dangerUntil)) then {
     _this call FUNC(directedMoveRelease);
 }] call CBA_fnc_addEventHandler;
 
+// intent set from a Zeus client ~ handled on the group owner
+[QGVAR(intent), {
+    _this call FUNC(intentSet);
+}] call CBA_fnc_addEventHandler;
+
 [QGVAR(diagnose), {
     params [["_group", grpNull, [grpNull]], ["_curatorOwner", -1, [0]]];
     if (isNull _group || {!local _group} || {_curatorOwner < 0}) exitWith {};

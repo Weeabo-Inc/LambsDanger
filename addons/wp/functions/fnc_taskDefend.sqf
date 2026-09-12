@@ -45,8 +45,9 @@ if (_group isEqualType objNull) then { _group = group _group; };
 if (_pos isEqualTo []) then {_pos = leader _group;};
 _pos = _pos call CBA_fnc_getPos;
 
-// task lifecycle
+// task lifecycle ~ this ground is the group's intent from now on
 private _token = [_group, "taskDefend"] call FUNC(taskBegin);
+[_group, "defend", _pos, _radius] call EFUNC(danger,intentSet);
 
 // orders
 _group enableAttack false;
