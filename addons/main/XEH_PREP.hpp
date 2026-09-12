@@ -28,6 +28,7 @@ PREP(initModules);
 PREP(isAlive);
 PREP(isDirected);
 PREP(isIndoor);
+PREP(isMedic);
 PREP(isNight);
 
 PREP(showDialog);

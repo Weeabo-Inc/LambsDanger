@@ -92,15 +92,17 @@ if (_units isEqualTo []) exitWith {
 private _vehicles = ([_unit] call EFUNC(main,findReadyVehicles)) select {someAmmo _x};
 {_x doWatch _target;} forEach _vehicles;
 
-// teams ~ leader and support gunners hold the first base of fire, the rest split evenly
-private _gunners = _units select {_x call EFUNC(main,isSupportGunner)};
-private _base = [_unit] + (_gunners - [_unit]);
-private _assault = [];
-{
-    if ((_forEachIndex % 2) isEqualTo 0) then {_assault pushBack _x;} else {_base pushBack _x;};
-} forEach (_units - _base);
-if (_assault isEqualTo [] && {count _base > 1}) then {
+// teams ~ leader, support gunners and medic form the fire team, everyone else the assault team
+private _base = [_unit] + ((_units - [_unit]) select {_x call EFUNC(main,isSupportGunner) || {_x call EFUNC(main,isMedic)}});
+private _assault = _units - _base;
+// a fire team needs no more than half the group, an assault team needs at least two
+while {count _assault < 2 && {count _base > 1}} do {
     private _mover = (_base - [_unit]) select 0;
+    _assault pushBack _mover;
+    _base = _base - [_mover];
+};
+while {count _base > count _assault && {count _base > 2}} do {
+    private _mover = (_base - [_unit]) select -1;
     _assault pushBack _mover;
     _base = _base - [_mover];
 };
@@ -131,17 +133,17 @@ _group setBehaviourStrong "AWARE";
 
 // gesture and callout
 [_unit, "gesturePoint"] call EFUNC(main,doGesture);
-[_unit, "combat", "SuppressiveFire", 125] call EFUNC(main,doCallout);
+[_unit, "combat", "suppress", 125] call EFUNC(main,doCallout);
 
 // concealment
 if (!GVAR(disableAutonomousSmokeGrenades)) then {[_unit, _target] call EFUNC(main,doSmoke);};
 
 // start the cycle
-[{_this call EFUNC(main,doGroupBound)}, [_group, _base, _assault, _posList, _target, 0, [], _vehicles], 1] call CBA_fnc_waitAndExecute;
+[{_this call EFUNC(main,doGroupBound)}, [_group, _base, _assault, _posList, _target, 0, 0, [], _vehicles], 1] call CBA_fnc_waitAndExecute;
 
 // debug
 if (EGVAR(main,debug_functions)) then {
-    ["%1 TACTICS BOUND (%2 with %3 base / %4 assault / %5 vehicles @ %6m, %7 positions)", side _unit, name _unit, count _base, count _assault, count _vehicles, round (_unit distance2D _target), count _posList] call EFUNC(main,debugLog);
+    ["%1 TACTICS BOUND (%2 with %3 fire team / %4 assault team / %5 vehicles @ %6m, %7 positions)", side _unit, name _unit, count _base, count _assault, count _vehicles, round (_unit distance2D _target), count _posList] call EFUNC(main,debugLog);
     private _m = [_unit, "tactics bound", _unit call EFUNC(main,debugMarkerColor), "hd_arrow"] call EFUNC(main,dotMarker);
     private _mt = [_target, "", _unit call EFUNC(main,debugMarkerColor), "hd_destroy"] call EFUNC(main,dotMarker);
     {_x setMarkerSizeLocal [0.6, 0.6];} forEach [_m, _mt];
