@@ -264,6 +264,9 @@ private _handle = [{
     // this plan owns the group's tactic state until it is done
     _group setVariable [QGVAR(isExecutingTactic), true];
 
+    // the small things never wait for the plan: a new leader, a man down dragged to cover, a seat refilled
+    [_group, 3] call FUNC(commanderContingency);
+
     private _picture = [_group] call FUNC(pictureGet);
     private _objective = _state get "objective";
     private _phase = _state get "phase";
@@ -388,8 +391,6 @@ private _handle = [{
 
         // mechanized: ride to the dismount point
         case "mounted": {
-            // a dead driver or gunner is replaced from the passengers on the way (or everyone bails if the enemy is close)
-            [_group, 3] call FUNC(commanderContingency);
             private _lead = _vehicles param [0, objNull];
 
             // contact on the way ~ actions on contact while mounted: smoke, get off the road away from the

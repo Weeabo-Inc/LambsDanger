@@ -60,6 +60,7 @@ SUBPREP(UnitAction,doAssaultCQB);
 SUBPREP(UnitAction,doAssaultMemory);
 SUBPREP(UnitAction,doAssaultSpeed);
 SUBPREP(UnitAction,doCallArtillery);
+SUBPREP(UnitAction,doCasualtyDrag);
 SUBPREP(UnitAction,doCheckBody);
 SUBPREP(UnitAction,doCover);
 SUBPREP(UnitAction,doDodge);

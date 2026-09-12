@@ -32,6 +32,7 @@
 #define STRAY_RANGE 300
 #define CREW_CONTACT 120
 #define CREW_REPLACE_TIME 15
+#define CASUALTY_RANGE 60
 #define LOW_AMMO 2
 #define BODY_RANGE 25
 #define SELF_AID_DAMAGE 0.3
@@ -56,8 +57,37 @@ if (!(_leader call EFUNC(main,isAlive))) then {
     };
 };
 
-// crew ~ carriers need a driver and a gunner; passengers fill the seats unless the enemy is on top of them
 private _threatPos = _picture get "threatPos";
+
+// casualties ~ a man down in the open is dragged into cover by his nearest buddy, under smoke (ACE)
+if (!isNil "ace_dragging_fnc_startDrag") then {
+    private _casualties = _units select {
+        alive _x && {(lifeState _x) isEqualTo "INCAPACITATED"} && {isNull objectParent _x}
+        && {
+            private _rescue = _x getVariable [QEGVAR(main,rescuer), []];
+            _rescue isEqualTo [] || {!((_rescue select 0) call EFUNC(main,isAlive))} || {time > (_rescue select 1)}
+        }
+    };
+    {
+        private _casualty = _x;
+        private _exposed = !(_casualty call EFUNC(main,isIndoor)) && {(nearestTerrainObjects [_casualty, ["BUSH", "TREE", "HOUSE", "HIDE", "WALL", "ROCK", "FENCE"], 3, false, true]) isEqualTo []};
+        if (_exposed) then {
+            private _buddies = _units select {
+                _x call EFUNC(main,isAlive) && {isNull objectParent _x} && {_x isNotEqualTo _casualty}
+                && {(_x getVariable [QEGVAR(main,survival), 0]) < time}
+                && {!(_x call EFUNC(main,isSupportGunner))}
+                && {_x isNotEqualTo _leader || {count _units <= 3}}
+                && {_x distance2D _casualty < CASUALTY_RANGE}
+            };
+            if (_buddies isNotEqualTo []) then {
+                _buddies = [_buddies, [], {_x distance2D _casualty}, "ASCEND"] call BIS_fnc_sortBy;
+                if ([_buddies select 0, _casualty, _threatPos] call EFUNC(main,doCasualtyDrag)) then {_action = "casualty";};
+            };
+        };
+    } forEach _casualties;
+};
+
+// crew ~ carriers need a driver and a gunner; passengers fill the seats unless the enemy is on top of them
 private _contactNear = _threatPos isNotEqualTo [] && {time - (_picture get "lastContact") < 30} && {_leader distance2D _threatPos < CREW_CONTACT};
 {
     private _vehicle = _x;
