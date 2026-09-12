@@ -45,6 +45,14 @@
 #define FAIL_LOSSES 3
 #define STALL_STEP 8
 #define STALL_TIME 60
+#define DISMOUNT_DISTANCE 60
+#define DISMOUNT_CLEARANCE 50
+#define DISMOUNT_REACHED 15
+#define DISMOUNT_STOPPED 40
+#define FAN_WIDTH 12
+#define FAN_AHEAD 4
+#define FAN_TIMEOUT 20
+#define MOUNTED_TIMEOUT 120
 #define SUPPRESS_POSITIONS 10
 
 params ["_group", "_objective", ["_maxDuration", 420]];
@@ -60,6 +68,19 @@ if (_objective isEqualTo [0, 0, 0]) exitWith {false};
 
 // units on foot ~ vehicles stay back as a fire base through the bound code
 private _units = [_unit, 300] call EFUNC(main,findReadyUnits);
+
+// mechanized ~ troops still aboard, or on foot next to their carrier: the vehicles carry them to a dismount
+// point short of the objective, then hold there as the fire base while the infantry fans out and assaults
+private _vehicles = ([_unit, 400] call EFUNC(main,findReadyVehicles)) select {alive _x && {(effectiveCommander _x) call EFUNC(main,isAlive)} && {alive (driver _x)}};
+private _mounted = [];
+{
+    private _vehicle = _x;
+    _mounted append ((fullCrew [_vehicle, "cargo"]) apply {_x select 0});
+    _mounted append (((fullCrew [_vehicle, "turret"]) select {_x select 4}) apply {_x select 0});
+} forEach _vehicles;
+_mounted = _mounted select {_x call EFUNC(main,isAlive) && {!isPlayer _x} && {(group _x) isEqualTo _group}};
+private _mechanized = _vehicles isNotEqualTo [] && {_mounted isNotEqualTo [] || {(_units findIf {private _foot = _x; (_vehicles findIf {_x distance2D _foot < 40}) isNotEqualTo -1}) isNotEqualTo -1}};
+if (_mechanized) then {_units = _units + _mounted;};
 if (_units isEqualTo []) exitWith {false};
 
 // stop whatever else was running
@@ -69,10 +90,31 @@ private _monitor = _group getVariable [QGVAR(tacticPFH), -1];
 if (_monitor isNotEqualTo -1) then {[_monitor] call CBA_fnc_removePerFrameHandler; _group setVariable [QGVAR(tacticPFH), nil];};
 
 // plan
-([getPosATL _unit, _objective] call EFUNC(main,findApproach)) params ["_route", "_assaultPos", "_supportPos", "_side"];
+private _leadVehicle = _vehicles param [0, objNull];
+private _planFrom = [getPosATL _unit, getPosATL _leadVehicle] select _mechanized;
+([_planFrom, _objective] call EFUNC(main,findApproach)) params ["_route", "_assaultPos", "_supportPos", "_side"];
 private _support = [];
 private _assault = _units;
-if (count _units >= MIN_SPLIT_SIZE) then {
+
+// mechanized: the vehicles are the support element, every rifleman assaults; dismount point on the approach axis,
+// as close as 60 m to the objective but never inside 50 m of a known enemy
+private _dismountPos = [];
+if (_mechanized) then {
+    private _axis = _objective getDir _planFrom;
+    private _distance = DISMOUNT_DISTANCE;
+    {
+        private _contact = _x select 1;
+        private _candidate = _objective getPos [_distance, _axis];
+        if (_candidate distance2D _contact < DISMOUNT_CLEARANCE) then {_distance = _distance + (DISMOUNT_CLEARANCE - (_candidate distance2D _contact));};
+    } forEach ([_group, 90] call FUNC(pictureContacts));
+    _dismountPos = _objective getPos [_distance min (_planFrom distance2D _objective), _axis];
+    private _empty = _dismountPos findEmptyPosition [0, 25, typeOf _leadVehicle];
+    if (_empty isNotEqualTo []) then {_dismountPos = _empty;};
+    _assaultPos = _dismountPos;
+    _route = [_dismountPos];
+};
+
+if (!_mechanized && {count _units >= MIN_SPLIT_SIZE}) then {
     _support = [_unit] + ((_units - [_unit]) select {_x call EFUNC(main,isSupportGunner) || {(secondaryWeapon _x) isNotEqualTo ""}});
     _assault = _units - _support;
     while {count _assault < MIN_ASSAULT && {count _support > 2}} do {
@@ -95,7 +137,11 @@ if (count _posList > SUPPRESS_POSITIONS) then {_posList resize SUPPRESS_POSITION
 
 // state
 private _state = createHashMapFromArray [
-    ["phase", "approach"],
+    ["phase", ["approach", "mounted"] select _mechanized],
+    ["mechanized", _mechanized],
+    ["vehicles", _vehicles],
+    ["mounted", _mounted],
+    ["dismountPos", _dismountPos],
     ["phaseTime", time],
     ["endTime", time + _maxDuration],
     ["support", _support],
@@ -133,6 +179,18 @@ _group setFormDir (_unit getDir _objective);
 [_unit, "gesturePoint"] call EFUNC(main,doGesture);
 [_unit, "combat", "Advance", 125] call EFUNC(main,doCallout);
 
+// mechanized: carriers drive to the dismount point and nowhere further, troops stay aboard until then
+if (_mechanized) then {
+    {
+        _x setUnloadInCombat [false, false];
+        (effectiveCommander _x) setVariable [QGVAR(forceMove), true];
+        _x doWatch _objective;
+        _x doMove _dismountPos;
+        (effectiveCommander _x) setVariable [QEGVAR(main,currentTask), "Carrying troops forward", EGVAR(main,debug_functions)];
+    } forEach _vehicles;
+    {_x setVariable [QEGVAR(main,currentTask), "Mounted", EGVAR(main,debug_functions)];} forEach _mounted;
+};
+
 // the plan runs from here
 private _handle = [{
     params ["_args", "_handle"];
@@ -147,7 +205,6 @@ private _handle = [{
         _picture set ["lastResult", _result];
         _picture set ["lastTacticTime", time];
         _group setVariable [QGVAR(maneuverPFH), nil];
-        _group setVariable [QGVAR(maneuver), nil];
         _group setVariable [QGVAR(boundToken), nil];
         _group setVariable [QGVAR(isExecutingTactic), nil];
         _group setVariable [QEGVAR(main,currentTactic), nil, EGVAR(main,debug_functions)];
@@ -163,11 +220,22 @@ private _handle = [{
                 private _maneuverUnit = _x;
                 {if (!(_x in _taskDisabled)) then {_maneuverUnit enableAI _x;};} forEach ["SUPPRESSION", "TARGET", "AUTOTARGET", "AUTOCOMBAT"];
                 if (_result isNotEqualTo "completed") then {_x doFollow (leader _group);};
+                [_x] allowGetIn true;
             };
         } forEach _units;
+        // carriers get their crews and their freedom back
+        {
+            if (alive _x) then {
+                _x setUnloadInCombat [true, true];
+                (effectiveCommander _x) setVariable [QGVAR(forceMove), nil];
+                (effectiveCommander _x) setVariable [QEGVAR(main,currentTask), nil, EGVAR(main,debug_functions)];
+                if (alive (driver _x)) then {(driver _x) doFollow (leader _group);};
+            };
+        } forEach ((_group getVariable [QGVAR(maneuver), createHashMap]) getOrDefault ["vehicles", []]);
         if (EGVAR(main,debug_functions)) then {
             ["%1 MANEUVER %2 %3", side _group, groupId _group, _result] call EFUNC(main,debugLog);
         };
+        _group setVariable [QGVAR(maneuver), nil];
     };
 
     // gone, taken over, or out of time
@@ -182,7 +250,11 @@ private _handle = [{
     private _picture = [_group] call FUNC(pictureGet);
     private _objective = _state get "objective";
     private _phase = _state get "phase";
-    private _alive = {_x call EFUNC(main,isAlive) && {isNull objectParent _x}};
+    private _mechanized = _state get "mechanized";
+    private _vehicles = (_state get "vehicles") select {alive _x && {(effectiveCommander _x) call EFUNC(main,isAlive)}};
+    _state set ["vehicles", _vehicles];
+    private _aboard = _mechanized && {_phase in ["mounted", "dismount"]};
+    private _alive = {_x call EFUNC(main,isAlive) && {_aboard || {isNull objectParent _x}}};
     private _support = (_state get "support") select _alive;
     private _assault = (_state get "assault") select _alive;
     [_group, []] call FUNC(pictureUpdate);
@@ -273,7 +345,90 @@ private _handle = [{
         } forEach _support;
     };
 
+    // carriers ~ hold where they dismounted the troops and shoot over their heads, lift when the troops are close
+    private _fnc_vehicleFire = {
+        private _lifted = _state get "lifted";
+        {
+            private _vehicle = _x;
+            if ((currentCommand _vehicle) isNotEqualTo "Suppress") then {
+                private _index = if (_lifted) then {-1} else {[_vehicle, _posList] call EFUNC(main,checkVisibilityList)};
+                if (_index isEqualTo -1 || {!([_vehicle, (_posList select _index) vectorAdd [0, 0, random 1]] call EFUNC(main,doVehicleSuppress))}) then {
+                    _vehicle doWatch _objective;
+                };
+            };
+            (effectiveCommander _vehicle) setVariable [QEGVAR(main,currentTask), ["Fire base (vehicle)", "Fire lifted (vehicle)"] select _lifted, EGVAR(main,debug_functions)];
+        } forEach _vehicles;
+    };
+
     switch (_phase) do {
+
+        // mechanized: ride to the dismount point
+        case "mounted": {
+            private _dismountPos = _state get "dismountPos";
+            private _lead = _vehicles param [0, objNull];
+            private _there = isNull _lead
+                || {_lead distance2D _dismountPos < DISMOUNT_REACHED}
+                || {_lead distance2D _dismountPos < DISMOUNT_STOPPED && {speed _lead < 2}}
+                || {time - (_state get "phaseTime") > MOUNTED_TIMEOUT};
+            if (!_there) then {
+                {if (unitReady _x) then {_x doMove _dismountPos;};} forEach _vehicles;
+            } else {
+                "dismount" call _fnc_setPhase;
+                {
+                    private _vehicle = _x;
+                    doStop (driver _vehicle);
+                    _vehicle doWatch _objective;
+                } forEach _vehicles;
+                private _troops = _assault + _support;
+                _troops orderGetIn false;
+                {
+                    if (!isNull objectParent _x) then {_x action ["Eject", vehicle _x];};
+                    [_x] allowGetIn false;
+                    _x setVariable [QEGVAR(main,currentTask), "Dismounting", EGVAR(main,debug_functions)];
+                } forEach _troops;
+                [selectRandom _troops, "combat", "Dismount"] call EFUNC(main,doCallout);
+            };
+        };
+
+        // mechanized: troops out and behind the carrier, then fanned out left and right of it
+        case "dismount": {
+            call _fnc_vehicleFire;
+            private _lead = _vehicles param [0, objNull];
+            private _anchor = if (isNull _lead) then {_state get "dismountPos"} else {getPosATL _lead};
+            private _axis = _anchor getDir _objective;
+            private _all = _assault + _support;
+            private _onFoot = _all select {isNull objectParent _x};
+            {
+                if (isNull objectParent _x) then {
+                    private _slot = _all find _x;
+                    private _sideSign = [1, -1] select ((_slot % 2) isEqualTo 1);
+                    private _rank = floor (_slot / 2);
+                    // fan: alternate left and right of the carrier, a little ahead of it, prone
+                    private _pos = (_anchor getPos [FAN_AHEAD, _axis]) getPos [FAN_WIDTH + (3 * _rank), _axis + (_sideSign * 90)];
+                    private _empty = _pos findEmptyPosition [0, 4];
+                    if (_empty isNotEqualTo []) then {_pos = _empty;};
+                    if (_x distance2D _pos > 3) then {
+                        _x setUnitPos "MIDDLE";
+                        _x doMove _pos;
+                    } else {
+                        _x setUnitPos "DOWN";
+                        _x doWatch _objective;
+                    };
+                    _x setVariable [QEGVAR(main,currentTask), "Fanning out", EGVAR(main,debug_functions)];
+                } else {
+                    _x action ["Eject", vehicle _x];
+                };
+            } forEach _all;
+            private _fanned = count _onFoot isEqualTo count _all && {(_onFoot findIf {_x distance2D _anchor > FAN_WIDTH + 12}) isEqualTo -1 && {(_onFoot findIf {_x distance2D _anchor < 4}) isEqualTo -1}};
+            if (_fanned || {time - (_state get "phaseTime") > FAN_TIMEOUT}) then {
+                "assault" call _fnc_setPhase;
+                _state set ["assault", _onFoot];
+                _state set ["support", []];
+                _assault = _onFoot;
+                _support = [];
+                call _fnc_launchBound;
+            };
+        };
 
         case "approach": {
             // support to its position
@@ -314,9 +469,11 @@ private _handle = [{
             if (!(_state get "lifted") && {_assaultDistance < SHIFT_FIRE_DISTANCE}) then {
                 _state set ["lifted", true];
                 {_x doWatch objNull; _x setUnitPos "MIDDLE";} forEach _support;
+                {_x doWatch objNull;} forEach _vehicles;
                 [_leader, "combat", "KeepFocused", 100] call EFUNC(main,doCallout);
             };
             call _fnc_supportFire;
+            if (_mechanized) then {call _fnc_vehicleFire;};
 
             // support moves up once fire is lifted, to the assault position
             if (_state get "lifted" && {_support isNotEqualTo []}) then {
@@ -331,10 +488,11 @@ private _handle = [{
         };
 
         case "clear": {
-            // support closes to the objective edge and watches outwards
+            // support closes to the objective edge and watches outwards; carriers keep watch from where they are
             if (_support isNotEqualTo []) then {
                 [_support, [_objective getPos [PERIMETER_RADIUS, _objective getDir _leader]], 0, "line", SUPPORT_SPACING, _objective] call EFUNC(main,doTeamMove);
             };
+            if (_mechanized) then {call _fnc_vehicleFire;};
             // done when nothing has been seen for a while and the assault element is on the objective
             private _contacts = [_group, CLEAR_QUIET] call FUNC(pictureContacts);
             _contacts = _contacts select {(_x select 1) distance2D _objective < 100};
@@ -356,7 +514,15 @@ private _handle = [{
                     } forEach _all;
                     [_leader, "combat", "KeepFocused", 100] call EFUNC(main,doCallout);
                     if (_losses > 0) then {[{_this call EFUNC(main,doCallout)}, [_leader, "combat", "mandown", 100], 3] call CBA_fnc_waitAndExecute;};
-                };
+                    // carriers come up to the edge of the objective, still facing it
+                    {
+                        private _spot = _objective getPos [PERIMETER_RADIUS + 15 + (10 * _forEachIndex), _objective getDir _x];
+                        private _empty = _spot findEmptyPosition [0, 20, typeOf _x];
+                        if (_empty isNotEqualTo []) then {_spot = _empty;};
+                        (driver _x) doFollow _leader;
+                        _x doMove _spot;
+                        _x doWatch _objective;
+                    } forEach _vehicles;
             } else {
                 _state set ["quietSince", -1];
             };

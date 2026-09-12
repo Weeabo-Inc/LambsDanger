@@ -26,6 +26,7 @@
 */
 #define CYCLE_TIME 6
 #define ENGAGE_DISTANCE 350
+#define TRAVEL_STANDOFF 300
 #define CONTACT_ENGAGE_DISTANCE 200
 #define CONTACT_AGE 30
 #define HOLD_TIME 30
@@ -85,7 +86,14 @@ private _leader = leader _group;
 
 // go ~ a Zeus route is kept, the attack waypoint on it points at the same spot
 if (_wpIndex < 0) then {[_group] call CBA_fnc_clearWaypoints;};
-_group move _pos;
+// a mounted group is driven to the engagement distance, never into the objective; the attack plan dismounts it
+private _travelPos = _pos;
+if (([_leader, 400] call EFUNC(main,findReadyVehicles)) isNotEqualTo []) then {
+    _travelPos = _pos getPos [TRAVEL_STANDOFF min ((_leader distance2D _pos) * 0.8), _pos getDir _leader];
+    _travelPos = [_travelPos, _travelPos findEmptyPosition [0, 30, typeOf (vehicle _leader)]] select ((_travelPos findEmptyPosition [0, 30, typeOf (vehicle _leader)]) isNotEqualTo []);
+    _group setVariable [QGVAR(attackTravelPos), _travelPos];
+};
+_group move _travelPos;
 [_leader, "combat", "Advance", 125] call EFUNC(main,doCallout);
 
 private _handle = [{
@@ -99,6 +107,7 @@ private _handle = [{
         if (isNull _group) exitWith {};
         _group setVariable [QGVAR(attackPFH), nil];
         _group setVariable [QGVAR(attackWaypoint), nil];
+        _group setVariable [QGVAR(attackTravelPos), nil];
         if (EGVAR(main,debug_functions)) then {
             ["%1 taskAttack: %2 %3", side _group, groupId _group, _reason] call EFUNC(main,debugLog);
         };
@@ -168,7 +177,8 @@ private _handle = [{
             _x setVariable [QEGVAR(danger,forceMove), nil];
             _x setVariable [QEGVAR(main,currentTask), "Attack (engage)", EGVAR(main,debug_functions)];
         } forEach _units;
-        if (count _units >= 4 && {_distance > 120}) then {
+        private _mounted = ([_leader, 400] call EFUNC(main,findReadyVehicles)) isNotEqualTo [];
+        if (_mounted || {count _units >= 4 && {_distance > 120}}) then {
             [_group, _objective, 420] call EFUNC(danger,tacticsManeuver);
         } else {
             [_group, _objective] call EFUNC(danger,tacticsBound);
@@ -195,7 +205,7 @@ private _handle = [{
         };
     } forEach _units;
     if (unitReady _leader || {((expectedDestination _leader) select 1) isEqualTo "DoNotPlan"}) then {
-        _group move _pos;
+        _group move (_group getVariable [QGVAR(attackTravelPos), _pos]);
     };
 }, CYCLE_TIME, [_group, _pos, _radius, _token, _wpIndex, _curatorOwner, ["approach", -1]]] call CBA_fnc_addPerFrameHandler;
 
