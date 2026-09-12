@@ -75,17 +75,23 @@ private _stance = "MIDDLE";
 
 if (_level >= 3) then {
     // break: cover away from the threat, not straight back (that is where the fire goes)
-    private _spots = [_unit, _threatPos, BREAK_RANGE, "ASCEND", 4] call FUNC(findCover);
+    private _spots = [_unit, _threatPos, BREAK_RANGE, "ASCEND", 6] call FUNC(findCover);
     private _awayVector = [sin _awayDir, cos _awayDir, 0];
+    // diagonal first: straight back is where the beaten zone is, straight forward is the enemy
     {
-        _x params ["_pos", "_posStance"];
-        private _offset = (_pos vectorDiff (getPosATL _unit));
-        _offset set [2, 0];
-        if (_destination isEqualTo [] && {(vectorNormalized _offset) vectorDotProduct _awayVector > -0.2} && {_unit distance2D _pos > 6}) then {
-            _destination = _pos;
-            _stance = _posStance;
-        };
-    } forEach _spots;
+        private _minDot = _x;
+        private _maxDot = [0.85, 1.01] select (_minDot < -0.2);
+        {
+            _x params ["_pos", "_posStance"];
+            private _offset = (_pos vectorDiff (getPosATL _unit));
+            _offset set [2, 0];
+            private _dot = (vectorNormalized _offset) vectorDotProduct _awayVector;
+            if (_destination isEqualTo [] && {_dot > _minDot} && {_dot < _maxDot} && {_unit distance2D _pos > 6}) then {
+                _destination = _pos;
+                _stance = _posStance;
+            };
+        } forEach _spots;
+    } forEach [-0.2, -0.3];
     if (_destination isEqualTo []) then {
         _destination = _unit getPos [BREAK_FALLBACK, _awayDir + (-45 + random 90)];
         _stance = "DOWN";
