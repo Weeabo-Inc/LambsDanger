@@ -8,6 +8,9 @@ lists the numbered checks from its system note in `docs/systems/`.
 | Folder | System note | Checks |
 |---|---|---|
 | `knowledge.Stratis` | [knowledge.md](../docs/systems/knowledge.md) | 1 to 5 |
+| `morale.Stratis` | [morale.md](../docs/systems/morale.md) | 1 to 5 |
+| `contact.Stratis` | [tactics.md](../docs/systems/tactics.md) | 1 to 5 |
+| `director.Stratis` | [director.md](../docs/systems/director.md) | 1 to 4 |
 
 How to run a test:
 
