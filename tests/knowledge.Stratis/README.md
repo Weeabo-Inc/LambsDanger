@@ -6,7 +6,7 @@ Layout on Stratis, placed by `init.sqf` at mission start:
 
 - **Player**: one BLUFOR rifleman on the airfield apron.
 - **Near squad** (`hostis_near`): four OPFOR riflemen 250 m north-east, in the open, facing
-  the player.
+  the player, with a radio backpack on the leader so its reports reach the far squad.
 - **Far squad** (`hostis_far`): four OPFOR riflemen 700 m north behind the hangar line, with
   no line of sight to the player, with a radio backpack on the leader.
 

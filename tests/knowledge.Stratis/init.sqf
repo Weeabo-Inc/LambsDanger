@@ -33,7 +33,7 @@ if (!isServer) exitWith {};
         "hostis_near",
         _origin getPos [250, 45],
         225,
-        false
+        true
     ] call _fnc_spawnSquad;
     private _far = [
         "hostis_far",

@@ -48,8 +48,9 @@ if (_accessory isNotEqualTo "" && {getNumber (configFile >> "CfgWeapons" >> _acc
 
 private _origin = getPosATL _shooter;
 private _side = side group _shooter;
-// only the groups the commander runs, distance first, and each group hears at most twice a second
-private _groups = missionNamespace getVariable ["lambs_danger_commanderGroups", allGroups];
+// every group, distance first so the far ones cost one comparison, and each group hears at most twice a second.
+// The commander's own list is not enough: a group joins it on first contact, and hearing is how an idle group gets its first contact.
+private _register = missionNamespace getVariable ["lambs_danger_fnc_commanderRegister", {}];
 {
     private _leader = leader _x;
     if (
@@ -59,9 +60,11 @@ private _groups = missionNamespace getVariable ["lambs_danger_commanderGroups", 
         && {_now - (_x getVariable [QGVAR(heardTime), -GROUP_THROTTLE]) >= GROUP_THROTTLE}
         && {[_side, side _x] call BIS_fnc_sideIsEnemy}
         && {(units _x) findIf {isPlayer _x} isEqualTo -1}
+        && {!(_leader getVariable ["lambs_danger_disableAI", false])}
     ) then {
         private _group = _x;
         _group setVariable [QGVAR(heardTime), _now];
+        [_group] call _register;
         private _distance = _leader distance2D _origin;
         private _error = ERROR_BASE + ERROR_PER_METRE * _distance;
         // a hundred guns in one treeline are one contact of strength a hundred, not a hundred rediscoveries:
@@ -77,4 +80,4 @@ private _groups = missionNamespace getVariable ["lambs_danger_commanderGroups", 
         [_group, objNull, _origin, "heard", _error, _confidence, _strength, "unknown", -1, "firing"] call FUNC(contactReport);
         [_group, _origin] call FUNC(fireLog);
     };
-} forEach _groups;
+} forEach allGroups;
