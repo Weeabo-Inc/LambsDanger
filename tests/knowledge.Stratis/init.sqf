@@ -44,6 +44,12 @@ if (!isServer) exitWith {};
 
     diag_log format ["HOSTIS TEST start: player %1, near squad %2 at 250 m, far squad %3 at 700 m", name _player, groupId _near, groupId _far];
 
+    // every shot the player fires goes in the RPT, so the timeline reads back
+    _player addEventHandler ["FiredMan", {
+        params ["_unit"];
+        diag_log format ["HOSTIS TEST player fired at %1, near leader %2 m away, knowsAbout %3", mapGridPosition _unit, round (_unit distance2D leader hostis_near), (leader hostis_near) knowsAbout _unit];
+    }];
+
     // print both pictures every 10 s
     [{
         params ["_args"];
@@ -52,9 +58,10 @@ if (!isServer) exitWith {};
             private _lines = [_x] call hostis_core_fnc_pictureReport;
             private _picture = [_x] call hostis_core_fnc_pictureGet;
             private _threatPos = _picture get "threatPos";
-            diag_log format ["HOSTIS TEST picture %1 (threat centre %2 m from the player's true position)", groupId _x, ["-", round (_threatPos distance2D _player)] select (_threatPos isNotEqualTo [])];
+            private _threatText = if (_threatPos isEqualTo []) then {"-"} else {round (_threatPos distance2D _player)};
+            diag_log format ["HOSTIS TEST picture %1 (threat centre %2 m from the player's true position)", groupId _x, _threatText];
             {diag_log ("HOSTIS TEST   " + _x);} forEach _lines;
         } forEach [_near, _far];
-        diag_log format ["HOSTIS TEST knowsAbout: near leader %1, far leader %2, engineReveal %3", (leader _near) knowsAbout _player, (leader _far) knowsAbout _player, hostis_core_engineReveal];
+        diag_log format ["HOSTIS TEST knowsAbout: near leader %1, far leader %2, engineReveal %3, player %4 m from near, %5 m from far", (leader _near) knowsAbout _player, (leader _far) knowsAbout _player, hostis_core_engineReveal, round (_player distance2D leader _near), round (_player distance2D leader _far)];
     }, 10, [_player, _near, _far]] call CBA_fnc_addPerFrameHandler;
 }, [], 5] call CBA_fnc_waitAndExecute;
