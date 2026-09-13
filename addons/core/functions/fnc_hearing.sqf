@@ -23,7 +23,8 @@
  *
  * Public: No
 */
-#define THROTTLE 1
+#define SHOOTER_THROTTLE 1
+#define GROUP_THROTTLE 0.5
 #define ERROR_BASE 5
 #define ERROR_PER_METRE 0.1
 #define CONFIDENCE 0.7
@@ -32,9 +33,9 @@ params [["_shooter", objNull, [objNull]], ["_weapon", "", [""]], ["_muzzle", "",
 
 if (GVAR(hearingRange) <= 0 || {isNull _shooter} || {_weapon in ["Throw", "Put"]}) exitWith {};
 
-// one report per shooter per second, whatever he is firing
+// one report per shooter per second, whatever he is firing: forty players on automatic are forty events a second, not four thousand
 private _now = CBA_missionTime;
-if (_now - (_shooter getVariable [QGVAR(heardTime), -THROTTLE]) < THROTTLE) exitWith {};
+if (_now - (_shooter getVariable [QGVAR(heardTime), -SHOOTER_THROTTLE]) < SHOOTER_THROTTLE) exitWith {};
 _shooter setVariable [QGVAR(heardTime), _now];
 
 private _range = GVAR(hearingRange);
@@ -45,17 +46,21 @@ if (_accessory isNotEqualTo "" && {getNumber (configFile >> "CfgWeapons" >> _acc
 
 private _origin = getPosATL _shooter;
 private _side = side group _shooter;
+// only the groups the commander runs, distance first, and each group hears at most twice a second
+private _groups = missionNamespace getVariable ["lambs_danger_commanderGroups", allGroups];
 {
     private _leader = leader _x;
     if (
-        local _x
-        && {!isNull _leader}
-        && {[_side, side _x] call BIS_fnc_sideIsEnemy}
+        !isNull _leader
         && {_leader distance2D _origin <= _range}
+        && {local _x}
+        && {_now - (_x getVariable [QGVAR(heardTime), -GROUP_THROTTLE]) >= GROUP_THROTTLE}
+        && {[_side, side _x] call BIS_fnc_sideIsEnemy}
         && {(units _x) findIf {isPlayer _x} isEqualTo -1}
     ) then {
+        _x setVariable [QGVAR(heardTime), _now];
         private _distance = _leader distance2D _origin;
         [_x, objNull, _origin, "heard", ERROR_BASE + ERROR_PER_METRE * _distance, CONFIDENCE, 1, "unknown", -1, "firing"] call FUNC(contactReport);
         [_x, _origin] call FUNC(fireLog);
     };
-} forEach allGroups;
+} forEach _groups;
