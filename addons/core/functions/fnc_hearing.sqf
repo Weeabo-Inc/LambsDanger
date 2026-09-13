@@ -28,6 +28,8 @@
 #define ERROR_BASE 5
 #define ERROR_PER_METRE 0.1
 #define CONFIDENCE 0.7
+#define CONFIDENCE_MAX 0.95
+#define COUNT_WINDOW 10
 
 params [["_shooter", objNull, [objNull]], ["_weapon", "", [""]], ["_muzzle", "", [""]]];
 
@@ -58,9 +60,21 @@ private _groups = missionNamespace getVariable ["lambs_danger_commanderGroups", 
         && {[_side, side _x] call BIS_fnc_sideIsEnemy}
         && {(units _x) findIf {isPlayer _x} isEqualTo -1}
     ) then {
-        _x setVariable [QGVAR(heardTime), _now];
+        private _group = _x;
+        _group setVariable [QGVAR(heardTime), _now];
         private _distance = _leader distance2D _origin;
-        [_x, objNull, _origin, "heard", ERROR_BASE + ERROR_PER_METRE * _distance, CONFIDENCE, 1, "unknown", -1, "firing"] call FUNC(contactReport);
-        [_x, _origin] call FUNC(fireLog);
+        private _error = ERROR_BASE + ERROR_PER_METRE * _distance;
+        // a hundred guns in one treeline are one contact of strength a hundred, not a hundred rediscoveries:
+        // the group remembers who it heard lately, and the record carries the distinct guns in that area
+        private _heard = (_group getVariable [QGVAR(heardLog), []]) select {_now - (_x select 0) < COUNT_WINDOW};
+        _heard pushBack [_now, _shooter, _origin];
+        _group setVariable [QGVAR(heardLog), _heard];
+        private _radius = GVAR(mergeRadius) max _error;
+        private _guns = [];
+        {if ((_x select 2) distance2D _origin < _radius) then {_guns pushBackUnique (_x select 1);};} forEach _heard;
+        private _strength = count _guns;
+        private _confidence = (CONFIDENCE + 0.05 * (_strength - 1)) min CONFIDENCE_MAX;
+        [_group, objNull, _origin, "heard", _error, _confidence, _strength, "unknown", -1, "firing"] call FUNC(contactReport);
+        [_group, _origin] call FUNC(fireLog);
     };
 } forEach _groups;
