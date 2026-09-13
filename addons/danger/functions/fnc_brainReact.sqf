@@ -33,16 +33,23 @@ private _timeout = time + 1.4;
 // ACE3
 _unit setVariable ["ace_medical_ai_lastHit", CBA_missionTime];
 
-// evidence into the picture: a shooter this man knows is a sighting, otherwise the fire came from a direction (C-58, C-62)
+// evidence into the picture: a shooter this man knows is a sighting, a shooter he only heard is an area (C-58, C-62, C-63).
+// The engine's danger position for fire is the round, not the gun, so the shooter the engine names is the only honest origin.
 private _group = group _unit;
 if (_type in [DANGER_FIRE, DANGER_BULLETCLOSE, DANGER_HIT]) then {
-    [_group, _pos] call HFUNC(core,fireLog);
-    if (!isNull _causedBy && {(side _causedBy) isNotEqualTo (side _group)} && {_unit knowsAbout _causedBy > 0}) then {
-        [_group, [_causedBy], "shotAt", _unit] call HFUNC(core,contactSweep);
-    } else {
-        if (_type isEqualTo DANGER_FIRE && {_pos isNotEqualTo [0, 0, 0]}) then {
-            [_group, objNull, _pos, "heard", 25 + 0.2 * (_unit distance2D _pos), 0.6, 1, "unknown", -1, "firing"] call HFUNC(core,contactReport);
+    private _shooterKnown = !isNull _causedBy && {(side _causedBy) isNotEqualTo (side _group)} && {!(_causedBy in units _group)};
+    if (_shooterKnown) then {
+        private _origin = getPosATL _causedBy;
+        [_group, _origin] call HFUNC(core,fireLog);
+        if (_unit knowsAbout _causedBy > 0) then {
+            [_group, [_causedBy], "shotAt", _unit] call HFUNC(core,contactSweep);
+        } else {
+            if (_type isEqualTo DANGER_FIRE) then {
+                [_group, objNull, _origin, "heard", 40 + 0.3 * (_unit distance2D _origin), 0.5, 1, "unknown", -1, "firing"] call HFUNC(core,contactReport);
+            };
         };
+    } else {
+        [_group, []] call HFUNC(core,fireLog);
     };
 };
 

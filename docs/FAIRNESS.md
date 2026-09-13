@@ -22,6 +22,13 @@ player with `reveal` above accuracy 1, `doTarget`, `doFire`, `commandTarget` or
 Allowed: `reveal` at accuracy 1 or below to model a *report* ("something is over there"),
 because that is what the engine offers for "suspected, not seen".
 
+Exception (ADR-0012): a shot fired within `hostis_core_hearingRange` (300 m) of a group's
+leader is filed in that group's picture as a `heard` contact at the shooter's position with
+an error of 5 m plus a tenth of the distance. The engine's own hearing is blind beyond about
+120 m and its Fire position is the round, not the gun. Picture only: the group may watch,
+search and suppress the area, but the shooter is never revealed, targeted or fired at as an
+object unless a sensor detects him.
+
 ### R2. No firing through what cannot be seen through
 
 Suppressive fire is aimed at *positions* (C-22) with the engine's own ballistics. Script

@@ -29,7 +29,7 @@ private _since = time - _window;
 private _count = 0;
 {
     _x params ["_time", "_dir"];
-    if (_time >= _since && {_bearing < 0 || {abs ((_dir - _bearing + 540) mod 360 - 180) <= _halfWidth}}) then {_count = _count + 1;};
+    if (_time >= _since && {_bearing < 0 || {_dir < 0} || {abs ((_dir - _bearing + 540) mod 360 - 180) <= _halfWidth}}) then {_count = _count + 1;};
 } forEach _log;
 
 _count / (_window max 1)

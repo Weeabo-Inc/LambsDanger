@@ -174,6 +174,10 @@ migrated into the layer addons per ADR-0008.
   longer `reveal` at `lambs_main_maxRevealValue`; that setting now has no effect. A new
   `hostis_core_engineReveal` setting (off) allows `reveal` at accuracy 1 only.
 - Deaths enter the picture from the DeadBody danger causes, not from `alive`.
+- A scripted ear (`hostis_core_fnc_hearing`, ADR-0012): every shot within
+  `hostis_core_hearingRange` (300 m) of a group's leader is a heard contact at the shooter's
+  position, error 5 m plus a tenth of the distance, picture only. The engine's Fire danger
+  position is the round, not the gun, and is no longer filed as a contact.
 - The commander sweeps and reports every think; a report from another group puts a group
   on alert but never makes it "engaged".
 - `taskHunt`, `taskRush` and `taskCreep` take their target from the group's own picture

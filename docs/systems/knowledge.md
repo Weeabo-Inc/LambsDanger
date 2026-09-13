@@ -60,8 +60,14 @@ becomes "last known" with a wide circle and a low confidence, which is what sear
 | Source | Who writes it | Position | Error at write |
 |---|---|---|---|
 | `seen` | the sensor sweep, from `targets [true, range]` of the leader and a rotating pair of other men | `observer getHideFrom enemy` | `targetKnowledge select 5` (engine error margin), at least 1 m |
-| `shotAt` | the danger FSM on Fire, Hit, BulletClose with a known shooter (milestone 3) | as above | as above |
+| `shotAt` | the danger FSM on Fire, Hit, BulletClose with a shooter the man knows | as above | as above |
+| `heard` | the scripted ear (ADR-0012): every shot within `hearingRange` of the leader | the shooter's position | 5 m plus 10% of the distance |
+| `heard` | the danger FSM on Fire with a shooter the engine names but the man does not know | the shooter's position | 40 m plus 30% of the distance |
 | `heard` | the danger FSM on Scream and Explosion without a known object (milestone 3) | the danger position | 25 m plus 20% of the distance |
+
+The engine's Fire danger position is the round, not the gun (observed 2026-09-13, C-63); it
+is never filed as a contact. A Fire, Hit or BulletClose cause with no shooter named only
+counts toward the volume of fire.
 | `reported` | the net event from another group | the sender's believed position | sender's error plus 30 m (radio) or 60 m (shouted), plus 2% of the distance between the groups |
 | `suspected` | Director areas of interest (milestone 5) | area centre | area radius |
 
@@ -134,6 +140,8 @@ Callers in `lambs_*` reach the store through the `HFUNC(core,name)` macro.
 | `mergeRadius` | 20 m | objectless records of one type this close are one contact |
 | `sweepRange` | 1200 m | how far the sweep asks the engine |
 | `sweepUnits` | 2 | extra men, rotating, whose eyes join the leader's per sweep |
+| `hearingRange` | 300 m | a shot this close to the leader is a heard contact at the shooter's position (ADR-0012); 0 leaves hearing to the engine |
+| `hearingSuppressed` | 0.3 | hearing range factor for a weapon with a muzzle attachment |
 | `reportDelay` | 3 s | base delay of a report |
 | `reportSpeed` | 150 m/s | plus one second per this many metres |
 | `reportInterval` | 10 s | a group reports at most this often |

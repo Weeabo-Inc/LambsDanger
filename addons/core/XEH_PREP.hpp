@@ -8,6 +8,7 @@ PREP(contactSweep);
 PREP(contactsGet);
 PREP(contactDeath);
 PREP(contactNearest);
+PREP(hearing);
 PREP(fireLog);
 PREP(fireIncoming);
 PREP(netParams);

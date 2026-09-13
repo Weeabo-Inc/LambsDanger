@@ -33,3 +33,4 @@ Research reference: C-nn consequences from docs/RESEARCH.md
 | [0009](0009-explicit-tactics-not-a-planner.md) | Explicit selectable tactics instead of a GOAP/HTN planner | Accepted |
 | [0010](0010-no-hand-placed-cover-nodes.md) | Positions are sampled and scored at runtime; no cover-node authoring | Accepted |
 | [0011](0011-tactic-lifecycle.md) | Every tactic declares preconditions, commitment, abort, and a reset path | Accepted |
+| [0012](0012-scripted-hearing.md) | Shots under 300 m are heard by script, and the shooter's origin is filed | Accepted |

@@ -118,6 +118,12 @@ Consequences:
 - **C-62** DCScream is how a silenced attack is noticed; a group taking suppressed fire is
   alerted by screams, not by omniscience, so a suppressed player can still be hunted after
   a wounding shot.
+- **C-63** DCFire's `_dangerPos` is the round, not the gun **[P]** (in-game run 2026-09-13,
+  `tests/knowledge.Stratis`: four men reported fire 929 to 937 m away in one direction while
+  the shooter stood 119 m away in another), and the cause did not fire at all for an
+  unsuppressed rifle at 150 to 200 m in the open. Only `_dangerCausedBy` names the shooter.
+  So the fire position is never filed as a contact, and hearing beyond the engine's reach is
+  scripted (ADR-0012).
 
 ### A.3 The scheduler and CBA per-frame handlers
 

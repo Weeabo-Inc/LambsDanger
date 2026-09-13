@@ -83,6 +83,24 @@ private _curCat = LSTRING(Settings_KnowledgeCat);
     1
 ] call CBA_fnc_addSetting;
 
+[
+    QGVAR(hearingRange),
+    "SLIDER",
+    [LSTRING(Settings_HearingRange), LSTRING(Settings_HearingRange_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [0, 1000, 300, 0],
+    1
+] call CBA_fnc_addSetting;
+
+[
+    QGVAR(hearingSuppressed),
+    "SLIDER",
+    [LSTRING(Settings_HearingSuppressed), LSTRING(Settings_HearingSuppressed_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    [0, 1, 0.3, 2],
+    1
+] call CBA_fnc_addSetting;
+
 // the net
 _curCat = LSTRING(Settings_NetCat);
 

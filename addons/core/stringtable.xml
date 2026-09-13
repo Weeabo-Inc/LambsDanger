@@ -46,6 +46,18 @@
         <Key ID="STR_hostis_Core_Settings_ErrorGrowth_ToolTip">
             <English>How fast the circle around a moving contact's last known position grows. A contact last seen static grows five times slower.</English>
         </Key>
+        <Key ID="STR_hostis_Core_Settings_HearingRange">
+            <English>Hearing range (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_HearingRange_ToolTip">
+            <English>Every shot fired within this range of an AI group's leader is filed in that group's picture as a heard contact at the shooter's position, error 5 m plus a tenth of the distance. Picture only, nothing is revealed to the engine. 0 leaves hearing to the engine (ADR-0012).</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_HearingSuppressed">
+            <English>Suppressed weapon hearing factor</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_HearingSuppressed_ToolTip">
+            <English>A weapon with a muzzle attachment is heard at this fraction of the hearing range.</English>
+        </Key>
         <Key ID="STR_hostis_Core_Settings_KnowledgeCat">
             <English>Knowledge</English>
         </Key>
