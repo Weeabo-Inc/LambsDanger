@@ -14,8 +14,12 @@ if (isServer) then {
         [_side, _key, _value] call FUNC(budget);
     }] call CBA_fnc_addEventHandler;
     [QGVAR(release), {
-        params ["_side", "_pos", ["_radius", 100]];
-        [_side, _pos, _radius, "event"] call FUNC(release);
+        params ["_side", "_pos", ["_radius", 100], ["_force", false]];
+        [_side, _pos, _radius, ["event", "zeus"] select _force, -1, _force] call FUNC(release);
+    }] call CBA_fnc_addEventHandler;
+    [QGVAR(setArea), {
+        params ["_side", "_pos", ["_radius", 0]];
+        [_side, _pos, _radius] call FUNC(area);
     }] call CBA_fnc_addEventHandler;
     [QGVAR(counterattack), {
         params ["_side", "_pos", ["_radius", 100]];

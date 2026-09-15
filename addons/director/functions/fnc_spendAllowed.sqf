@@ -23,6 +23,9 @@ params [["_side", sideUnknown, [sideUnknown]], ["_pos", [], [[]]]];
 
 if (GVAR(throttle) <= 0) exitWith {false};
 private _state = [_side] call FUNC(sideState);
+// a Zeus drew an area of operations: nothing is spent outside it
+private _ao = _state get "ao";
+if (_ao isNotEqualTo [] && {(_ao select 0) distance2D _pos > (_ao select 1)}) exitWith {false};
 private _nearest = [];
 private _nearestDistance = NEAREST_RANGE;
 {

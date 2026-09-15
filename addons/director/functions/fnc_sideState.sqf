@@ -32,6 +32,7 @@ if (isNil "_state") then {
         ["counterBatteryDone", []],
         ["fallen", createHashMap],
         ["routes", createHashMap],
+        ["ao", []],
         ["lastLosses", createHashMap],
         ["log", []],
         ["lastThink", -1e9],

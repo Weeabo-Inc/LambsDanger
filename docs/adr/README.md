@@ -34,3 +34,4 @@ Research reference: C-nn consequences from docs/RESEARCH.md
 | [0010](0010-no-hand-placed-cover-nodes.md) | Positions are sampled and scored at runtime; no cover-node authoring | Accepted |
 | [0011](0011-tactic-lifecycle.md) | Every tactic declares preconditions, commitment, abort, and a reset path | Accepted |
 | [0012](0012-scripted-hearing.md) | Shots under 300 m are heard by script, and the shooter's origin is filed | Accepted |
+| [0013](0013-zeus-layer-is-intents-and-dials.md) | The Zeus layer sets intents and dials, never orders | Accepted |

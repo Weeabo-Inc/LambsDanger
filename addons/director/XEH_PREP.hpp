@@ -1,6 +1,7 @@
 // Layer 3, the Director (docs/systems/director.md, ADR-0004)
 PREP(board);
 PREP(budget);
+PREP(area);
 PREP(counterattack);
 PREP(counterBattery);
 PREP(firedArtillery);

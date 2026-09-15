@@ -17,4 +17,4 @@ Acceptance test, Performance budget, Fairness review.
 | 3.8 | Adaptation and memory | [`director.md`](director.md) (Adaptation) | 5, 7 | route seeding built; fatal-position and collapsing-flank rules in milestone 7 |
 | 3.9 | Legibility | [`legibility.md`](legibility.md) | 3 | bark vocabulary and morale tells in `hostis_agent` |
 | 3.10 | Performance | `performance.md` | every milestone | budgets in ADR-0005 |
-| 4 | Zeus layer | `zeus.md` | 6 | seeded by posture module, directed move, diagnose |
+| 4 | Zeus layer | [`zeus.md`](zeus.md) | 6 | built in `hostis_zeus`: intent module, action, waypoints, Director dials, area of operations, pause, overlay; test `tests/zeus.Stratis` awaiting a run |

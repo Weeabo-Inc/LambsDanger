@@ -82,6 +82,26 @@ migrated into the layer addons per ADR-0008.
 `commanderReinforceRange`, `commanderMergeStrays`, `zeusWaypointDiscipline`,
 `zeusWaypointTimeout`, `aggression`, `dodgeCooldown`.
 
+## Milestone 6: layer 4, the Zeus layer (`hostis_zeus`)
+
+- One door for intents (`hostis_zeus_fnc_intent`, ADR-0013): the HOSTIS: Intent module,
+  the ZEN "Intent..." action, and four waypoint types in Eden and ZEN (Hold, Defend,
+  Attack, Reserve) all set the group's intent, radius, posture and escalation cap, and
+  start or stop the matching task.
+- The Director's dials in the Zeus hand: the HOSTIS: Director module and ZEN action set
+  the throttle, the side's two budgets, an area of operations outside which the Director
+  spends nothing (`hostis_director_fnc_area`, honoured by `spendAllowed`), and the squad
+  pause. Release reserves here and Fire mission here ask the Director on an area; a Zeus
+  release ignores budget and pacing.
+- Pause / resume as a module and a ZEN action.
+- A curator overlay: a label over every commander-run group within range with intent,
+  escalation colour, cohesion, running tactic and contact count, and a line to the threat
+  centre; a server snapshot every 3 s, forty rows at most.
+- Settings `hostis_zeus_overlayRange`, `overlayInterval`, `debug`.
+- Fixed: the upstream-era Posture module never ran, because its function expected the CBA
+  module call form and its config did not ask for it.
+- Test: `tests/zeus.Stratis`.
+
 ## Milestone 5: layer 3, the Director (`hostis_director`)
 
 - **One Director per side on the server** ([docs/systems/director.md](systems/director.md)),

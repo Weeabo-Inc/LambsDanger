@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="hostis">
+    <Package name="Zeus">
+        <Key ID="STR_hostis_Zeus_Context_Director">
+            <English>Director...</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Context_FireMission">
+            <English>Fire mission here...</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Context_Intent">
+            <English>Intent...</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Context_Main">
+            <English>HOSTIS</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Context_Overlay">
+            <English>Overlay on / off</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Context_Pause">
+            <English>Pause the AI</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Context_Release">
+            <English>Release reserves here...</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Context_Resume">
+            <English>Resume the AI</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_AORadius">
+            <English>Area of operations radius (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_AORadius_ToolTip">
+            <English>Centred where you clicked. The Director spends nothing outside it: no reinforcement, no counterattack, no fire mission. 0 removes the area.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Cap">
+            <English>Escalation cap</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Cap_ToolTip">
+            <English>The highest level the group may climb to on its own: routine, alert, engaged, decisive.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Error">
+            <English>Target error (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Error_ToolTip">
+            <English>How well the gun is told where to shoot. The Director adjusts from this circle.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_FireMissions">
+            <English>Fire missions left</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_FireMissions_ToolTip">
+            <English>Sets the side's remaining fire mission budget.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Group">
+            <English>Group</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Group_ToolTip">
+            <English>The nearest AI groups to where you dropped the module.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Mode">
+            <English>Intent</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Mode_ToolTip">
+            <English>Free: react, then go home. Hold: stay on this spot. Defend: stay and counterattack inside the radius. Attack: take this position. Reserve: wait for the Director to release you.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Paused">
+            <English>AI paused</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Paused_ToolTip">
+            <English>Stops every squad tactic within the frame and the planners until resumed. The men still shoot back.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Posture">
+            <English>Posture</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Posture_ToolTip">
+            <English>Cautious groups break contact early and never assault; aggressive ones close and press.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Radius">
+            <English>Radius (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Radius_ToolTip">
+            <English>How far from the objective the group may roam on its own.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Reinforcements">
+            <English>Reinforcements left</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Reinforcements_ToolTip">
+            <English>Sets the side's remaining reinforcement budget: releases of a reserve, counterattacks included.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_ReleaseRadius">
+            <English>Area radius (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_ReleaseRadius_ToolTip">
+            <English>The reserve gets this area as a suspected contact, never a position.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Side">
+            <English>Side</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Side_ToolTip">
+            <English>Which side's Director this concerns.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Throttle">
+            <English>Pressure throttle</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Dialog_Throttle_ToolTip">
+            <English>1 is normal, 0.5 doubles every lull, 0 stops all Director spending. Applies to every side.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Escalation_Alert">
+            <English>Alert</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Escalation_Decisive">
+            <English>Decisive</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Escalation_Engaged">
+            <English>Engaged</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Escalation_Routine">
+            <English>Routine</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Intent_Attack">
+            <English>Attack</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Intent_Defend">
+            <English>Defend</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Intent_Free">
+            <English>Free</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Intent_Hold">
+            <English>Hold</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Intent_Reserve">
+            <English>Reserve</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Module_Director_DisplayName">
+            <English>HOSTIS: Director</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Module_FireMission_DisplayName">
+            <English>HOSTIS: Fire mission</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Module_Intent_DisplayName">
+            <English>HOSTIS: Intent</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Module_Overlay_DisplayName">
+            <English>HOSTIS: Overlay on / off</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Module_Pause_DisplayName">
+            <English>HOSTIS: Pause / resume the AI</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Module_Release_DisplayName">
+            <English>HOSTIS: Release reserves</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Posture_Aggressive">
+            <English>Aggressive</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Posture_Balanced">
+            <English>Balanced</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Posture_Cautious">
+            <English>Cautious</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Settings_Debug">
+            <English>Log the Zeus layer</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Settings_DebugCat">
+            <English>Debug</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Settings_Debug_ToolTip">
+            <English>Every intent, dial and release a Zeus gives goes to the RPT. For testing only.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Settings_OverlayCat">
+            <English>Overlay</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Settings_OverlayInterval">
+            <English>Overlay refresh (s)</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Settings_OverlayInterval_ToolTip">
+            <English>How often the overlay asks the server for the groups' state.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Settings_OverlayRange">
+            <English>Overlay range (m)</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Settings_OverlayRange_ToolTip">
+            <English>Groups farther than this from the Zeus camera are not labelled.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Waypoint_Attack_DisplayName">
+            <English>HOSTIS Attack</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Waypoint_Attack_ToolTip">
+            <English>The group takes this position with fire and movement and sweeps it, then carries on.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Waypoint_Defend_DisplayName">
+            <English>HOSTIS Defend</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Waypoint_Defend_ToolTip">
+            <English>The group holds this position and counterattacks inside its radius.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Waypoint_Hold_DisplayName">
+            <English>HOSTIS Hold</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Waypoint_Hold_ToolTip">
+            <English>The group stays on this spot and fights from it.</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Waypoint_Reserve_DisplayName">
+            <English>HOSTIS Reserve</English>
+        </Key>
+        <Key ID="STR_hostis_Zeus_Waypoint_Reserve_ToolTip">
+            <English>The group waits here for the Director to release it.</English>
+        </Key>
+    </Package>
+</Project>

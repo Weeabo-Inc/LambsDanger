@@ -1,0 +1,6 @@
+author = "bluefield-creator";
+onLoadName = "HOSTIS zeus test";
+onLoadMission = "Layer 4 acceptance test: intents, waypoints, Director dials, the pause, the overlay.";
+disabledAI = 1;
+respawn = 3;
+respawnDelay = 5;

@@ -90,6 +90,8 @@ class CfgVehicles {
         _generalMacro = QGVAR(Posture);
         scope = 1;
         scopeCurator = 2;
+        // the function expects the CBA ["init", ...] form that initModules only sends with is3DEN
+        is3DEN = 1;
         displayName = CSTRING(Module_Posture_DisplayName);
         isGlobal = 0;
         category = "Lambs_Danger_Cat";
