@@ -82,6 +82,23 @@ migrated into the layer addons per ADR-0008.
 `commanderReinforceRange`, `commanderMergeStrays`, `zeusWaypointDiscipline`,
 `zeusWaypointTimeout`, `aggression`, `dodgeCooldown`.
 
+## Milestone 7: combined arms, close quarters, adaptation
+
+- **Platform-aware hearing** ([docs/systems/combined-arms.md](systems/combined-arms.md)):
+  a gun on an aircraft is heard at four times the range, on a tank three, on any other
+  vehicle one and a half. An aircraft's gun raises `hostis_director_enemyAir`.
+- **The hug rule (C-55)**: for 10 minutes after enemy air or artillery, the squad planner
+  prefers the closing tactics. Setting `hostis_director_hugging`.
+- **Illumination at night**: a grenadier lights the threat when a closing or searching
+  tactic starts, once a minute, only from a real launcher.
+- **Adaptation** (director.md): fire on a favourite position after its third visit;
+  a blocking position between a collapsing flank and the nearest held post. Setting
+  `hostis_director_adaptation` covers route seeding too.
+- **Fairness repairs**: the `taskCQB` unstick teleport is gone (the man gives the room up),
+  `taskHunt` no longer conjures a flare, `brainVehicle` measures to the crew's last known
+  position instead of the true one. Two TODO rows left `tools/fairness_allow.txt`.
+- Test: `tests/arms.Stratis`.
+
 ## Milestone 6: layer 4, the Zeus layer (`hostis_zeus`)
 
 - One door for intents (`hostis_zeus_fnc_intent`, ADR-0013): the HOSTIS: Intent module,

@@ -13,7 +13,7 @@
  * 4: Center Position, if no position or Empty Array is given it uses the Group as Center and updates the position every Cycle, default [] <ARRAY>
  * 5: Only Players, default true <BOOL>
  * 6: enable dynamic reinforcement <BOOL>
- * 7: Enable Flare <BOOL> or <NUMBER> where 0 disabled, 1 enabled (if Units cant fire it them self a flare is created via createVehicle), 2 Only if Units can Fire UGL them self
+ * 7: Enable Flare <BOOL> or <NUMBER> where 0 disabled, 1 or 2 enabled, only from a real launcher and round
  *
  * Return Value:
  * none
@@ -44,16 +44,10 @@ params [
 // shoot flare
 private _fnc_flare = {
     params ["_leader"];
+    // a flare comes only from a real launcher with a real round (FAIRNESS.md R5); options 1 and 2 are now the same
     switch (_doUGL) do {
         case true;
-        case 1: {
-            private _units = units _leader;
-            private _unitsPostUGL = [_units] call EFUNC(main,doUGL);
-            if (_units isEqualTo _unitsPostUGL) then {
-                private _flare = "F_20mm_Red" createVehicle (_leader modelToWorld [0, 0, 200]);
-                _flare setVelocity [0, 0, -10];
-            };
-        };
+        case 1;
         case 2: {
             [group _leader] call EFUNC(main,doUGL);
         };

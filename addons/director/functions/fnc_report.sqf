@@ -28,6 +28,7 @@ _lines pushBack format ["Director %1: %2 groups, %3 reserves; reinforcements %4 
     _budget get "reinforcements", _spent get "reinforcements", _budget get "fireMissions", _spent get "fireMissions", GVAR(throttle)];
 private _ao = _state get "ao";
 if (_ao isNotEqualTo []) then {_lines pushBack format ["  area of operations: %1 m around %2", round (_ao select 1), mapGridPosition (_ao select 0)];};
+if (_state get "hug") then {_lines pushBack "  hugging: the enemy has indirect fire or air";};
 {
     _y params ["_intensity", "_pstate", "_since"];
     _lines pushBack format ["  pacing: element %1 %2 for %3 s, intensity %4", _x, _pstate, round (time - _since), _intensity toFixed 2];

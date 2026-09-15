@@ -7,6 +7,8 @@ PREP(counterBattery);
 PREP(firedArtillery);
 PREP(fireMissions);
 PREP(fireRequest);
+PREP(favourites);
+PREP(flank);
 PREP(influence);
 PREP(log);
 PREP(pacing);

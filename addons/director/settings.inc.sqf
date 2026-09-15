@@ -121,6 +121,26 @@ _curCat = LSTRING(Settings_FireCat);
     1
 ] call CBA_fnc_addSetting;
 
+_curCat = LSTRING(Settings_AdaptCat);
+
+[
+    QGVAR(hugging),
+    "CHECKBOX",
+    [LSTRING(Settings_Hugging), LSTRING(Settings_Hugging_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    true,
+    1
+] call CBA_fnc_addSetting;
+
+[
+    QGVAR(adaptation),
+    "CHECKBOX",
+    [LSTRING(Settings_Adaptation), LSTRING(Settings_Adaptation_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    true,
+    1
+] call CBA_fnc_addSetting;
+
 _curCat = LSTRING(Settings_DebugCat);
 
 [

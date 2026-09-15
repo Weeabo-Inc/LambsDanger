@@ -347,7 +347,7 @@ if (_car) exitWith {
     if (
         _slow
         && {(side _dangerCausedBy) isNotEqualTo (side _unit)}
-        && {_cause isEqualTo DANGER_EXPLOSION || {_vehicle distanceSqr _dangerCausedBy < (225 + random 1225)}}
+        && {_cause isEqualTo DANGER_EXPLOSION || {_vehicle distanceSqr (_unit getHideFrom _dangerCausedBy) < (225 + random 1225)}}
         && {(driver _vehicle) call EFUNC(main,isAlive)}
     ) exitWith {
         [_unit] call EFUNC(main,doVehicleJink);
@@ -395,7 +395,7 @@ if (_vehicle isKindOf "Car_F" && {!someAmmo _vehicle}) then {
         && {!isNull (driver _vehicle)}
         && {canUnloadInCombat _vehicle}
         && {_cause isEqualTo DANGER_ENEMYDETECTED}
-        && {_vehicle distanceSqr _dangerCausedBy < (100 + random 225)}
+        && {_vehicle distanceSqr (_unit getHideFrom _dangerCausedBy) < (100 + random 225)}
     ) then {
         private _driver = driver _vehicle;
         _driver action ["Eject", _vehicle];

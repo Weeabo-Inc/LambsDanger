@@ -134,9 +134,9 @@ private _fnc_act = {
             if (_x distance _buildingPosSelected < 30 || { RND(0.5) && {(leader _group isEqualTo _x)}}) then {
                 _buildingPos deleteAt 0;
             } else {
-                // teleport debug (unit sometimes gets stuck due to Arma buildings )
-                if (RND(0.6) && {_x call EFUNC(main,isIndoor)} && {_x distance _buildingPosSelected > 45} && {!([_x, 50] call CBA_fnc_nearPlayer)}) then {
-                    _x setVehiclePosition [getPos _x, [], 3.5];
+                // a man stuck indoors gives that room up instead of being teleported out (FAIRNESS.md R5)
+                if (RND(0.6) && {_x call EFUNC(main,isIndoor)} && {_x distance _buildingPosSelected > 45}) then {
+                    _buildingPos deleteAt 0;
                 };
 
                 // distance to building is too far?

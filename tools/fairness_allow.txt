@@ -71,9 +71,7 @@ addons/main/functions/UnitAction/fnc_doCheckBody.sqf|allDeadMen|scan for a body 
 addons/main/functions/GroupAction/fnc_doGroupCommandoDeploy.sqf|createVehicle|creates the weapon holder for a mortar the team carried in its bags
 addons/main/functions/UnitAction/fnc_doUGL.sqf|createVehicle|scripted flare aim dummy 200 m up, not a unit
 addons/main/functions/UnitAction/fnc_doUGL.sqf|setPos|positions the scripted flare aim dummy
-addons/wp/functions/fnc_taskCQB.sqf|setVehiclePosition|TODO milestone 4: the unstick teleport goes with the rewrite on unitOrder
 addons/wp/functions/fnc_taskCamp.sqf|setVehiclePosition|Zeus asked for the teleport (task option), R5 exception
 addons/wp/functions/fnc_taskDefend.sqf|setVehiclePosition|Zeus asked for the teleport (task option), R5 exception
 addons/wp/functions/fnc_taskGarrison.sqf|setVehiclePosition|Zeus asked for the teleport (task option), R5 exception
-addons/wp/functions/fnc_taskHunt.sqf|createVehicle|TODO milestone 5: flare conjured without a UGL round
 addons/wp/functions/fnc_taskPatrol.sqf|setVehiclePosition|Zeus asked for the teleport (task option), R5 exception

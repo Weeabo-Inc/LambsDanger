@@ -29,6 +29,16 @@ if (isServer) then {
         params ["_side", "_pos", ["_error", 50], ["_reason", "event"], ["_observer", grpNull]];
         [_side, _pos, _error, _reason, _observer] call FUNC(fireRequest);
     }] call CBA_fnc_addEventHandler;
+    // an aircraft of some side fired: the sides hostile to it now know there is air overhead (C-55)
+    [QGVAR(enemyAir), {
+        params ["_side", "_pos"];
+        {
+            if ((_x getFriend _side) < 0.6) then {
+                private _state = [_x] call FUNC(sideState);
+                _state set ["airSeen", time];
+            };
+        } forEach (keys GVAR(sides));
+    }] call CBA_fnc_addEventHandler;
     // a player's gun fired somewhere: the sides hostile to it may locate it
     [QGVAR(enemyArtillery), {
         params ["_side", "_pos"];

@@ -69,5 +69,8 @@ _ctx set ["rested", time - (_picture get "withdrawTime") > WITHDRAW_REST];
 _ctx set ["defending", _defending];
 _ctx set ["insideArea", _defending && {_threatPos isNotEqualTo []} && {_threatPos distance2D _objective < _radius}];
 _ctx set ["vehicles", ([_leader] call LFUNC(main,findReadyVehicles)) select {someAmmo _x}];
+// the Director's word that the enemy has guns or air overhead (C-55), and whether a flare would help
+_ctx set ["hug", missionNamespace getVariable [format [QEGVAR(director,hug_%1), side _group], false]];
+_ctx set ["night", sunOrMoon < 0.5];
 
 _ctx

@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project name="hostis">
     <Package name="Director">
+        <Key ID="STR_hostis_Director_Settings_AdaptCat">
+            <English>Adaptation</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Adaptation">
+            <English>Adaptation rules</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Adaptation_ToolTip">
+            <English>Route seeding, fire on favourite positions and blocking a collapsing flank. Off leaves the Director reacting only.</English>
+        </Key>
         <Key ID="STR_hostis_Director_Settings_BudgetCat">
             <English>Budgets</English>
         </Key>
@@ -54,6 +63,12 @@
         </Key>
         <Key ID="STR_hostis_Director_Settings_FireMissions_ToolTip">
             <English>Starting fire mission budget of every side. A Zeus or a script can change it live.</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Hugging">
+            <English>Hug the enemy under indirect fire or air</English>
+        </Key>
+        <Key ID="STR_hostis_Director_Settings_Hugging_ToolTip">
+            <English>For 10 minutes after enemy artillery or aircraft is heard, groups in contact prefer the tactics that close the distance, so the enemy cannot bring the guns in without hitting themselves.</English>
         </Key>
         <Key ID="STR_hostis_Director_Settings_ObserverError">
             <English>Observer error limit (m)</English>

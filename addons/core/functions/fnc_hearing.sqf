@@ -30,6 +30,11 @@
 #define CONFIDENCE 0.7
 #define CONFIDENCE_MAX 0.95
 #define COUNT_WINDOW 10
+// a gun on a platform carries further than a rifle
+#define PLATFORM_AIR 4
+#define PLATFORM_ARMOUR 3
+#define PLATFORM_VEHICLE 1.5
+#define AIR_THROTTLE 30
 
 params [["_shooter", objNull, [objNull]], ["_weapon", "", [""]], ["_muzzle", "", [""]]];
 
@@ -48,6 +53,21 @@ if (_accessory isNotEqualTo "" && {getNumber (configFile >> "CfgWeapons" >> _acc
 
 private _origin = getPosATL _shooter;
 private _side = side group _shooter;
+
+// a helicopter or a jet is heard across the map, a tank far, a mounted gun a little further; the Director
+// learns the enemy has air from the first burst anyone hears (RESEARCH.md C-55)
+private _platform = vehicle _shooter;
+if (_platform isNotEqualTo _shooter) then {
+    _range = _range * (switch (true) do {
+        case (_platform isKindOf "Air"): {PLATFORM_AIR};
+        case (_platform isKindOf "Tank"): {PLATFORM_ARMOUR};
+        default {PLATFORM_VEHICLE};
+    });
+    if (_platform isKindOf "Air" && {_now - (_shooter getVariable [QGVAR(airHeardTime), -1e9]) > AIR_THROTTLE}) then {
+        _shooter setVariable [QGVAR(airHeardTime), _now];
+        [QEGVAR(director,enemyAir), [_side, _origin]] call CBA_fnc_serverEvent;
+    };
+};
 // every group, distance first so the far ones cost one comparison, and each group hears at most twice a second.
 // The commander's own list is not enough: a group joins it on first contact, and hearing is how an idle group gets its first contact.
 private _register = missionNamespace getVariable ["lambs_danger_fnc_commanderRegister", {}];

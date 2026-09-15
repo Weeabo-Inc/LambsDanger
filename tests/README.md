@@ -11,6 +11,8 @@ lists the numbered checks from its system note in `docs/systems/`.
 | `morale.Stratis` | [morale.md](../docs/systems/morale.md) | 1 to 5 |
 | `contact.Stratis` | [tactics.md](../docs/systems/tactics.md) | 1 to 5 |
 | `director.Stratis` | [director.md](../docs/systems/director.md) | 1 to 4 |
+| `zeus.Stratis` | [zeus.md](../docs/systems/zeus.md) | 1 to 5 |
+| `arms.Stratis` | [combined-arms.md](../docs/systems/combined-arms.md) | 1 to 5 |
 
 How to run a test:
 

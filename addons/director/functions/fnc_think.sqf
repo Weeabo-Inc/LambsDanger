@@ -18,6 +18,7 @@
  * Public: No
 */
 #define FALLEN_FORGET 900
+#define HUG_TIME 600
 
 params [["_side", sideUnknown, [sideUnknown]]];
 
@@ -36,8 +37,20 @@ _state set ["groups", _groups];
 [_side] call FUNC(board);
 [_side] call FUNC(influence);
 [_side] call FUNC(pacing);
-[_side] call FUNC(routes);
+if (GVAR(adaptation)) then {[_side] call FUNC(routes);};
 [_side] call FUNC(counterBattery);
+if (GVAR(adaptation)) then {[_side] call FUNC(favourites);};
+
+// the enemy has guns or air overhead: the side hugs (RESEARCH.md C-55), and every group reads the flag
+private _hug = GVAR(hugging) && {
+    time - (_state get "airSeen") < HUG_TIME
+    || {((_state get "artilleryLog") findIf {time - (_x select 0) < HUG_TIME}) isNotEqualTo -1}
+};
+if (_hug isNotEqualTo (_state get "hug")) then {
+    _state set ["hug", _hug];
+    missionNamespace setVariable [format [QGVAR(hug_%1), _side], _hug, true];
+    [_side, ["no longer hugging", "hugging: the enemy has indirect fire or air, groups in contact close to inside danger close"] select _hug] call FUNC(log);
+};
 
 // defended ground that fell: the defender is gone or has left it, and the enemy is reported on it
 private _fallen = _state get "fallen";
@@ -62,6 +75,7 @@ private _fallen = _state get "fallen";
     if (time - (_y select 2) > FALLEN_FORGET) then {_fallen deleteAt _x;};
 } forEach +_fallen;
 
+if (GVAR(adaptation)) then {[_side] call FUNC(flank);};
 [_side] call FUNC(reinforce);
 [_side, [], 100, false] call FUNC(counterattack);
 [_side] call FUNC(fireMissions);

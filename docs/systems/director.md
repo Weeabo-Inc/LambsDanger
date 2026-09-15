@@ -77,9 +77,37 @@ without an observer, `counterBatteryDelay` (180 s) later, once per position per 
 
 ## Adaptation (C-14)
 
-Route cells the players have entered on two separate visits get a reserve with a defend
-intent and radius 100 on them, holding fire until the players are close (the defence
-tree's fire discipline). One seed per 5 minutes, spending a reinforcement.
+Three locked rules, each unlocked by what the players did and never by what killed them.
+All three read the board and the side's own state, never a player position, and the
+`adaptation` setting turns them off together.
+
+- **Route seeding** (`routes`): a route cell the players have entered on two separate
+  visits gets a reserve with a defend intent and radius 100 on it, holding fire until the
+  players are close. One seed per 5 minutes, spending a reinforcement.
+- **Favourite positions** (`favourites`): the board's clusters are counted per 100 m cell,
+  once per visit (a gap of 2 minutes between reports on the cell is a new visit). The third
+  visit, while the cell is still reported fresh, gets a fire request on its centre with a
+  60 m error and no observer. One per side per 10 minutes, and each cell at most once per
+  10 minutes. Sentence: "You used that spot three times, so they had the mortars ready for
+  it."
+- **Collapsing flank** (`flank`): two defended positions lost within 400 m of each other
+  inside 10 minutes mean one side of the line is being rolled up. Instead of retaking
+  either, a reserve is released to a blocking position 150 m from the nearest position
+  still held, toward the breach, and gets a hold intent there once it arrives (a Zeus-style
+  forced release, ignoring budget and pacing but not the area of operations). One block
+  per breach per 20 minutes. Sentence: "They lost two posts on that side, so the next squad
+  dug in across your path."
+
+## Hugging (C-55)
+
+The side hugs for 10 minutes after any of its groups hear an enemy aircraft fire (the
+scripted ear raises `hostis_director_enemyAir` for a gun on an `Air` platform, once per
+aircraft per 30 s) or after the enemy's artillery is logged. The flag is published as
+`hostis_director_hug_<side>`; the squad planner reads it into its context as `hug` and
+raises the priority of `bound`, `assault` and `suppressAndFlank` by 30, so a group in
+contact closes to inside danger-close range rather than holding at distance where the guns
+can be brought in. The `hugging` setting turns it off. Sentence: "Your helicopter was
+overhead, so they ran straight at you instead of holding the treeline."
 
 ## API
 
@@ -96,7 +124,7 @@ tree's fire discipline). One seed per 5 minutes, spending a reinforcement.
 
 `enabled`, `thinkInterval`, `throttle`, `relaxTime`, `reinforcements`, `fireMissions`,
 `reservePoolAuto`, `reserveRange`, `counterattackDelay`, `dangerClose`, `observerError`,
-`counterBatteryWindow`, `counterBatteryDelay`, `debug`.
+`counterBatteryWindow`, `counterBatteryDelay`, `hugging`, `adaptation`, `debug`.
 
 ## Acceptance test (`tests/director.Stratis`)
 
