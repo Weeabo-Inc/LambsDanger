@@ -27,7 +27,7 @@ params [["_group", grpNull, [grpNull]], ["_ctx", createHashMap, [createHashMap]]
 private _data = _state get "data";
 private _maneuver = (_data get "maneuver") select {_x call LFUNC(main,isAlive) && {isNull objectParent _x}};
 private _base = (_data get "base") select {_x call LFUNC(main,isAlive)};
-if (_maneuver isEqualTo []) exitWith {"failed"};
+if (_maneuver isEqualTo []) exitWith {"failed (manoeuvre element down)"};
 _data set ["maneuver", _maneuver];
 _data set ["base", _base];
 
@@ -71,8 +71,7 @@ if (_distance < (_data get "lastDistance") - PROGRESS_STEP) then {
     _data set ["lastProgress", time];
 } else {
     if (time - (_data get "lastProgress") > STALL_TIME) exitWith {
-        if (SQUAD_DEBUG) then {["%1 TACTIC %2: manoeuvre element stalled %3 m from %4", side _group, groupId _group, round _distance, _phase] call LFUNC(main,debugLog);};
-        "failed"
+        format ["failed (stalled %1 m from the %2 point)", round _distance, _phase]
     };
 };
 

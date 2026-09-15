@@ -57,6 +57,7 @@ private _state = createHashMapFromArray [
     ["name", _name],
     ["since", time],
     ["token", _token],
+    ["leader", _leader],
     ["objective", _ctx getOrDefault ["threatPos", []]],
     ["data", createHashMap],
     ["startLosses", _picture get "losses"],

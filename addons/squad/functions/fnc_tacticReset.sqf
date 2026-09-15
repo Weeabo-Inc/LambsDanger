@@ -66,8 +66,11 @@ if (!isNil "_state") then {
         _group enableAttack (_attack || {!(_group call LFUNC(main,isDirected))});
     };
     private _picture = [_group] call EFUNC(core,pictureGet);
+    // the reason may carry a detail after the verdict: "failed (leader lost)"
     private _result = switch (true) do {
-        case (_reason in ["completed", "failed", "timeout"]): {_reason};
+        case ((_reason find "completed") isEqualTo 0): {"completed"};
+        case ((_reason find "failed") isEqualTo 0): {"failed"};
+        case ((_reason find "timeout") isEqualTo 0): {"timeout"};
         default {"aborted"};
     };
     _picture set ["lastTactic", _name];

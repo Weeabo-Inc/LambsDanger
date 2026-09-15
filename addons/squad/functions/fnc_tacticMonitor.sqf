@@ -43,6 +43,9 @@ if (!(_group getVariable [QLGVAR(danger,isExecutingTactic), false]) || {_group c
     [_group, ["aborted", "paused"] select GVAR(paused), "now"] call FUNC(tacticReset);
 };
 
+// the man who gave the orders is down: the tactic dies with him and the new leader plans afresh
+if (!((_state get "leader") call LFUNC(main,isAlive))) exitWith {[_group, "failed (leader lost)", "now"] call FUNC(tacticReset);};
+
 // a blend abort that waited for the leg to end
 private _abortAt = _state get "abortAt";
 if (_abortAt > 0) then {
@@ -67,13 +70,15 @@ if (_result isEqualTo "running") then {
     private _losses = (_picture get "losses") - (_state get "startLosses");
     private _progress = _state get "progress";
     _progress params ["_lastDistance", "_lastProgressTime", "_enemyGoneSince"];
-    if (_losses >= FAIL_LOSSES || {(_ctx get "morale") < FAIL_MORALE} || {(_ctx get "cohesion") isEqualTo "broken" && {_name isNotEqualTo "withdraw"}}) then {_result = "failed";};
+    if (_losses >= FAIL_LOSSES) then {_result = format ["failed (%1 lost)", _losses];};
+    if (_result isEqualTo "running" && {(_ctx get "morale") < FAIL_MORALE}) then {_result = "failed (morale)";};
+    if (_result isEqualTo "running" && {(_ctx get "cohesion") isEqualTo "broken"} && {_name isNotEqualTo "withdraw"}) then {_result = "failed (broken)";};
 
     if (_result isEqualTo "running") then {
         private _recent = [_group, ENEMY_GONE_AGE] call EFUNC(core,contactsGet);
         if (_recent isEqualTo []) then {
             if (_enemyGoneSince < 0) then {_progress set [2, time];} else {
-                if (time - _enemyGoneSince > ENEMY_GONE_HOLD) then {_result = "completed";};
+                if (time - _enemyGoneSince > ENEMY_GONE_HOLD) then {_result = "completed (enemy gone)";};
             };
         } else {
             _progress set [2, -1];
@@ -84,12 +89,12 @@ if (_result isEqualTo "running") then {
         private _objective = _state get "objective";
         private _distance = 1e9;
         {_distance = _distance min (_x distance2D _objective);} forEach (_ctx get "onFoot");
-        if (_distance < REACHED_DISTANCE) then {_result = "completed";} else {
+        if (_distance < REACHED_DISTANCE) then {_result = "completed (reached)";} else {
             if (_distance < _lastDistance - PROGRESS_STEP) then {
                 _progress set [0, _distance];
                 _progress set [1, time];
             } else {
-                if (time - _lastProgressTime > STALL_TIME) then {_result = "failed";};
+                if (time - _lastProgressTime > STALL_TIME) then {_result = format ["failed (stalled %1 m out)", round _distance];};
             };
         };
     };
@@ -97,6 +102,7 @@ if (_result isEqualTo "running") then {
 
 if (_result isEqualTo "running" && {time - (_state get "since") > (_descriptor get "maxDuration")}) then {_result = "timeout";};
 
+// a tactic's own monitor says "done"; everything else already carries its reason
 if (_result isNotEqualTo "running") then {
-    [_group, ["completed", _result] select (_result in ["completed", "failed", "timeout"]), "now"] call FUNC(tacticReset);
+    [_group, ["completed", _result] select (_result isNotEqualTo "done"), "now"] call FUNC(tacticReset);
 };
