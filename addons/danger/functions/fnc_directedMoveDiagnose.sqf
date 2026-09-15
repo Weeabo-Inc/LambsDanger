@@ -106,6 +106,9 @@ if (isServer && {!isNil "hostis_director_fnc_report"}) then {
     _lines pushBack "<t color='#FFAA00'>Director</t>";
     _lines append ([side _group] call hostis_director_fnc_report);
 };
+// what HOSTIS costs on the machine that owns the group (ADR-0014)
+_lines pushBack "<t color='#FFAA00'>Performance</t>";
+_lines append ([false] call HFUNC(core,profileReport));
 _lines pushBack "<t color='#FFAA00'>Units</t>";
 
 // unit lines

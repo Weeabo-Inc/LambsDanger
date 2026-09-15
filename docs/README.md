@@ -24,6 +24,12 @@ is never friendly and never commandable by players.
 7. Combined arms, CQB, adaptation.
 8. Performance pass, compatibility pass, documentation, release.
 
+Status (2026-09-15): all eight milestones are built and on `master` as version 1.0.0.
+Milestones 2 to 5 have had in-game runs and fixes from them; milestones 6 to 8 (Zeus layer,
+combined arms and adaptation, profiling and the load rig) are awaiting their first runs of
+`tests/zeus.Stratis`, `tests/arms.Stratis` and `tests/load.Stratis`. Each system note in
+`systems/` says what its test should show.
+
 ## Layers
 
 | Layer | Addon | Tick |

@@ -25,5 +25,5 @@ GVAR(unitCursor) = 0;
 
 GVAR(unitPFH) = [{
     if ((GVAR(units)) isEqualTo []) exitWith {};
-    call FUNC(unitCycle);
+    ["soldier", FUNC(unitCycle)] call HFUNC(core,profile);
 }, TICK, []] call CBA_fnc_addPerFrameHandler;

@@ -16,5 +16,5 @@ Acceptance test, Performance budget, Fairness review.
 | 3.7 | Indirect fire and Director tools | [`director.md`](director.md) | 5 | built in `hostis_director`: reserves, reinforcement, counterattack, observed fire missions, counter-battery, pacing; test `tests/director.Stratis` awaiting a run |
 | 3.8 | Adaptation and memory | [`director.md`](director.md) (Adaptation) | 5, 7 | route seeding, favourite positions and collapsing flank built in `hostis_director` |
 | 3.9 | Legibility | [`legibility.md`](legibility.md) | 3 | bark vocabulary and morale tells in `hostis_agent` |
-| 3.10 | Performance | `performance.md` | every milestone | budgets in ADR-0005 |
+| 3.10 | Performance | [`performance.md`](performance.md) | 8 | every handler profiled, `HOSTIS PERF` log, pinning for headless clients; load rig `tests/load.Stratis` awaiting a run |
 | 4 | Zeus layer | [`zeus.md`](zeus.md) | 6 | built in `hostis_zeus`: intent module, action, waypoints, Director dials, area of operations, pause, overlay; test `tests/zeus.Stratis` awaiting a run |

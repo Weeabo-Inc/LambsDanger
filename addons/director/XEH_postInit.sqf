@@ -12,5 +12,5 @@ if (!isServer) exitWith {};
             _sides pushBack _side;
         };
     } forEach allGroups;
-    {[_x] call FUNC(think);} forEach _sides;
+    {["director", FUNC(think), [_x]] call EFUNC(core,profile);} forEach _sides;
 }, GVAR(thinkInterval)] call CBA_fnc_addPerFrameHandler;

@@ -178,3 +178,12 @@ _curCat = LSTRING(Settings_DebugCat);
     false,
     1
 ] call CBA_fnc_addSetting;
+
+[
+    QGVAR(debugPerformance),
+    "CHECKBOX",
+    [LSTRING(Settings_DebugPerformance), LSTRING(Settings_DebugPerformance_ToolTip)],
+    [COMPONENT_NAME, _curCat],
+    false,
+    1
+] call CBA_fnc_addSetting;

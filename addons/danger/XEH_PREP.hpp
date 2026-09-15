@@ -4,6 +4,7 @@ PREP(commanderContingency);
 PREP(commanderEscalation);
 PREP(commanderGroup);
 PREP(commanderInit);
+PREP(commanderCycle);
 PREP(commanderRegister);
 PREP(commanderSide);
 PREP(intentGet);

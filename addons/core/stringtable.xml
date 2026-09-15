@@ -22,6 +22,12 @@
         <Key ID="STR_hostis_Core_Settings_DebugCat">
             <English>Debug</English>
         </Key>
+        <Key ID="STR_hostis_Core_Settings_DebugPerformance">
+            <English>Log performance</English>
+        </Key>
+        <Key ID="STR_hostis_Core_Settings_DebugPerformance_ToolTip">
+            <English>Every 30 s each machine writes HOSTIS PERF lines to its RPT: frame rate, script counts, and what every HOSTIS layer cost in that slice. For the load test and for tuning.</English>
+        </Key>
         <Key ID="STR_hostis_Core_Settings_DebugPicture">
             <English>Draw the picture on the map</English>
         </Key>

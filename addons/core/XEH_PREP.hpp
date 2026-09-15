@@ -14,3 +14,5 @@ PREP(fireIncoming);
 PREP(netParams);
 PREP(netSend);
 PREP(debugDraw);
+PREP(profile);
+PREP(profileReport);

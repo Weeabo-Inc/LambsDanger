@@ -4,5 +4,5 @@
 GVAR(moraleCursor) = 0;
 [{
     if (!GVAR(morale)) exitWith {};
-    call FUNC(moraleCycle);
+    ["morale", FUNC(moraleCycle)] call EFUNC(core,profile);
 }, 2] call CBA_fnc_addPerFrameHandler;

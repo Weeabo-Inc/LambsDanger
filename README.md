@@ -12,6 +12,51 @@ architecture decision records are in [docs/](docs/README.md). The upstream waypo
 and script surface (`lambs_wp_fnc_task*`, the Zeus modules, the ZEN actions, the CBA
 settings) keeps working; see [ADR-0002](docs/adr/0002-fork-identity-and-addon-naming.md).
 
+## Requirements
+
+- Arma 3 and [CBA_A3](https://github.com/CBATeam/CBA_A3).
+- Optional: [Zeus Enhanced](https://github.com/zen-mod/ZEN) for the context-menu actions
+  and waypoint types, [ACE3](https://github.com/acemod/ACE3) (medical states and the
+  headless module are honoured).
+- Not compatible with any mod that gives the AI knowledge the engine did not (spotting
+  scripts, `reveal` loops): the fairness contract in [docs/FAIRNESS.md](docs/FAIRNESS.md)
+  is the reason the AI feels fair.
+
+## Install
+
+Build with [HEMTT](https://hemtt.dev) (`hemtt release`) or take the release zip; load
+`@hostis` on the server, every headless client and every player. Keys are in `keys/`.
+CBA settings are under **HOSTIS**; the upstream LAMBS settings keep their names.
+
+## Layers
+
+| Layer | Addon | Does | Note |
+|---|---|---|---|
+| 4 Zeus | `hostis_zeus` | intents, Director dials, area of operations, pause, overlay | [zeus.md](docs/systems/zeus.md) |
+| 3 Director | `hostis_director` | reserves, reinforcement, counterattack, fire missions, counter-battery, pacing, adaptation | [director.md](docs/systems/director.md) |
+| 2 Squad | `hostis_squad`, `lambs_danger` commander | planned tactics with a lifecycle | [tactics.md](docs/systems/tactics.md) |
+| 1 Agent | `hostis_agent`, `lambs_danger` soldier machine | positions, morale, cohesion, barks | [morale.md](docs/systems/morale.md), [positions.md](docs/systems/positions.md) |
+| 0 Knowledge | `hostis_core` | the group's picture: contacts with error, reports, hearing | [knowledge.md](docs/systems/knowledge.md) |
+| compat | `lambs_main`, `lambs_danger`, `lambs_wp` | the upstream surface, kept working | [UPSTREAM-MAP.md](docs/UPSTREAM-MAP.md) |
+
+## Zeus quick start
+
+1. Place OPFOR (or any side no player is on) groups as usual, by hand or with the
+   upstream waypoint types. They fight on their own from the first contact.
+2. **HOSTIS: Intent** module (or the ZEN action, or a Hold / Defend / Attack / Reserve
+   waypoint) on a group: what it is for, where, how far, how careful.
+3. **HOSTIS: Director** module: the throttle, the two budgets, the area of operations,
+   pause. **Release reserves here** and **Fire mission here** ask the Director on an area.
+4. **HOSTIS: Overlay** to watch what every group believes and is doing; **Diagnose** on a
+   group for the full reasoning, the Director's log and the machine's performance.
+
+## Tests and tuning
+
+`tests/` holds one mission per system with numbered checks against its design note; the
+RPT lines are prefixed `HOSTIS TEST`. `tests/load.Stratis` is the two-hundred-AI rig;
+`hostis_core_debugPerformance` writes `HOSTIS PERF` slices from every machine
+([performance.md](docs/systems/performance.md)).
+
 The upstream README follows.
 
 ---

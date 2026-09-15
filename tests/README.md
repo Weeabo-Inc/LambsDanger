@@ -13,6 +13,7 @@ lists the numbered checks from its system note in `docs/systems/`.
 | `director.Stratis` | [director.md](../docs/systems/director.md) | 1 to 4 |
 | `zeus.Stratis` | [zeus.md](../docs/systems/zeus.md) | 1 to 5 |
 | `arms.Stratis` | [combined-arms.md](../docs/systems/combined-arms.md) | 1 to 5 |
+| `load.Stratis` | [performance.md](../docs/systems/performance.md) | 1 to 4 |
 
 How to run a test:
 

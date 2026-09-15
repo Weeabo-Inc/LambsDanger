@@ -82,6 +82,22 @@ migrated into the layer addons per ADR-0008.
 `commanderReinforceRange`, `commanderMergeStrays`, `zeusWaypointDiscipline`,
 `zeusWaypointTimeout`, `aggression`, `dodgeCooldown`.
 
+## Milestone 8: performance, compatibility, documentation, release 1.0.0
+
+- **Profiling built in** ([docs/systems/performance.md](systems/performance.md),
+  ADR-0014): `hostis_core_fnc_profile` wraps every layer's handler body (commander,
+  soldier, morale, director, tactics, hearing, debug draw); `hostis_core_fnc_profileReport`
+  renders the cost with the frame rate, script counts and registered counts. The Diagnose
+  module gained a Performance section; setting `hostis_core_debugPerformance` writes
+  `HOSTIS PERF` slices from every machine every 30 s. The commander tick body moved to
+  `lambs_danger_fnc_commanderCycle`.
+- **Pinning for headless clients** (ADR-0007, done): a group registered with the commander
+  carries `hostis_pinned` and its men `ace_headless_blacklist`, cleared when dropped.
+- **Load rig** `tests/load.Stratis`: two hundred AI with targets per layer.
+- **Documentation**: the README gained requirements, install, the layer table, a Zeus quick
+  start and the test loop; `docs/README.md` carries the milestone status.
+- **Version 1.0.0**, `BUILD 0` so CI stamps the commit count as before.
+
 ## Milestone 7: combined arms, close quarters, adaptation
 
 - **Platform-aware hearing** ([docs/systems/combined-arms.md](systems/combined-arms.md)):

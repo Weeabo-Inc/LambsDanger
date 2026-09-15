@@ -81,7 +81,7 @@ if (_started isNotEqualTo true) exitWith {
     false
 };
 
-private _handle = [FUNC(tacticMonitor), MONITOR_INTERVAL, [_group, _token]] call CBA_fnc_addPerFrameHandler;
+private _handle = [{["tactics", FUNC(tacticMonitor), _this] call EFUNC(core,profile);}, MONITOR_INTERVAL, [_group, _token]] call CBA_fnc_addPerFrameHandler;
 _state set ["handle", _handle];
 
 private _log = _picture getOrDefault ["tacticLog", []];

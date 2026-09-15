@@ -17,7 +17,7 @@ class Extended_PostInit_EventHandlers {
 class Extended_FiredMan_EventHandlers {
     class CAManBase {
         class ADDON {
-            firedMan = QUOTE(_this call FUNC(hearing));
+            firedMan = QUOTE([ARR_3('hearing',FUNC(hearing),_this)] call FUNC(profile));
         };
     };
 };
